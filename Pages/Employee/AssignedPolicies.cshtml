@@ -1,0 +1,776 @@
+@page
+@model TechNova_IT_Solutions.Pages.Employee.AssignedPoliciesModel
+@{
+    ViewData["Title"] = "My Policies";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TechNova</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8f9fa;
+            color: #1f2937;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .nav-menu {
+            padding: 20px 16px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #6b7280;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: #f3f4f6;
+            color: #1e40af;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Filter Section */
+        .filter-bar {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1f2937;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        /* Section Card */
+        .section-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            padding: 20px 28px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+        }
+
+        .section-title-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .section-body {
+            padding: 28px;
+        }
+
+        /* Policy Cards */
+        .policy-card {
+            padding: 20px;
+            background: #f3f4f6;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            transition: background 0.2s;
+        }
+
+        .policy-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .policy-card:hover {
+            background: #e5e7eb;
+        }
+
+        .policy-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .policy-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 6px;
+        }
+
+        .policy-metadata {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .policy-meta-item {
+            font-size: 13px;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .policy-meta-item svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .policy-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .policy-badge.pending {
+            background: rgba(246, 173, 85, 0.15);
+            color: #d97706;
+        }
+
+        .policy-badge.acknowledged {
+            background: rgba(72, 187, 120, 0.15);
+            color: #48bb78;
+        }
+
+        .policy-badge.overdue {
+            background: rgba(252, 129, 129, 0.15);
+            color: #dc2626;
+        }
+
+        .policy-description {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .policy-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .policy-detail-item {
+            padding: 10px 12px;
+            background: #ffffff;
+            border-radius: 6px;
+        }
+
+        .policy-detail-label {
+            font-size: 11px;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .policy-detail-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .policy-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #ffffff;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+        }
+
+        .btn-secondary:hover {
+            background: #f3f4f6;
+        }
+
+        .btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 900px;
+            width: 95%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            background: #f3f4f6;
+            border: none;
+            font-size: 20px;
+            color: #6b7280;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #e5e7eb;
+        }
+
+        .modal-body {
+            padding: 28px;
+        }
+
+        .policy-content {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .policy-content h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 12px;
+        }
+
+        .policy-content p {
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .acknowledgment-form {
+            background: rgba(246, 173, 85, 0.1);
+            border: 1px solid rgba(246, 173, 85, 0.3);
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .acknowledgment-text {
+            font-size: 14px;
+            color: #92400e;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: start;
+            gap: 12px;
+        }
+
+        .checkbox-input {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            margin-top: 2px;
+            accent-color: #1e40af;
+        }
+
+        .checkbox-label {
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.5;
+            cursor: pointer;
+        }
+
+        .modal-footer {
+            padding: 20px 28px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @@media (max-width: 1024px) {
+            .policy-details {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .main-content {
+                margin-left: 200px;
+                padding: 20px;
+            }
+
+            .policy-details {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-bar {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    @await Html.PartialAsync("_EmployeeSidebar", "AssignedPolicies")
+
+    <div class="main-content">
+        @await Html.PartialAsync("_EmployeeTopBar", (Title: "My Policies", Description: "View and acknowledge your assigned policies"))
+
+        <div class="content-wrapper">
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label class="filter-label">Search</label>
+                    <input type="text" class="filter-input" placeholder="Search by policy name..." id="searchInput">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Status</label>
+                    <select class="filter-input" id="statusFilter">
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="acknowledged">Acknowledged</option>
+                        <option value="overdue">Overdue</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Category</label>
+                    <select class="filter-input" id="categoryFilter">
+                        <option value="all">All Categories</option>
+                        <option value="security">Security</option>
+                        <option value="compliance">Compliance</option>
+                        <option value="hr">Human Resources</option>
+                        <option value="it">Information Technology</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Policies Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-title-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                        Assigned Policies
+                    </div>
+                </div>
+                <div class="section-body">
+                    @foreach (var policy in Model.Policies)
+                    {
+                    var statusClass = policy.Status == "Acknowledged" ? "acknowledged" : "pending";
+                    <div class="policy-card" data-status="@statusClass" data-category="@(policy.Category?.ToLower() ?? "general")">
+                        <div class="policy-top">
+                            <div>
+                                <div class="policy-name">@policy.PolicyTitle</div>
+                                <div class="policy-metadata">
+                                    <span class="policy-meta-item">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                                        </svg>
+                                        @(policy.Status == "Acknowledged" ? "Acknowledged" : "Assigned"): @policy.DateAssigned.ToString("MMM d, yyyy")
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="policy-badge @statusClass">@(policy.Status == "Acknowledged" ? "Acknowledged" : "Pending")</span>
+                        </div>
+                        <div class="policy-details">
+                            <div class="policy-detail-item">
+                                <div class="policy-detail-label">Category</div>
+                                <div class="policy-detail-value">@(policy.Category ?? "General")</div>
+                            </div>
+                            <div class="policy-detail-item">
+                                <div class="policy-detail-label">Assigned Date</div>
+                                <div class="policy-detail-value">@policy.DateAssigned.ToString("MMM d, yyyy")</div>
+                            </div>
+                            @if (policy.AcknowledgedDate.HasValue)
+                            {
+                            <div class="policy-detail-item">
+                                <div class="policy-detail-label">Acknowledged On</div>
+                                <div class="policy-detail-value">@policy.AcknowledgedDate.Value.ToString("MMM d, yyyy")</div>
+                            </div>
+                            }
+                        </div>
+                        <div class="policy-actions">
+                            @if (!string.IsNullOrEmpty(policy.FilePath))
+                            {
+                            <a href="/Admin/DownloadPolicyFile?policyId=@policy.PolicyId" target="_blank" class="btn btn-secondary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                                Open File
+                            </a>
+                            }
+                            @if (policy.Status != "Acknowledged")
+                            {
+                            <button class="btn btn-primary" onclick="viewPolicy('@policy.PolicyTitle.Replace("'", "\\'")','pending',@policy.PolicyId,'@(policy.FilePath ?? "")','@(policy.Description?.Replace("'", "\\'") ?? "")')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                View & Acknowledge
+                            </button>
+                            }
+                            else
+                            {
+                            <button class="btn btn-secondary" onclick="viewPolicy('@policy.PolicyTitle.Replace("'", "\\'")','acknowledged',@policy.PolicyId,'@(policy.FilePath ?? "")','@(policy.Description?.Replace("'", "\\'") ?? "")')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                View Policy
+                            </button>
+                            }
+                        </div>
+                    </div>
+                    }
+                    @if (!Model.Policies.Any())
+                    {
+                    <div style="text-align: center; padding: 40px 20px; color: #6b7280;">
+                        <p>No policies have been assigned to you yet.</p>
+                    </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acknowledgment Modal -->
+    <div class="modal" id="policyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalPolicyName">Policy Name</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="policy-content" id="policyContent"></div>
+                <div class="acknowledgment-form" id="acknowledgmentForm" style="display: none;">
+                    <p class="acknowledgment-text">By acknowledging this policy, you confirm that you have read, understood, and agree to comply with all stated requirements.</p>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="acknowledgeCheckbox" class="checkbox-input">
+                        <label for="acknowledgeCheckbox" class="checkbox-label">
+                            I have read and understood this policy. I agree to comply with all requirements and acknowledge that failure to do so may result in disciplinary action.
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+                <button class="btn btn-primary" id="acknowledgeBtn" style="display: none;" onclick="acknowledgePolicy()" disabled>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Acknowledge Policy
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPolicyId = null;
+
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const policyCards = document.querySelectorAll('.policy-card');
+
+        function filterPolicies() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const statusValue = statusFilter.value;
+            const categoryValue = categoryFilter.value;
+
+            policyCards.forEach(card => {
+                const name = card.querySelector('.policy-name').textContent.toLowerCase();
+                const status = card.dataset.status;
+                const category = card.dataset.category;
+
+                const matchSearch = name.includes(searchTerm);
+                const matchStatus = statusValue === 'all' || status === statusValue;
+                const matchCategory = categoryValue === 'all' || category === categoryValue;
+
+                card.style.display = (matchSearch && matchStatus && matchCategory) ? 'block' : 'none';
+            });
+        }
+
+        searchInput.addEventListener('input', filterPolicies);
+        statusFilter.addEventListener('change', filterPolicies);
+        categoryFilter.addEventListener('change', filterPolicies);
+
+        function viewPolicy(policyName, status, policyId, filePath, description) {
+            currentPolicyId = policyId;
+            document.getElementById('modalPolicyName').textContent = policyName;
+
+            let contentHtml = '';
+
+            // Show description if available
+            if (description && description.trim() !== '') {
+                contentHtml += `<h3>Policy Description</h3><p>${description}</p>`;
+            } else {
+                contentHtml += `<h3>Policy Overview</h3><p>This policy document outlines the standards, procedures, and requirements that all employees must follow to ensure compliance with organizational and regulatory standards.</p>`;
+            }
+
+            // Show file viewer if file is attached
+            if (filePath && filePath.trim() !== '') {
+                const fileUrl = '/Admin/DownloadPolicyFile?policyId=' + policyId;
+                const ext = filePath.split('.').pop().toLowerCase();
+
+                contentHtml += `<h3 style="margin-top:20px;">Attached Document</h3>`;
+
+                if (ext === 'pdf') {
+                    contentHtml += `
+                        <div style="margin:10px 0; border:1px solid #e5e7eb; border-radius:8px; overflow:hidden;">
+                            <iframe src="${fileUrl}" style="width:100%; height:500px; border:none;"></iframe>
+                        </div>
+                        <a href="${fileUrl}" target="_blank" class="btn btn-secondary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px; margin-top:8px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            Open PDF in New Tab
+                        </a>`;
+                } else if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) {
+                    contentHtml += `
+                        <div style="margin:10px 0; text-align:center;">
+                            <img src="${fileUrl}" style="max-width:100%; max-height:500px; border-radius:8px; border:1px solid #e5e7eb;" />
+                        </div>`;
+                } else {
+                    // For DOCX, XLSX, PPTX, TXT, etc. — provide a download button
+                    const fileTypeLabels = { 'doc': 'Word Document', 'docx': 'Word Document', 'xls': 'Excel Spreadsheet', 'xlsx': 'Excel Spreadsheet', 'ppt': 'PowerPoint', 'pptx': 'PowerPoint', 'txt': 'Text File' };
+                    const label = fileTypeLabels[ext] || ext.toUpperCase() + ' File';
+                    contentHtml += `
+                        <div style="margin:10px 0; padding:20px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; text-align:center;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" style="width:48px;height:48px;margin-bottom:12px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                            <p style="margin:0 0 12px 0; font-weight:600; color:#0c4a6e;">${label}</p>
+                            <a href="${fileUrl}" target="_blank" class="btn btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                Download & Open ${label}
+                            </a>
+                        </div>`;
+                }
+            }
+
+            contentHtml += `
+                <h3 style="margin-top:20px;">Compliance Obligations</h3>
+                <p>Failure to comply with this policy may result in disciplinary action. All employees are responsible for maintaining compliance and reporting any violations.</p>
+            `;
+
+            document.getElementById('policyContent').innerHTML = contentHtml;
+
+            const form = document.getElementById('acknowledgmentForm');
+            const btn = document.getElementById('acknowledgeBtn');
+            const checkbox = document.getElementById('acknowledgeCheckbox');
+
+            if (status === 'pending') {
+                form.style.display = 'block';
+                btn.style.display = 'flex';
+                checkbox.checked = false;
+                btn.disabled = true;
+            } else {
+                form.style.display = 'none';
+                btn.style.display = 'none';
+            }
+
+            document.getElementById('policyModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('policyModal').classList.remove('active');
+        }
+
+        document.getElementById('acknowledgeCheckbox').addEventListener('change', function() {
+            document.getElementById('acknowledgeBtn').disabled = !this.checked;
+        });
+
+        function acknowledgePolicy() {
+            if (!currentPolicyId) return;
+
+            fetch('/Employee/AcknowledgePolicy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ policyId: currentPolicyId })
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    closeModal();
+                    location.reload();
+                } else {
+                    alert(result.message || 'Failed to acknowledge policy');
+                    closeModal();
+                }
+            })
+            .catch(() => {
+                alert('Error acknowledging policy');
+                closeModal();
+            });
+        }
+
+        document.getElementById('policyModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+    </script>
+</body>
+</html>

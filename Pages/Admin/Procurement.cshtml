@@ -1,0 +1,854 @@
+@page
+@model TechNova_IT_Solutions.Pages.ProcurementModel
+@{
+    ViewData["Title"] = "Procurement Management";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TechNova</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8f9fa;
+            color: #1f2937;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .nav-menu {
+            padding: 20px 16px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #6b7280;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: #f3f4f6;
+            color: #1e40af;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Header Section */
+        .page-header-section {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .btn-add {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-add:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-add svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Filters */
+        .filters-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1f2937;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        /* Table */
+        .table-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f3f4f6;
+        }
+
+        th {
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 16px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #1f2937;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-pending {
+            color: #d97706;
+        }
+
+        .status-approved {
+            color: #48bb78;
+        }
+
+        /* Action Buttons */
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: #f8f9fa;
+            color: #6b7280;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-action:hover {
+            border-color: #1e40af;
+            color: #1e40af;
+        }
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .summary-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px 20px;
+            transition: all 0.2s;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-template-rows: auto auto;
+            gap: 0 12px;
+            align-items: center;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            grid-row: 1 / 3;
+        }
+
+        .card-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .card-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .card-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            background: #f3f4f6;
+            border: none;
+            font-size: 20px;
+            color: #6b7280;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #e5e7eb;
+        }
+
+        .modal-body {
+            padding: 28px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1f2937;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .modal-footer {
+            padding: 20px 28px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        @@media (max-width: 1024px) {
+            .filters-row {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .main-content {
+                margin-left: 200px;
+            }
+
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    @await Html.PartialAsync("_AdminSidebar", "Procurement")
+
+    <div class="main-content">
+        @await Html.PartialAsync("_AdminTopBar", (Title: "Procurement Management", Description: "Manage procurement records and suppliers"))
+
+        <div class="content-wrapper">
+            <!-- Header Section -->
+            <div class="page-header-section">
+                <div class="header-top">
+                    <h1 class="header-title">Procurement Management</h1>
+                    <button class="btn-add" onclick="openModal()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add Procurement Record
+                    </button>
+                </div>
+
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <label class="filter-label">Search</label>
+                        <input type="text" class="filter-input" placeholder="Search by item name or supplier..." id="searchInput">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Supplier</label>
+                        <select class="filter-input" id="supplierFilter">
+                            <option value="">All Suppliers</option>
+                            @foreach (var supplier in Model.Suppliers)
+                            {
+                                <option value="@supplier.Name">@supplier.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Approval Status</label>
+                        <select class="filter-input" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="card-icon" style="color: #1e40af;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                    </div>
+                    <div class="card-value">@Model.TotalProcurements</div>
+                    <div class="card-label">Total Procurement Records</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon" style="color: #d97706;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div class="card-value">@Model.PendingApprovals</div>
+                    <div class="card-label">Pending Approvals</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon" style="color: #48bb78;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </div>
+                    <div class="card-value">@Model.ProcurementsThisMonth</div>
+                    <div class="card-label">Procurements This Month</div>
+                </div>
+            </div>
+
+            <!-- Main Table -->
+            <div class="table-card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Procurement ID</th>
+                                <th>Item Name</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Supplier Name</th>
+                                <th>Linked Policy</th>
+                                <th>Purchase Date</th>
+                                <th>Approval Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="procurementTable">
+                            @foreach (var record in Model.ProcurementRecords)
+                            {
+                            <tr data-supplier="@record.SupplierName" data-status="@record.ApprovalStatus">
+                                <td>@record.ProcurementId</td>
+                                <td>@record.ItemName</td>
+                                <td>@record.Category</td>
+                                <td>@record.Quantity</td>
+                                <td>@record.SupplierName</td>
+                                <td>@record.LinkedPolicy</td>
+                                <td>@record.PurchaseDate.ToString("MMM d, yyyy")</td>
+                                <td><span class="status-badge status-@record.ApprovalStatus.ToLower()">@record.ApprovalStatus</span></td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="btn-action" onclick="viewRecord('@record.ProcurementId')">View</button>
+                                        <button class="btn-action" onclick="editRecord('@record.ProcurementId')">Edit</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Add/Edit Procurement Modal -->
+    <div class="modal" id="procurementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Add Procurement Record</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="procurementForm">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label class="form-label">Item Name *</label>
+                            <input type="text" id="itemName" class="form-input" placeholder="e.g., Dell Laptops" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Category *</label>
+                            <select id="category" class="form-input" required>
+                                <option value="">Select Category</option>
+                                <option value="IT Equipment">IT Equipment</option>
+                                <option value="Software">Software</option>
+                                <option value="Hardware">Hardware</option>
+                                <option value="Facilities">Facilities</option>
+                                <option value="Security">Security</option>
+                                <option value="Consumables">Consumables</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Quantity *</label>
+                            <input type="number" id="quantity" class="form-input" placeholder="0" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Supplier *</label>
+                            <select id="supplierId" class="form-input" required>
+                                <option value="">Select Supplier</option>
+                                @foreach (var supplier in Model.Suppliers)
+                                {
+                                    <option value="@supplier.Id">@supplier.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Linked Policy *</label>
+                            <select id="policyId" class="form-input" required>
+                                <option value="">Select Policy</option>
+                                @foreach (var policy in Model.Policies)
+                                {
+                                    <option value="@policy.Id">@policy.Title</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Purchase Date *</label>
+                            <input type="date" id="purchaseDate" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Approval Status *</label>
+                            <select id="approvalStatus" class="form-input" required>
+                                <option value="Pending">Pending</option>
+                                <option value="Approved">Approved</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveProcurement()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Procurement Details Modal -->
+    <div class="modal" id="viewModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Procurement Details</h2>
+                <button class="modal-close" onclick="closeViewModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Procurement ID</div>
+                        <div id="viewId" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Item Name</div>
+                        <div id="viewItem" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Category</div>
+                        <div id="viewCategory" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Quantity</div>
+                        <div id="viewQuantity" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Supplier</div>
+                        <div id="viewSupplier" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Linked Policy</div>
+                        <div id="viewPolicy" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Purchase Date</div>
+                        <div id="viewDate" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Approval Status</div>
+                        <div id="viewStatus" style="font-weight: 600; font-size: 15px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeViewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Filter functionality
+        const searchInput = document.getElementById('searchInput');
+        const supplierFilter = document.getElementById('supplierFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const tableRows = document.querySelectorAll('#procurementTable tr');
+
+        function filterTable() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const supplierValue = supplierFilter.value;
+            const statusValue = statusFilter.value;
+
+            tableRows.forEach(row => {
+                const itemName = row.cells[1]?.textContent.toLowerCase() || '';
+                const supplier = row.dataset.supplier || '';
+                const status = row.dataset.status || '';
+
+                const matchSearch = itemName.includes(searchTerm) || supplier.toLowerCase().includes(searchTerm);
+                const matchSupplier = !supplierValue || supplier === supplierValue;
+                const matchStatus = !statusValue || status === statusValue;
+
+                row.style.display = (matchSearch && matchSupplier && matchStatus) ? '' : 'none';
+            });
+        }
+
+        searchInput.addEventListener('input', filterTable);
+        supplierFilter.addEventListener('change', filterTable);
+        statusFilter.addEventListener('change', filterTable);
+
+        // Modal functions
+        function openModal() {
+            editingProcurementId = null;
+            document.getElementById('modalTitle').textContent = 'Add Procurement Record';
+            document.getElementById('procurementForm').reset();
+            document.getElementById('procurementModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('procurementModal').classList.remove('active');
+        }
+
+        function viewRecord(id) {
+            // Find the table row matching this procurement ID
+            const rows = document.querySelectorAll('#procurementTable tr');
+            let targetRow = null;
+            rows.forEach(row => {
+                if (row.cells[0] && row.cells[0].textContent.trim() === id) {
+                    targetRow = row;
+                }
+            });
+
+            if (!targetRow) {
+                alert('Record not found');
+                return;
+            }
+
+            document.getElementById('viewId').textContent = targetRow.cells[0].textContent.trim();
+            document.getElementById('viewItem').textContent = targetRow.cells[1].textContent.trim();
+            document.getElementById('viewCategory').textContent = targetRow.cells[2].textContent.trim();
+            document.getElementById('viewQuantity').textContent = targetRow.cells[3].textContent.trim();
+            document.getElementById('viewSupplier').textContent = targetRow.cells[4].textContent.trim();
+            document.getElementById('viewPolicy').textContent = targetRow.cells[5].textContent.trim();
+            document.getElementById('viewDate').textContent = targetRow.cells[6].textContent.trim();
+
+            const status = targetRow.cells[7].textContent.trim();
+            const statusEl = document.getElementById('viewStatus');
+            statusEl.textContent = status;
+            statusEl.style.color = status === 'Approved' ? '#16a34a' : '#d97706';
+
+            document.getElementById('viewModal').classList.add('active');
+        }
+
+        function closeViewModal() {
+            document.getElementById('viewModal').classList.remove('active');
+        }
+
+        function editRecord(id) {
+            // Extract numeric DB ID from "PROC-001" format
+            editingProcurementId = parseInt(id.replace('PROC-', ''));
+            document.getElementById('modalTitle').textContent = 'Edit Procurement Record';
+            document.getElementById('procurementModal').classList.add('active');
+        }
+
+        let editingProcurementId = null;
+
+        function saveProcurement() {
+            const form = document.getElementById('procurementForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const data = {
+                procurementId: editingProcurementId || 0,
+                supplierId: parseInt(document.getElementById('supplierId').value),
+                itemName: document.getElementById('itemName').value,
+                category: document.getElementById('category').value,
+                quantity: parseInt(document.getElementById('quantity').value),
+                procurementDate: document.getElementById('purchaseDate').value,
+                policyId: parseInt(document.getElementById('policyId').value) || null
+            };
+
+            const url = editingProcurementId ? '/Admin/UpdateProcurement' : '/Admin/CreateProcurement';
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    closeModal();
+                    location.reload();
+                } else {
+                    alert(result.message || 'Failed to save procurement');
+                }
+            })
+            .catch(() => alert('Error saving procurement'));
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('procurementModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        document.getElementById('viewModal').addEventListener('click', function(e) {
+            if (e.target === this) closeViewModal();
+        });
+    </script>
+</body>
+</html>

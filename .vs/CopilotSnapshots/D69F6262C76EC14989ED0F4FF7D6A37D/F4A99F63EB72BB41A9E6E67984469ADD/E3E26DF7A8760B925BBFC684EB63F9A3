@@ -1,0 +1,45 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace TechNova_IT_Solutions.Pages.Account
+{
+    public class LoginModel : PageModel
+    {
+        [BindProperty]
+        public string Email { get; set; } = string.Empty;
+
+        [BindProperty]
+        public string Password { get; set; } = string.Empty;
+
+        [BindProperty]
+        public bool RememberMe { get; set; }
+
+        [TempData]
+        public string? ErrorMessage { get; set; }
+
+        public void OnGet()
+        {
+        }
+
+        public IActionResult OnPost()
+        {
+            if (string.IsNullOrEmpty(Email) || string.IsNullOrEmpty(Password))
+            {
+                ErrorMessage = "Please enter both email and password.";
+                return Page();
+            }
+
+            // Placeholder authentication logic (no database)
+            // In a real application, validate against your authentication system
+            if (Email.EndsWith("@company.com") && Password.Length >= 6)
+            {
+                // Authentication successful
+                // Store user session or authentication cookie here
+                return RedirectToPage("/Index");
+            }
+
+            ErrorMessage = "Invalid credentials. Please try again.";
+            return Page();
+        }
+    }
+}

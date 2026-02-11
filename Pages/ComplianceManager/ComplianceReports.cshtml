@@ -1,0 +1,554 @@
+@page
+@model TechNova_IT_Solutions.Pages.ComplianceManager.ComplianceReportsModel
+@{
+    ViewData["Title"] = "Compliance Reports";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            color: #1f2937;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+
+
+        /* Controls Section */
+        .controls-section {
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 32px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls-row {
+            display: grid;
+            grid-template-columns: 2fr 1.5fr 1.5fr auto;
+            gap: 16px;
+            align-items: end;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .control-select, .control-input {
+            padding: 12px 14px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            color: #1f2937;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .control-select:focus, .control-input:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .btn-generate {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 64, 175, 0.4);
+        }
+
+        /* Report Actions */
+        .report-actions {
+            background: #ffffff;
+            padding: 20px 24px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 14px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            color: #1f2937;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .search-input::placeholder {
+            color: #6b7280;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-export {
+            padding: 10px 20px;
+            background: #f3f4f6;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-export:hover {
+            background: #1e40af;
+            border-color: #1e40af;
+            color: white;
+        }
+
+        .btn-export i {
+            font-size: 16px;
+        }
+
+        /* Report Section */
+        .report-section {
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .report-header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .report-title {
+            font-size: 24px;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .report-meta {
+            font-size: 14px;
+            color: #9ca3af;
+        }
+
+        .no-report {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .no-report i {
+            font-size: 64px;
+            margin-bottom: 16px;
+            color: #374151;
+        }
+
+        .no-report h3 {
+            font-size: 20px;
+            color: #9ca3af;
+            margin-bottom: 8px;
+        }
+
+        .no-report p {
+            font-size: 14px;
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead {
+            background: #252940;
+        }
+
+        .data-table th {
+            padding: 16px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #9ca3af;
+            border-bottom: 1px solid #2d3548;
+        }
+
+        .data-table td {
+            padding: 16px;
+            font-size: 14px;
+            color: #e5e7eb;
+            border-bottom: 1px solid #2d3548;
+        }
+
+        .data-table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(30, 64, 175, 0.05);
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .status-compliant {
+            color: #10b981;
+        }
+
+        .status-not-compliant {
+            color: #ef4444;
+        }
+
+        /* Hidden for print */
+        .hidden {
+            display: none;
+        }
+
+        /* Print Styles */
+        @@media print {
+            body {
+                background: white;
+                color: black;
+            }
+
+            .sidebar, .report-actions, .controls-section {
+                display: none !important;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .report-section {
+                border: none;
+                box-shadow: none;
+            }
+
+            .data-table th {
+                background: #f3f4f6 !important;
+                color: black !important;
+            }
+
+            .data-table td {
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    @await Html.PartialAsync("_ComplianceManagerSidebar", "ComplianceReports")
+
+    <!-- Main Content -->
+    <main class="main-content">
+        @await Html.PartialAsync("_ComplianceManagerTopBar", (Title: "Compliance Reports", Description: "Generate compliance reports and analytics"))
+
+        <div class="content-wrapper">
+
+        <!-- Controls Section -->
+        <div class="controls-section">
+            <div class="controls-row">
+                <div class="control-group">
+                    <label for="reportType">Report Type</label>
+                    <select id="reportType" class="control-select">
+                        <option value="">Select Report Type</option>
+                        <option value="employee">Employee Compliance Report</option>
+                        <option value="supplier">Supplier Compliance Report</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="dateFrom">Date From</label>
+                    <input type="date" id="dateFrom" class="control-input" value="2026-01-01">
+                </div>
+                <div class="control-group">
+                    <label for="dateTo">Date To</label>
+                    <input type="date" id="dateTo" class="control-input" value="2026-02-09">
+                </div>
+                <button class="btn-generate" onclick="generateReport()">
+                    <i class="fas fa-chart-pie"></i> Generate Report
+                </button>
+            </div>
+        </div>
+
+        <!-- Report Actions -->
+        <div id="reportActionsSection" class="report-actions hidden">
+            <div class="search-box">
+                <input type="text" id="searchReport" class="search-input" placeholder="Search within report...">
+            </div>
+            <div class="export-buttons">
+                <button class="btn-export" onclick="exportPDF()">
+                    <i class="fas fa-file-pdf"></i> Export PDF
+                </button>
+                <button class="btn-export" onclick="exportExcel()">
+                    <i class="fas fa-file-excel"></i> Export Excel
+                </button>
+                <button class="btn-export" onclick="printReport()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+
+        <!-- Report Section -->
+        <div class="report-section">
+            <div id="noReport" class="no-report">
+                <i class="fas fa-file-chart-line"></i>
+                <h3>No Report Generated</h3>
+                <p>Select a report type and date range, then click "Generate Report" to view data.</p>
+            </div>
+
+            <div id="reportContent" class="hidden">
+                <div class="report-header">
+                    <h2 class="report-title" id="reportTitle"></h2>
+                    <p class="report-meta" id="reportMeta"></p>
+                </div>
+
+                <!-- Employee Report Table -->
+                <div id="employeeReport" class="hidden">
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="employeeReportTable">
+                            <thead>
+                                <tr>
+                                    <th>Employee Name</th>
+                                    <th>Department</th>
+                                    <th>Assigned Policy</th>
+                                    <th>Compliance Status</th>
+                                    <th>Date Assigned</th>
+                                    <th>Acknowledged Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeeReportBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Supplier Report Table -->
+                <div id="supplierReport" class="hidden">
+                    <div style="overflow-x: auto;">
+                        <table class="data-table" id="supplierReportTable">
+                            <thead>
+                                <tr>
+                                    <th>Supplier Name</th>
+                                    <th>Contact Person</th>
+                                    <th>Assigned Policy</th>
+                                    <th>Compliance Status</th>
+                                    <th>Date Assigned</th>
+                                </tr>
+                            </thead>
+                            <tbody id="supplierReportBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        </div> <!-- Close content-wrapper -->
+    </main>
+
+    <script>
+        // Data from server
+        const employeeData = [];
+        const supplierData = [];
+
+        function generateReport() {
+            const reportType = document.getElementById('reportType').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            if (!reportType) {
+                alert('Please select a report type');
+                return;
+            }
+
+            // Hide no report message
+            document.getElementById('noReport').classList.add('hidden');
+            document.getElementById('reportContent').classList.remove('hidden');
+            document.getElementById('reportActionsSection').classList.remove('hidden');
+
+            // Update report header
+            const reportTitle = reportType === 'employee' ? 'Employee Compliance Report' : 'Supplier Compliance Report';
+            document.getElementById('reportTitle').textContent = reportTitle;
+            document.getElementById('reportMeta').textContent = `Generated on ${new Date().toLocaleDateString()} | Period: ${dateFrom} to ${dateTo}`;
+
+            // Show appropriate table
+            if (reportType === 'employee') {
+                document.getElementById('employeeReport').classList.remove('hidden');
+                document.getElementById('supplierReport').classList.add('hidden');
+                populateEmployeeReport(dateFrom, dateTo);
+            } else {
+                document.getElementById('supplierReport').classList.remove('hidden');
+                document.getElementById('employeeReport').classList.add('hidden');
+                populateSupplierReport(dateFrom, dateTo);
+            }
+        }
+
+        function populateEmployeeReport(dateFrom, dateTo) {
+            const tbody = document.getElementById('employeeReportBody');
+            tbody.innerHTML = '';
+
+            const filteredData = employeeData.filter(emp => {
+                const assignedDate = new Date(emp.dateAssigned);
+                return assignedDate >= new Date(dateFrom) && assignedDate <= new Date(dateTo);
+            });
+
+            filteredData.forEach(emp => {
+                const statusClass = emp.complianceStatus === 'Compliant' ? 'status-compliant' : 'status-not-compliant';
+                const row = `
+                    <tr>
+                        <td>${emp.employeeName}</td>
+                        <td>${emp.department}</td>
+                        <td>${emp.assignedPolicy}</td>
+                        <td><span class="status-badge ${statusClass}">${emp.complianceStatus}</span></td>
+                        <td>${emp.dateAssigned}</td>
+                        <td>${emp.acknowledgedDate}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #6b7280; padding: 40px;">No data available for selected date range</td></tr>';
+            }
+        }
+
+        function populateSupplierReport(dateFrom, dateTo) {
+            const tbody = document.getElementById('supplierReportBody');
+            tbody.innerHTML = '';
+
+            const filteredData = supplierData.filter(sup => {
+                const assignedDate = new Date(sup.dateAssigned);
+                return assignedDate >= new Date(dateFrom) && assignedDate <= new Date(dateTo);
+            });
+
+            filteredData.forEach(sup => {
+                const statusClass = sup.complianceStatus === 'Compliant' ? 'status-compliant' : 'status-not-compliant';
+                const row = `
+                    <tr>
+                        <td>${sup.supplierName}</td>
+                        <td>${sup.contactPerson}</td>
+                        <td>${sup.assignedPolicy}</td>
+                        <td><span class="status-badge ${statusClass}">${sup.complianceStatus}</span></td>
+                        <td>${sup.dateAssigned}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #6b7280; padding: 40px;">No data available for selected date range</td></tr>';
+            }
+        }
+
+        // Search functionality
+        document.getElementById('searchReport')?.addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const reportType = document.getElementById('reportType').value;
+            
+            if (reportType === 'employee') {
+                const table = document.getElementById('employeeReportTable');
+                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+                
+                for (let row of rows) {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                }
+            } else {
+                const table = document.getElementById('supplierReportTable');
+                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+                
+                for (let row of rows) {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(searchTerm) ? '' : 'none';
+                }
+            }
+        });
+
+        function exportPDF() {
+            alert('PDF export functionality would integrate with a library like jsPDF or server-side PDF generation');
+        }
+
+        function exportExcel() {
+            alert('Excel export functionality would integrate with a library like SheetJS or server-side Excel generation');
+        }
+
+        function printReport() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

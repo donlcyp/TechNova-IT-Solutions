@@ -1,0 +1,15 @@
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace TechNova_IT_Solutions.Pages
+{
+    public class DashboardModel : PageModel
+    {
+        public string UserEmail { get; set; } = string.Empty;
+
+        public void OnGet()
+        {
+            // In a real app, get this from authentication claims
+            UserEmail = TempData["UserEmail"]?.ToString() ?? "user@company.com";
+        }
+    }
+}

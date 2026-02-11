@@ -1,0 +1,486 @@
+@page
+@model TechNova_IT_Solutions.Pages.ComplianceManager.ComplianceDashboardModel
+@{
+    ViewData["Title"] = "Compliance Dashboard";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            color: #1f2937;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+
+        .summary-card {
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: block;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(30, 64, 175, 0.2);
+            border-color: #1e40af;
+        }
+
+        .summary-card h3 {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .summary-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .summary-card.gradient-1 .value {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .summary-card.gradient-2 .value {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .summary-card.gradient-3 .value {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .summary-card.gradient-4 .value {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Two Column Layout */
+        .two-column-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .column-card {
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .column-card h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .view-all-link {
+            font-size: 14px;
+            color: #1e40af;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .view-all-link:hover {
+            color: #1e3a8a;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-input, .filter-select {
+            padding: 10px 14px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            color: #1f2937;
+            font-size: 14px;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-select {
+            min-width: 150px;
+        }
+
+        .search-input::placeholder {
+            color: #6b7280;
+        }
+
+        .search-input:focus, .filter-select:focus {
+            outline: none;
+            border-color: #1e40af;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead {
+            background: #f3f4f6;
+        }
+
+        .data-table th {
+            padding: 14px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table td {
+            padding: 14px;
+            font-size: 14px;
+            color: #1f2937;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(30, 64, 175, 0.05);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        .status-compliant {
+            color: #10b981;
+        }
+
+        .status-not-compliant {
+            color: #ef4444;
+        }
+
+        /* Bottom Section */
+        .bottom-section {
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .bottom-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+
+        .recent-list {
+            list-style: none;
+        }
+
+        .recent-item {
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .recent-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .recent-info h4 {
+            font-size: 14px;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .recent-info p {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .recent-date {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .type-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 12px;
+        }
+
+        .type-employee {
+            color: #1e40af;
+        }
+
+        .type-supplier {
+            color: #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    @await Html.PartialAsync("_ComplianceManagerSidebar", "ComplianceDashboard")
+
+    <!-- Main Content -->
+    <main class="main-content">
+        @await Html.PartialAsync("_ComplianceManagerTopBar", (Title: "Compliance Dashboard", Description: "Overview of compliance metrics"))
+
+        <div class="content-wrapper">
+
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <a href="/ComplianceManager/PolicyReview" class="summary-card gradient-1">
+                <h3>Total Policies Assigned</h3>
+                <div class="value">@Model.TotalPoliciesAssigned</div>
+            </a>
+            <a href="/ComplianceManager/EmployeeCompliance" class="summary-card gradient-2">
+                <h3>Employees Compliant</h3>
+                <div class="value">@Model.EmployeesCompliant</div>
+            </a>
+            <a href="/ComplianceManager/EmployeeCompliance" class="summary-card gradient-3">
+                <h3>Employees Not Compliant</h3>
+                <div class="value">@Model.EmployeesNotCompliant</div>
+            </a>
+            <a href="/ComplianceManager/SupplierCompliance" class="summary-card gradient-4">
+                <h3>Suppliers Compliant</h3>
+                <div class="value">@Model.SuppliersCompliant</div>
+            </a>
+        </div>
+
+        <!-- Two Column Layout -->
+        <div class="two-column-layout">
+            <!-- Left Column: Employee Compliance -->
+            <div class="column-card">
+                <h2>
+                    <span>Employee Compliance Overview</span>
+                    <a href="/ComplianceManager/EmployeeCompliance" class="view-all-link">
+                        View All <i class="fas fa-arrow-right"></i>
+                    </a>
+                </h2>
+                <div class="filters">
+                    <input type="text" class="search-input" id="employeeSearch" placeholder="Search employees...">
+                    <select class="filter-select" id="departmentFilter">
+                        <option value="">All Departments</option>
+                        <option value="IT">IT</option>
+                        <option value="HR">HR</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Legal">Legal</option>
+                        <option value="Operations">Operations</option>
+                        <option value="Sales">Sales</option>
+                    </select>
+                    <select class="filter-select" id="employeeStatusFilter">
+                        <option value="">All Status</option>
+                        <option value="Compliant">Compliant</option>
+                        <option value="Not Compliant">Not Compliant</option>
+                    </select>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="employeeTable">
+                        <thead>
+                            <tr>
+                                <th>Employee Name</th>
+                                <th>Department</th>
+                                <th>Assigned Policy</th>
+                                <th>Status</th>
+                                <th>Acknowledged Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var employee in Model.EmployeeCompliance)
+                            {
+                                <tr>
+                                    <td>@employee.EmployeeName</td>
+                                    <td>@employee.Department</td>
+                                    <td>@employee.AssignedPolicy</td>
+                                    <td>
+                                        <span class="status-badge @(employee.ComplianceStatus == "Compliant" ? "status-compliant" : "status-not-compliant")">
+                                            @employee.ComplianceStatus
+                                        </span>
+                                    </td>
+                                    <td>@employee.AcknowledgedDate</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right Column: Supplier Compliance -->
+            <div class="column-card">
+                <h2>
+                    <span>Supplier Compliance Overview</span>
+                    <a href="/ComplianceManager/SupplierCompliance" class="view-all-link">
+                        View All <i class="fas fa-arrow-right"></i>
+                    </a>
+                </h2>
+                <div class="filters">
+                    <input type="text" class="search-input" id="supplierSearch" placeholder="Search suppliers...">
+                    <select class="filter-select" id="supplierStatusFilter">
+                        <option value="">All Status</option>
+                        <option value="Compliant">Compliant</option>
+                        <option value="Not Compliant">Not Compliant</option>
+                    </select>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="supplierTable">
+                        <thead>
+                            <tr>
+                                <th>Supplier Name</th>
+                                <th>Assigned Policy</th>
+                                <th>Status</th>
+                                <th>Assigned Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var supplier in Model.SupplierCompliance)
+                            {
+                                <tr>
+                                    <td>@supplier.SupplierName</td>
+                                    <td>@supplier.AssignedPolicy</td>
+                                    <td>
+                                        <span class="status-badge @(supplier.ComplianceStatus == "Compliant" ? "status-compliant" : "status-not-compliant")">
+                                            @supplier.ComplianceStatus
+                                        </span>
+                                    </td>
+                                    <td>@supplier.VerifiedDate</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Section: Recently Assigned Policies -->
+        <div class="bottom-section">
+            <h2>Recently Assigned Policies</h2>
+            <ul class="recent-list">
+                @foreach (var recent in Model.RecentlyAssigned)
+                {
+                    <li class="recent-item">
+                        <div class="recent-info">
+                            <h4>@recent.PolicyName <span class="type-badge @(recent.Type == "Employee" ? "type-employee" : "type-supplier")">@recent.Type</span></h4>
+                            <p>Assigned to: @recent.AssignedTo</p>
+                        </div>
+                        <span class="recent-date">@recent.DateAssigned</span>
+                    </li>
+                }
+            </ul>
+        </div>
+        </div>
+    </main>
+
+    <script>
+        // Employee Table Filtering
+        function filterEmployeeTable() {
+            const searchTerm = document.getElementById('employeeSearch').value.toLowerCase();
+            const deptFilter = document.getElementById('departmentFilter').value.toLowerCase();
+            const statusFilter = document.getElementById('employeeStatusFilter').value.toLowerCase();
+            const table = document.getElementById('employeeTable');
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (let row of rows) {
+                const name = row.cells[0].textContent.toLowerCase();
+                const dept = row.cells[1].textContent.toLowerCase();
+                const status = row.cells[3].textContent.toLowerCase();
+
+                const matchesSearch = name.includes(searchTerm);
+                const matchesDept = !deptFilter || dept === deptFilter;
+                const matchesStatus = !statusFilter || status.includes(statusFilter);
+
+                row.style.display = (matchesSearch && matchesDept && matchesStatus) ? '' : 'none';
+            }
+        }
+
+        // Supplier Table Filtering
+        function filterSupplierTable() {
+            const searchTerm = document.getElementById('supplierSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('supplierStatusFilter').value.toLowerCase();
+            const table = document.getElementById('supplierTable');
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (let row of rows) {
+                const name = row.cells[0].textContent.toLowerCase();
+                const status = row.cells[2].textContent.toLowerCase();
+
+                const matchesSearch = name.includes(searchTerm);
+                const matchesStatus = !statusFilter || status.includes(statusFilter);
+
+                row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('employeeSearch').addEventListener('keyup', filterEmployeeTable);
+        document.getElementById('departmentFilter').addEventListener('change', filterEmployeeTable);
+        document.getElementById('employeeStatusFilter').addEventListener('change', filterEmployeeTable);
+        document.getElementById('supplierSearch').addEventListener('keyup', filterSupplierTable);
+        document.getElementById('supplierStatusFilter').addEventListener('change', filterSupplierTable);
+    </script>
+</body>
+</html>

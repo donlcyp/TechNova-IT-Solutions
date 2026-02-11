@@ -1,0 +1,505 @@
+﻿@page
+@model TechNova_IT_Solutions.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Employee Sign In";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TechNova</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 100vh;
+        }
+
+        .left-panel {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .welcome-section {
+            max-width: 500px;
+        }
+
+        .welcome-section h1 {
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 24px;
+        }
+
+        .welcome-section h1 span {
+            color: #fbbf24;
+        }
+
+        .welcome-section h2 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            opacity: 0.95;
+        }
+
+        .info-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 32px;
+            margin-top: 40px;
+            text-align: left;
+        }
+
+        .info-section h3 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #fbbf24;
+        }
+
+        .info-section p {
+            font-size: 16px;
+            line-height: 1.8;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .info-section strong {
+            color: #fbbf24;
+            font-weight: 600;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            margin-top: 60px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .right-panel {
+            background: #f8f9fa;
+            color: #1a1d2e;
+            padding: 60px 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+
+        .form-container {
+            max-width: 440px;
+            width: 100%;
+        }
+
+        .logo-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            background: white;
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .form-container h2 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .form-container > p {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-group input[type="email"],
+        .form-group input[type="password"],
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 14px 48px 14px 16px;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            color: #1a1d2e;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toggle-password:hover {
+            color: #6366f1;
+        }
+
+        .toggle-password svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            gap: 12px;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-wrapper label {
+            font-size: 14px;
+            cursor: pointer;
+            color: #374151;
+        }
+
+        .form-options a {
+            color: #6366f1;
+            text-decoration: none;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .form-options a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-signin {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-signin:hover {
+            opacity: 0.9;
+        }
+
+        .info-box {
+            margin-top: 32px;
+            background: #e0e7ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .info-icon {
+            color: #6366f1;
+            flex-shrink: 0;
+        }
+
+        .info-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .info-content h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #1a1d2e;
+        }
+
+        .info-content p {
+            font-size: 13px;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+
+        .error-message {
+            background: #ef4444;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        /* Tablet styles */
+        @@media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .left-panel {
+                display: none;
+            }
+
+            .right-panel {
+                padding: 40px 32px;
+            }
+        }
+
+        /* Mobile styles */
+        @@media (max-width: 640px) {
+            body {
+                overflow-y: auto;
+            }
+
+            .right-panel {
+                padding: 32px 20px;
+                min-height: 100vh;
+            }
+
+            .form-container h2 {
+                font-size: 28px;
+            }
+
+            .form-options {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .info-box {
+                flex-direction: column;
+            }
+
+            .logo-icon {
+                width: 64px;
+                height: 64px;
+            }
+        }
+
+        /* Small mobile styles */
+        @@media (max-width: 375px) {
+            .right-panel {
+                padding: 24px 16px;
+            }
+
+            .form-container h2 {
+                font-size: 24px;
+            }
+
+            .form-group input[type="email"],
+            .form-group input[type="password"],
+            .form-group input[type="text"] {
+                padding: 12px 40px 12px 12px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div class="welcome-section">
+                <h1>Welcome to <span>TechNova</span></h1>
+                <h2>The Consulting and Software Services Company</h2>
+                
+                <div class="info-section">
+                    <h3>About Us</h3>
+                    <p>
+                        Greetings! We are a leading technology consulting and software development company dedicated to delivering innovative solutions that drive business transformation.
+                    </p>
+                    <p>
+                        Our expert team specializes in <strong>compliance management</strong>, <strong>procurement solutions</strong>, and <strong>enterprise software development</strong>.
+                    </p>
+                    <p>
+                        We help organizations streamline operations, ensure regulatory compliance, and achieve their digital transformation goals through cutting-edge technology and strategic consulting.
+                    </p>
+                    <p>
+                        <strong>Thank you for choosing TechNova!</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Contact IT</a>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="form-container">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <img src="~/images/logo.png" alt="TechNova Logo" />
+                    </div>
+                </div>
+
+                <h2>Employee Sign In</h2>
+                <p>Use the credentials provided by your administrator</p>
+
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="error-message">@Model.ErrorMessage</div>
+                }
+
+                <form method="post">
+                    <div class="form-group">
+                        <label asp-for="Email">Employee Email</label>
+                        <input asp-for="Email" type="email" placeholder="employee@company.com" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Password">Password</label>
+                        <div class="input-wrapper">
+                            <input asp-for="Password" type="password" id="passwordField" placeholder="Enter your password" required />
+                            <button type="button" class="toggle-password" onclick="togglePassword()" id="toggleBtn" aria-label="Toggle password visibility">
+                                <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path id="eyePath" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle id="eyeCircle" cx="12" cy="12" r="3"></circle>
+                                    <line id="eyeSlash" x1="1" y1="1" x2="23" y2="23" style="display: none;"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-options">
+                        <div class="checkbox-wrapper">
+                            <input asp-for="RememberMe" type="checkbox" />
+                            <label asp-for="RememberMe">Remember me</label>
+                        </div>
+                        <a href="#">Contact Admin</a>
+                    </div>
+
+                    <button type="submit" class="btn-signin">Sign In</button>
+                </form>
+
+                <div class="info-box">
+                    <div class="info-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </div>
+                    <div class="info-content">
+                        <h4>Need Access?</h4>
+                        <p>Contact your IT administrator to receive your login credentials. All employee accounts are created and managed by the admin team.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('passwordField');
+            const eyePath = document.getElementById('eyePath');
+            const eyeCircle = document.getElementById('eyeCircle');
+            const eyeSlash = document.getElementById('eyeSlash');
+            const isPassword = passwordInput.getAttribute('type') === 'password';
+            
+            if (isPassword) {
+                passwordInput.setAttribute('type', 'text');
+                eyePath.setAttribute('d', 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24');
+                eyeCircle.style.display = 'none';
+                eyeSlash.style.display = 'block';
+            } else {
+                passwordInput.setAttribute('type', 'password');
+                eyePath.setAttribute('d', 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z');
+                eyeCircle.style.display = 'block';
+                eyeSlash.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

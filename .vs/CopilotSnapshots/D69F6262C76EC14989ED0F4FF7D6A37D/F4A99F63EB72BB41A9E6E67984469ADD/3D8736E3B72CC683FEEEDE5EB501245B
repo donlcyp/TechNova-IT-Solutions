@@ -1,0 +1,14 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace TechNova_IT_Solutions.Pages
+{
+    public class IndexModel : PageModel
+    {
+        public IActionResult OnGet()
+        {
+            // Redirect to login page
+            return RedirectToPage("/Account/Login");
+        }
+    }
+}

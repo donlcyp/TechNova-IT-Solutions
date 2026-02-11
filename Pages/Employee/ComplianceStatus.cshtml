@@ -1,0 +1,699 @@
+@page
+@model TechNova_IT_Solutions.Pages.Employee.ComplianceStatusModel
+@{
+    ViewData["Title"] = "Compliance Status";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TechNova</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8f9fa;
+            color: #1f2937;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .nav-menu {
+            padding: 20px 16px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #6b7280;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: #f3f4f6;
+            color: #1e40af;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px 20px;
+            transition: all 0.2s;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-template-rows: auto auto;
+            gap: 0 12px;
+            align-items: center;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            grid-row: 1 / 3;
+        }
+
+        .card-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .card-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .card-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        /* Section Card */
+        .section-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .section-title-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+        }
+
+        .section-title-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Compliance Score Block */
+        .compliance-score-block {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            border-radius: 12px;
+            padding: 28px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            margin-bottom: 24px;
+        }
+
+        .score-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .score-value {
+            font-size: 36px;
+            font-weight: 700;
+        }
+
+        .score-label {
+            font-size: 12px;
+            opacity: 0.85;
+        }
+
+        .score-details {
+            flex: 1;
+        }
+
+        .score-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .score-detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .score-detail-text {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .score-detail-num {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        /* Compliance Items */
+        .compliance-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: #f3f4f6;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            transition: background 0.2s;
+        }
+
+        .compliance-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .compliance-item:hover {
+            background: #e5e7eb;
+        }
+
+        .compliance-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .compliance-icon.success {
+            background: rgba(30, 64, 175, 0.1);
+            color: #1e40af;
+        }
+
+        .compliance-icon.warning {
+            background: rgba(217, 119, 6, 0.1);
+            color: #d97706;
+        }
+
+        .compliance-icon.danger {
+            background: rgba(220, 38, 38, 0.1);
+            color: #dc2626;
+        }
+
+        .compliance-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .compliance-info {
+            flex: 1;
+        }
+
+        .compliance-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 2px;
+        }
+
+        .compliance-meta {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .compliance-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .compliance-badge.compliant {
+            background: rgba(72, 187, 120, 0.15);
+            color: #48bb78;
+        }
+
+        .compliance-badge.pending {
+            background: rgba(246, 173, 85, 0.15);
+            color: #d97706;
+        }
+
+        .compliance-badge.overdue {
+            background: rgba(252, 129, 129, 0.15);
+            color: #dc2626;
+        }
+
+        /* Progress Bars */
+        .progress-item {
+            margin-bottom: 20px;
+        }
+
+        .progress-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .progress-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .progress-percent {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e40af;
+        }
+
+        .progress-track {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #1e40af, #1e3a8a);
+            border-radius: 10px;
+            transition: width 0.4s;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 32px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 8px;
+            bottom: 8px;
+            width: 2px;
+            background: #e5e7eb;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 24px;
+        }
+
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -28px;
+            top: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 3px solid #1e40af;
+            background: white;
+        }
+
+        .timeline-dot.pending {
+            border-color: #d97706;
+        }
+
+        .timeline-dot.overdue {
+            border-color: #dc2626;
+        }
+
+        .timeline-content {
+            background: #f3f4f6;
+            padding: 16px;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+
+        .timeline-content:hover {
+            background: #e5e7eb;
+        }
+
+        .timeline-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .timeline-date {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .timeline-desc {
+            font-size: 13px;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        /* Action Alert */
+        .action-alert {
+            background: rgba(217, 119, 6, 0.08);
+            border: 1px solid rgba(217, 119, 6, 0.25);
+            border-radius: 12px;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .alert-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(217, 119, 6, 0.12);
+            color: #d97706;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .alert-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .alert-text {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 2px;
+        }
+
+        .alert-desc {
+            font-size: 13px;
+            color: #b45309;
+        }
+
+        .alert-btn {
+            padding: 10px 18px;
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .alert-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        @@media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .main-content {
+                margin-left: 200px;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .compliance-score-block {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    @await Html.PartialAsync("_EmployeeSidebar", "ComplianceStatus")
+
+    <div class="main-content">
+        @await Html.PartialAsync("_EmployeeTopBar", (Title: "Compliance Status", Description: "Track your personal compliance progress and requirements"))
+
+        <div class="content-wrapper">
+            <!-- Action Required Alert -->
+            <div class="action-alert">
+                <div class="alert-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <div class="alert-text">
+                    <div class="alert-title">Action Required</div>
+                    <div class="alert-desc">You have @Model.PendingPolicies pending policy acknowledgments. Please review by February 14, 2026.</div>
+                </div>
+                <a href="/Employee/AssignedPolicies" class="alert-btn">Review Policies</a>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="card">
+                    <div class="card-icon" style="color: #1e40af;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <div class="card-value">@Model.ComplianceScore%</div>
+                    <div class="card-label">Compliance Score</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="color: #48bb78;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="card-value">@Model.AcknowledgedPolicies</div>
+                    <div class="card-label">Acknowledged</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="color: #d97706;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div class="card-value">@Model.PendingPolicies</div>
+                    <div class="card-label">Pending</div>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="color: #8b5cf6;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                    </div>
+                    <div class="card-value">@Model.TotalPolicies</div>
+                    <div class="card-label">Total Policies</div>
+                </div>
+            </div>
+
+            <!-- Compliance Score Block -->
+            <div class="compliance-score-block">
+                <div class="score-circle">
+                    <div class="score-value">@Model.ComplianceScore%</div>
+                    <div class="score-label">Compliant</div>
+                </div>
+                <div class="score-details">
+                    <div class="score-detail-row">
+                        <span class="score-detail-text">Total Policies Assigned</span>
+                        <span class="score-detail-num">@Model.TotalPolicies</span>
+                    </div>
+                    <div class="score-detail-row">
+                        <span class="score-detail-text">Policies Acknowledged</span>
+                        <span class="score-detail-num">@Model.AcknowledgedPolicies</span>
+                    </div>
+                    <div class="score-detail-row">
+                        <span class="score-detail-text">Pending Acknowledgment</span>
+                        <span class="score-detail-num">@Model.PendingPolicies</span>
+                    </div>
+                    <div class="score-detail-row">
+                        <span class="score-detail-text">Last Updated</span>
+                        <span class="score-detail-num">@Model.LastUpdated</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Policy Compliance -->
+                <div class="section-card">
+                    <div class="section-title">
+                        <div class="section-title-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 11l3 3L22 4"></path>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                            </svg>
+                        </div>
+                        Policy Compliance
+                    </div>
+
+                    <div class="compliance-item">
+                        <div class="compliance-icon success">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="compliance-info">
+                            <div class="compliance-name">Acknowledged Policies</div>
+                            <div class="compliance-meta">@Model.AcknowledgedPolicies out of @Model.TotalPolicies policies</div>
+                        </div>
+                        <span class="compliance-badge compliant">@(Model.TotalPolicies > 0 ? (Model.AcknowledgedPolicies * 100 / Model.TotalPolicies) : 0)%</span>
+                    </div>
+
+                    <div class="compliance-item">
+                        <div class="compliance-icon warning">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                        <div class="compliance-info">
+                            <div class="compliance-name">Pending Review</div>
+                            <div class="compliance-meta">@Model.PendingPolicies policies awaiting acknowledgment</div>
+                        </div>
+                        <span class="compliance-badge pending">@Model.PendingPolicies</span>
+                    </div>
+                </div>
+
+
+            </div>
+
+            <!-- Compliance Timeline -->
+            <div class="section-card">
+                <div class="section-title">
+                    <div class="section-title-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    Compliance Activity Timeline
+                </div>
+
+                <div class="timeline">
+                    @foreach (var policy in Model.PolicyList)
+                    {
+                    <div class="timeline-item">
+                        <div class="timeline-dot @(policy.Status == "Pending" ? "pending" : "")"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">@(policy.Status == "Acknowledged" ? "Acknowledged" : "New Policy Assigned"): @policy.PolicyTitle</div>
+                            <div class="timeline-date">@policy.DateAssigned.ToString("MMMM d, yyyy")</div>
+                            <div class="timeline-desc">@(policy.Status == "Acknowledged" ? $"Successfully reviewed and acknowledged {policy.PolicyTitle}." : $"{policy.PolicyTitle} has been assigned for your review.")</div>
+                        </div>
+                    </div>
+                    }
+                    @if (!Model.PolicyList.Any())
+                    {
+                    <p style="color: #6b7280; text-align: center; padding: 20px;">No compliance activity yet</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,572 @@
+@page
+@model TechNova_IT_Solutions.Pages.AuditLogsModel
+@{
+    ViewData["Title"] = "Audit Logs";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TechNova</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8f9fa;
+            color: #1f2937;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            position: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 28px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .logo-icon {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 24px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .nav-menu {
+            padding: 20px 16px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #6b7280;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .nav-item:hover {
+            background: #f3f4f6;
+            color: #1e40af;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+        }
+
+        .user-profile {
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 16px;
+            color: white;
+        }
+
+        .user-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .user-info p {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+
+
+        .filters-section {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 10px 14px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            color: #1f2937;
+            font-size: 14px;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            outline: none;
+            border-color: #1e40af;
+        }
+
+        .table-container {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f3f4f6;
+        }
+
+        th {
+            padding: 16px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 16px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #1f2937;
+        }
+
+        tbody tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f3f4f6;
+        }
+
+        .module-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .module-users {
+            color: #1e40af;
+        }
+
+        .module-policies {
+            color: #9f7aea;
+        }
+
+        .module-compliance {
+            color: #48bb78;
+        }
+
+        .module-suppliers {
+            color: #f6ad55;
+        }
+
+        .module-procurement {
+            color: #38b2ac;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-close:hover {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .detail-group {
+            margin-bottom: 20px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #1f2937;
+            padding: 12px;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .detail-full {
+            grid-column: 1 / -1;
+        }
+
+        @@media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+                padding: 16px;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 1000px;
+            }
+        }
+    </style>
+</head>
+<body>
+    @await Html.PartialAsync("_AdminSidebar", "AuditLogs")
+
+    <main class="main-content">
+        @await Html.PartialAsync("_AdminTopBar", (Title: "Audit Logs", Description: "View system activity and audit trails"))
+
+        <div class="content-wrapper">
+            <div class="filters-section">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label>Search</label>
+                    <input type="text" id="searchInput" placeholder="Search by user name or action..." onkeyup="filterTable()" />
+                </div>
+                <div class="filter-group">
+                    <label>Module</label>
+                    <select id="moduleFilter" onchange="filterTable()">
+                        <option value="">All Modules</option>
+                        <option value="Users">Users</option>
+                        <option value="Policies">Policies</option>
+                        <option value="Compliance">Compliance</option>
+                        <option value="Suppliers">Suppliers</option>
+                        <option value="Procurement">Procurement</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>From Date</label>
+                    <input type="date" id="fromDate" onchange="filterTable()" />
+                </div>
+                <div class="filter-group">
+                    <label>To Date</label>
+                    <input type="date" id="toDate" onchange="filterTable()" />
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="auditTable">
+                <thead>
+                    <tr>
+                        <th>Log ID</th>
+                        <th>User Name</th>
+                        <th>Role</th>
+                        <th>Action Performed</th>
+                        <th>Module</th>
+                        <th>Date and Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model.AuditLogs)
+                    {
+                        <tr onclick="openDetailModal('@log.LogId', '@log.UserName', '@log.Role', '@log.ActionPerformed', '@log.Module', '@log.DateTime.ToString("yyyy-MM-dd HH:mm:ss")', '@log.UserEmail', '@log.IpAddress', '@log.FullDescription')">
+                            <td>@log.LogId</td>
+                            <td>@log.UserName</td>
+                            <td><span class="role-badge">@log.Role</span></td>
+                            <td>@log.ActionPerformed</td>
+                            <td>
+                                <span class="module-badge module-@log.Module.ToLower()">
+                                    @log.Module
+                                </span>
+                            </td>
+                            <td>@log.DateTime.ToString("MMM dd, yyyy HH:mm:ss")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Audit Log Details</h2>
+                <button class="btn-close" onclick="closeDetailModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-grid">
+                    <div class="detail-group">
+                        <div class="detail-label">Log ID</div>
+                        <div class="detail-value" id="detail-logid"></div>
+                    </div>
+                    <div class="detail-group">
+                        <div class="detail-label">Module</div>
+                        <div class="detail-value" id="detail-module"></div>
+                    </div>
+                    <div class="detail-group">
+                        <div class="detail-label">User Name</div>
+                        <div class="detail-value" id="detail-username"></div>
+                    </div>
+                    <div class="detail-group">
+                        <div class="detail-label">User Email</div>
+                        <div class="detail-value" id="detail-useremail"></div>
+                    </div>
+                    <div class="detail-group">
+                        <div class="detail-label">Role</div>
+                        <div class="detail-value" id="detail-role"></div>
+                    </div>
+                    <div class="detail-group">
+                        <div class="detail-label">IP Address</div>
+                        <div class="detail-value" id="detail-ip"></div>
+                    </div>
+                    <div class="detail-group detail-full">
+                        <div class="detail-label">Action Performed</div>
+                        <div class="detail-value" id="detail-action"></div>
+                    </div>
+                    <div class="detail-group detail-full">
+                        <div class="detail-label">Full Description</div>
+                        <div class="detail-value" id="detail-description"></div>
+                    </div>
+                    <div class="detail-group detail-full">
+                        <div class="detail-label">Timestamp</div>
+                        <div class="detail-value" id="detail-timestamp"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function filterTable() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const moduleFilter = document.getElementById('moduleFilter').value.toLowerCase();
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            
+            const table = document.getElementById('auditTable');
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const userName = rows[i].cells[1].textContent.toLowerCase();
+                const action = rows[i].cells[3].textContent.toLowerCase();
+                const module = rows[i].cells[4].textContent.toLowerCase();
+                const dateTimeText = rows[i].getAttribute('onclick').split("'")[11];
+                const rowDate = dateTimeText.split(' ')[0];
+
+                let showRow = true;
+
+                if (searchInput && !userName.includes(searchInput) && !action.includes(searchInput)) {
+                    showRow = false;
+                }
+
+                if (moduleFilter && !module.includes(moduleFilter)) {
+                    showRow = false;
+                }
+
+                if (fromDate && rowDate < fromDate) {
+                    showRow = false;
+                }
+
+                if (toDate && rowDate > toDate) {
+                    showRow = false;
+                }
+
+                rows[i].style.display = showRow ? '' : 'none';
+            }
+        }
+
+        function openDetailModal(logId, userName, role, action, module, timestamp, userEmail, ipAddress, description) {
+            document.getElementById('detail-logid').textContent = logId;
+            document.getElementById('detail-username').textContent = userName;
+            document.getElementById('detail-useremail').textContent = userEmail;
+            document.getElementById('detail-role').textContent = role;
+            document.getElementById('detail-action').textContent = action;
+            document.getElementById('detail-module').textContent = module;
+            document.getElementById('detail-timestamp').textContent = timestamp;
+            document.getElementById('detail-ip').textContent = ipAddress;
+            document.getElementById('detail-description').textContent = description;
+            
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('detailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDetailModal();
+            }
+        });
+    </script>
+</body>
+</html>

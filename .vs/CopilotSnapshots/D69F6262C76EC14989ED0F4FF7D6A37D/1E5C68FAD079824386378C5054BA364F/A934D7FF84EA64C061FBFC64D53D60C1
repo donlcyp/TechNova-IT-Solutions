@@ -1,0 +1,33 @@
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace TechNova_IT_Solutions.Pages
+{
+    public class DashboardModel : PageModel
+    {
+        public string UserEmail { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+
+        // Summary Card Data
+        public int TotalUsers { get; set; } = 45;
+        public int TotalPolicies { get; set; } = 23;
+        public int TotalSuppliers { get; set; } = 18;
+        public int TotalProcurementRecords { get; set; } = 127;
+        public int PendingCompliance { get; set; } = 8;
+
+        // Compliance Status
+        public int CompliedCount { get; set; } = 15;
+        public int PendingCount { get; set; } = 5;
+        public int OverdueCount { get; set; } = 3;
+
+        // Supplier Summary
+        public int ActiveSuppliers { get; set; } = 15;
+        public int InactiveSuppliers { get; set; } = 3;
+
+        public void OnGet()
+        {
+            // In a real app, get this from authentication claims
+            UserEmail = TempData["UserEmail"]?.ToString() ?? "admin@company.com";
+            UserName = UserEmail.Split('@')[0];
+        }
+    }
+}

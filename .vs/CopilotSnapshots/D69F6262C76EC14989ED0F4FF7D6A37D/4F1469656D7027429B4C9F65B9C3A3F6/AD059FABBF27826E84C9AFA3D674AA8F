@@ -1,0 +1,411 @@
+﻿@page
+@model TechNova_IT_Solutions.Pages.LoginModel
+@{
+    ViewData["Title"] = "Employee Sign In";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TechNova</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            height: 100vh;
+        }
+
+        .left-panel {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            padding: 60px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 80px;
+        }
+
+        .logo-icon {
+            background: white;
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-text h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .logo-text p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .main-content h2 {
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 24px;
+        }
+
+        .main-content > p {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 60px;
+            line-height: 1.6;
+        }
+
+        .features {
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+            margin-bottom: auto;
+        }
+
+        .feature {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .feature-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .feature-content h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            margin-top: 40px;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .right-panel {
+            background: #1a1d2e;
+            color: white;
+            padding: 60px 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-container {
+            max-width: 440px;
+            width: 100%;
+        }
+
+        .form-container h2 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .form-container > p {
+            color: #9ca3af;
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-group input[type="email"],
+        .form-group input[type="password"],
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            background: #2d3548;
+            border: 1px solid #3d4458;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-wrapper label {
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .form-options a {
+            color: #6366f1;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .form-options a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-signin {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-signin:hover {
+            opacity: 0.9;
+        }
+
+        .info-box {
+            margin-top: 32px;
+            background: #252940;
+            border: 1px solid #3d4458;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .info-icon {
+            color: #6366f1;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .info-content h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .info-content p {
+            font-size: 13px;
+            color: #9ca3af;
+            line-height: 1.5;
+        }
+
+        .error-message {
+            background: #ef4444;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        @@media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .left-panel {
+                display: none;
+            }
+
+            .right-panel {
+                padding: 40px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div class="logo">
+                <div class="logo-icon">?</div>
+                <div class="logo-text">
+                    <h1>TechNova</h1>
+                    <p>IT Solutions</p>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <h2>Employee<br />Access Portal</h2>
+                <p>Sign in with your company-provided credentials<br />to access your workspace and enterprise tools.</p>
+
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-icon">?</div>
+                        <div class="feature-content">
+                            <h3>Secure Access</h3>
+                            <p>Admin-managed credentials with enterprise security</p>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">?</div>
+                        <div class="feature-content">
+                            <h3>Centralized Management</h3>
+                            <p>All accounts managed by your IT department</p>
+                        </div>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">?</div>
+                        <div class="feature-content">
+                            <h3>Instant Support</h3>
+                            <p>Contact your admin for any access issues</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Contact IT</a>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="form-container">
+                <h2>Employee Sign In</h2>
+                <p>Use the credentials provided by your administrator</p>
+
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="error-message">@Model.ErrorMessage</div>
+                }
+
+                <form method="post">
+                    <div class="form-group">
+                        <label asp-for="Email">Employee Email</label>
+                        <input asp-for="Email" type="email" placeholder="employee@company.com" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Password">Password</label>
+                        <div class="input-wrapper">
+                            <input asp-for="Password" type="password" placeholder="Enter your password" required />
+                            <button type="button" class="toggle-password" onclick="togglePassword()">??</button>
+                        </div>
+                    </div>
+
+                    <div class="form-options">
+                        <div class="checkbox-wrapper">
+                            <input asp-for="RememberMe" type="checkbox" />
+                            <label asp-for="RememberMe">Remember me</label>
+                        </div>
+                        <a href="#">Contact Admin</a>
+                    </div>
+
+                    <button type="submit" class="btn-signin">Sign In</button>
+                </form>
+
+                <div class="info-box">
+                    <div class="info-icon">?</div>
+                    <div class="info-content">
+                        <h4>Need Access?</h4>
+                        <p>Contact your IT administrator to receive your login credentials. All employee accounts are created and managed by the admin team.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('Password');
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+        }
+    </script>
+</body>
+</html>

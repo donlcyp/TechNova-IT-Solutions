@@ -1,0 +1,107 @@
+@model (string Title, string Description)
+@* Top bar with page header and account section *@
+
+<div class="top-bar">
+    <div class="page-header">
+        <h1>@Model.Title</h1>
+        <p>@Model.Description</p>
+    </div>
+    <div class="account-section">
+        <div class="account-info">
+            <h4>@Context.Session.GetString("UserName")</h4>
+            <p>Compliance Officer</p>
+        </div>
+        <div class="account-avatar">
+            @{
+                var userName = Context.Session.GetString("UserName") ?? "User";
+                var nameParts = userName.Split(' ');
+                var initials = nameParts.Length >= 2 
+                    ? $"{nameParts[0][0]}{nameParts[1][0]}" 
+                    : userName.Length >= 2 ? userName.Substring(0, 2).ToUpper() : userName[0].ToString().ToUpper();
+            }
+            @initials
+        </div>
+    </div>
+</div>
+
+<style>
+    .top-bar {
+        background: #ffffff;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 24px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .page-header {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .page-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .page-header p {
+        color: #6b7280;
+        font-size: 15px;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .account-section {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-shrink: 0;
+    }
+
+    .account-info {
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .account-info h4 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    .account-info p {
+        font-size: 13px;
+        color: #6b7280;
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    .account-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 18px;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .content-wrapper {
+        padding: 32px;
+    }
+</style>
