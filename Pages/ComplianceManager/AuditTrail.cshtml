@@ -185,6 +185,16 @@
             background: rgba(30, 64, 175, 0.05);
         }
 
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-container .data-table {
+            min-width: 900px;
+        }
+
         .module-badge {
             padding: 6px 12px;
             border-radius: 16px;
@@ -307,6 +317,65 @@
             color: #e5e7eb;
             line-height: 1.6;
         }
+
+        /* Mobile Responsive Styles */
+        @@media (max-width: 991px) {
+            .main-content {
+                margin-left: 0;
+            }
+
+            .filters-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .filters-row {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-card .value {
+                font-size: 24px;
+            }
+
+            .filters-section {
+                padding: 16px;
+            }
+
+            .table-section {
+                padding: 16px;
+            }
+
+            .modal-content {
+                width: 95%;
+                border-radius: 12px;
+            }
+
+            .modal-header {
+                padding: 16px 20px;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            .detail-item {
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .detail-value {
+                text-align: left;
+            }
+        }
     </style>
 </head>
 <body>
@@ -362,7 +431,7 @@
 
         <!-- Main Table -->
         <div class="table-section">
-            <div style="overflow-x: auto;">
+            <div class="table-container">
                 <table class="data-table" id="auditTable">
                     <thead>
                         <tr>

@@ -273,9 +273,61 @@
             color: #ef4444;
         }
 
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-container .data-table {
+            min-width: 900px;
+        }
+
         /* Hidden for print */
         .hidden {
             display: none;
+        }
+
+        /* Mobile Responsive Styles */
+        @@media (max-width: 991px) {
+            .main-content {
+                margin-left: 0;
+            }
+
+            .controls-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .report-actions {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .search-box {
+                max-width: 100%;
+            }
+
+            .export-buttons {
+                flex-wrap: wrap;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .controls-row {
+                grid-template-columns: 1fr;
+            }
+
+            .controls-section {
+                padding: 16px;
+            }
+
+            .report-section {
+                padding: 16px;
+            }
+
+            .report-title {
+                font-size: 18px;
+            }
         }
 
         /* Print Styles */
@@ -378,7 +430,7 @@
 
                 <!-- Employee Report Table -->
                 <div id="employeeReport" class="hidden">
-                    <div style="overflow-x: auto;">
+                    <div class="table-container">
                         <table class="data-table" id="employeeReportTable">
                             <thead>
                                 <tr>
@@ -398,7 +450,7 @@
 
                 <!-- Supplier Report Table -->
                 <div id="supplierReport" class="hidden">
-                    <div style="overflow-x: auto;">
+                    <div class="table-container">
                         <table class="data-table" id="supplierReportTable">
                             <thead>
                                 <tr>

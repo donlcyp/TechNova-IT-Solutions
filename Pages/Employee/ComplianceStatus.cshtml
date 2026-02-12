@@ -505,13 +505,9 @@
             }
         }
 
-        @@media (max-width: 768px) {
-            .sidebar {
-                width: 200px;
-            }
-
+        @@media (max-width: 991px) {
             .main-content {
-                margin-left: 200px;
+                margin-left: 0;
             }
 
             .summary-cards {
@@ -521,6 +517,29 @@
             .compliance-score-block {
                 flex-direction: column;
                 text-align: center;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .card-value {
+                font-size: 22px;
+            }
+
+            .section-card {
+                padding: 20px;
+            }
+
+            .action-alert {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .score-value {
+                font-size: 28px;
             }
         }
     </style>

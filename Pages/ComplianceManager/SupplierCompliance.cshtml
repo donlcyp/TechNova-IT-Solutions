@@ -180,6 +180,16 @@
             background: rgba(30, 64, 175, 0.05);
         }
 
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-container .data-table {
+            min-width: 950px;
+        }
+
         .status-badge {
             padding: 6px 12px;
             border-radius: 16px;
@@ -338,6 +348,60 @@
             font-size: 13px;
             color: #9ca3af;
         }
+
+        /* Mobile Responsive Styles */
+        @@media (max-width: 991px) {
+            .main-content {
+                margin-left: 0;
+            }
+
+            .filters-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .filters-row {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-card .value {
+                font-size: 24px;
+            }
+
+            .filters-section {
+                padding: 16px;
+            }
+
+            .table-section {
+                padding: 16px;
+            }
+
+            .modal-content {
+                width: 95%;
+                border-radius: 12px;
+            }
+
+            .modal-header {
+                padding: 16px 20px;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -400,7 +464,7 @@
 
         <!-- Main Table -->
         <div class="table-section">
-            <div style="overflow-x: auto;">
+            <div class="table-container">
                 <table class="data-table" id="supplierTable">
                     <thead>
                         <tr>

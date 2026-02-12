@@ -4,12 +4,7 @@
     ViewData["Title"] = "Procurement Management";
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - TechNova</title>
+@section Styles {
     <style>
         * {
             margin: 0;
@@ -457,13 +452,9 @@
             }
         }
 
-        @@media (max-width: 768px) {
-            .sidebar {
-                width: 200px;
-            }
-
+        @@media (max-width: 991px) {
             .main-content {
-                margin-left: 200px;
+                margin-left: 0;
             }
 
             .header-top {
@@ -471,30 +462,65 @@
                 align-items: flex-start;
                 gap: 16px;
             }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .page-header-section {
+                padding: 16px;
+            }
+
+            .modal-header {
+                padding: 16px 20px;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            .modal-footer {
+                padding: 16px 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full-width {
+                grid-column: span 1;
+            }
         }
     </style>
-</head>
-<body>
-    @await Html.PartialAsync("_AdminSidebar", "Procurement")
+}
 
-    <div class="main-content">
-        @await Html.PartialAsync("_AdminTopBar", (Title: "Procurement Management", Description: "Manage procurement records and suppliers"))
+@await Html.PartialAsync("_AdminSidebar", "Procurement")
 
-        <div class="content-wrapper">
-            <!-- Header Section -->
-            <div class="page-header-section">
-                <div class="header-top">
-                    <h1 class="header-title">Procurement Management</h1>
-                    <button class="btn-add" onclick="openModal()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Add Procurement Record
-                    </button>
-                </div>
+<!-- Main Content -->
+<div class="main-content">
+    @await Html.PartialAsync("_AdminTopBar", (Title: "Procurement Management", Description: "Manage procurement records and approvals"))
 
-                <div class="filters-row">
+    <div class="content-wrapper">
+        <!-- Header Section -->
+        <div class="page-header-section">
+            <div class="header-top">
+                <h1 class="header-title">Procurement Management</h1>
+                <button class="btn-add" onclick="openModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add Procurement Record
+                </button>
+            </div>
+
+            <div class="filters-row">
                     <div class="filter-group">
                         <label class="filter-label">Search</label>
                         <input type="text" class="filter-input" placeholder="Search by item name or supplier..." id="searchInput">
@@ -721,30 +747,31 @@
         </div>
     </div>
 
-    <script>
-        // Filter functionality
-        const searchInput = document.getElementById('searchInput');
-        const supplierFilter = document.getElementById('supplierFilter');
-        const statusFilter = document.getElementById('statusFilter');
-        const tableRows = document.querySelectorAll('#procurementTable tr');
+    @section Scripts {
+        <script>
+            // Filter functionality
+            const searchInput = document.getElementById('searchInput');
+            const supplierFilter = document.getElementById('supplierFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const tableRows = document.querySelectorAll('#procurementTable tr');
 
-        function filterTable() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const supplierValue = supplierFilter.value;
-            const statusValue = statusFilter.value;
+            function filterTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const supplierValue = supplierFilter.value;
+                const statusValue = statusFilter.value;
 
-            tableRows.forEach(row => {
-                const itemName = row.cells[1]?.textContent.toLowerCase() || '';
-                const supplier = row.dataset.supplier || '';
-                const status = row.dataset.status || '';
+                tableRows.forEach(row => {
+                    const itemName = row.cells[1]?.textContent.toLowerCase() || '';
+                    const supplier = row.dataset.supplier || '';
+                    const status = row.dataset.status || '';
 
-                const matchSearch = itemName.includes(searchTerm) || supplier.toLowerCase().includes(searchTerm);
-                const matchSupplier = !supplierValue || supplier === supplierValue;
-                const matchStatus = !statusValue || status === statusValue;
+                    const matchSearch = itemName.includes(searchTerm) || supplier.toLowerCase().includes(searchTerm);
+                    const matchSupplier = !supplierValue || supplier === supplierValue;
+                    const matchStatus = !statusValue || status === statusValue;
 
-                row.style.display = (matchSearch && matchSupplier && matchStatus) ? '' : 'none';
-            });
-        }
+                    row.style.display = (matchSearch && matchSupplier && matchStatus) ? '' : 'none';
+                });
+            }
 
         searchInput.addEventListener('input', filterTable);
         supplierFilter.addEventListener('change', filterTable);
@@ -850,5 +877,4 @@
             if (e.target === this) closeViewModal();
         });
     </script>
-</body>
-</html>
+}

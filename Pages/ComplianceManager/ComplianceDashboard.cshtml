@@ -4,12 +4,7 @@
     ViewData["Title"] = "Compliance Dashboard";
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"]</title>
+@section Styles {
     <style>
         * {
             margin: 0;
@@ -21,7 +16,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f8f9fa;
             color: #1f2937;
-            display: flex;
             min-height: 100vh;
         }
 
@@ -171,6 +165,17 @@
             border-color: #1e40af;
         }
 
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 10px;
+        }
+
+        .table-container .data-table {
+            min-width: 800px;
+        }
+
         /* Tables */
         .data-table {
             width: 100%;
@@ -281,16 +286,84 @@
         .type-supplier {
             color: #f59e0b;
         }
+
+        @@media (max-width: 1024px) {
+            .two-column-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 991px) {
+            .main-content {
+                margin-left: 0;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filters {
+                gap: 10px;
+            }
+
+            .filter-select {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .search-input {
+                min-width: 0;
+                flex: 1 1 100%;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .main-content {
+                padding: 16px;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+                gap: 14px;
+                margin-bottom: 20px;
+            }
+
+            .column-card {
+                padding: 16px;
+            }
+
+            .column-card h2 {
+                font-size: 16px;
+                margin-bottom: 14px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input,
+            .filter-select {
+                width: 100%;
+            }
+
+            .table-container .data-table {
+                min-width: 900px;
+            }
+        }
     </style>
-</head>
-<body>
+}
+
     @await Html.PartialAsync("_ComplianceManagerSidebar", "ComplianceDashboard")
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main class="main-content flex-grow-1">
         @await Html.PartialAsync("_ComplianceManagerTopBar", (Title: "Compliance Dashboard", Description: "Overview of compliance metrics"))
 
-        <div class="content-wrapper">
+        <div class="content-wrapper container-fluid">
 
         <!-- Summary Cards -->
         <div class="summary-cards">
@@ -339,7 +412,7 @@
                         <option value="Not Compliant">Not Compliant</option>
                     </select>
                 </div>
-                <div style="overflow-x: auto;">
+                <div class="table-container">
                     <table class="data-table" id="employeeTable">
                         <thead>
                             <tr>
@@ -386,7 +459,7 @@
                         <option value="Not Compliant">Not Compliant</option>
                     </select>
                 </div>
-                <div style="overflow-x: auto;">
+                <div class="table-container">
                     <table class="data-table" id="supplierTable">
                         <thead>
                             <tr>
@@ -435,6 +508,7 @@
         </div>
     </main>
 
+@section Scripts {
     <script>
         // Employee Table Filtering
         function filterEmployeeTable() {
@@ -482,5 +556,4 @@
         document.getElementById('supplierSearch').addEventListener('keyup', filterSupplierTable);
         document.getElementById('supplierStatusFilter').addEventListener('change', filterSupplierTable);
     </script>
-</body>
-</html>
+}

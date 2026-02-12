@@ -432,3 +432,5 @@ D:\C#\repos\TechNova IT Solutions\obj\Debug\net10.0\TechNova IT Solutions.pdb
 D:\C#\repos\TechNova IT Solutions\obj\Debug\net10.0\TechNova IT Solutions.genruntimeconfig.cache
 D:\C#\repos\TechNova IT Solutions\obj\Debug\net10.0\ref\TechNova IT Solutions.dll
 D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\BCrypt.Net-Next.dll
+D:\C#\repos\TechNova IT Solutions\obj\Debug\net10.0\TechNova IT Solutions.sourcelink.json
+D:\C#\repos\TechNova IT Solutions\obj\Debug\net10.0\staticwebassets.upToDateCheck.txt

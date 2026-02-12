@@ -239,6 +239,52 @@
             font-size: 14px;
         }
         .back-link:hover { text-decoration: underline; }
+
+        @@media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+
+            .page-header {
+                padding: 18px 18px;
+            }
+
+            .page-header h1 {
+                font-size: 20px;
+            }
+
+            .stats-row {
+                flex-direction: column;
+            }
+
+            .filter-tabs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 6px;
+            }
+
+            .filter-tab {
+                flex: 0 0 auto;
+                white-space: nowrap;
+            }
+
+            .category-section {
+                padding: 16px;
+            }
+
+            .category-name {
+                font-size: 16px;
+            }
+
+            .policy-card {
+                padding: 14px;
+            }
+
+            .policy-description {
+                -webkit-line-clamp: 4;
+            }
+        }
     </style>
 </head>
 <body>
@@ -268,11 +314,11 @@
 
         <!-- Filter Tabs -->
         <div class="filter-tabs">
-            <button class="filter-tab active" onclick="filterCategory('all')">All Categories</button>
+            <button class="filter-tab active" onclick="filterCategory('all', event)">All Categories</button>
             @foreach (var group in grouped)
             {
                 var icon = icons.ContainsKey(group.Key) ? icons[group.Key] : "📄";
-                <button class="filter-tab" onclick="filterCategory('@group.Key.Replace("'", "\\'")')">@icon @group.Key (@group.Count())</button>
+                <button class="filter-tab" onclick="filterCategory('@group.Key.Replace("'", "\\'")', event)">@icon @group.Key (@group.Count())</button>
             }
         </div>
 
@@ -343,10 +389,12 @@
     </div>
 
     <script>
-        function filterCategory(cat) {
+        function filterCategory(cat, evt) {
             // Update active tab
             document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-            event.target.classList.add('active');
+            if (evt && evt.target) {
+                evt.target.classList.add('active');
+            }
 
             // Show/hide sections
             document.querySelectorAll('.category-section').forEach(section => {

@@ -2,15 +2,9 @@
 @model TechNova_IT_Solutions.Pages.SupplierManagementModel
 @{
     ViewData["Title"] = "Supplier Management";
-    Layout = null;
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - TechNova</title>
+@section Styles {
     <style>
         * {
             margin: 0;
@@ -445,15 +439,9 @@
             gap: 12px;
         }
 
-        @@media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-
+        @@media (max-width: 991px) {
             .main-content {
                 margin-left: 0;
-                width: 100%;
-                padding: 16px;
             }
 
             .summary-cards {
@@ -467,20 +455,37 @@
             .table-container {
                 overflow-x: auto;
             }
+        }
 
-            table {
-                min-width: 1000px;
+        @@media (max-width: 576px) {
+            .filters-section {
+                padding: 16px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-header,
+            .modal-body,
+            .modal-footer {
+                padding: 16px;
+            }
+
+            .actions {
+                flex-direction: column;
             }
         }
     </style>
-</head>
-<body>
-    @await Html.PartialAsync("_AdminSidebar", "SupplierManagement")
+}
 
-    <main class="main-content">
-        @await Html.PartialAsync("_AdminTopBar", (Title: "Supplier Management", Description: "Manage supplier information and relationships"))
+@await Html.PartialAsync("_AdminSidebar", "SupplierManagement")
 
-        <div class="content-wrapper">
+<!-- Main Content -->
+<div class="main-content">
+    @await Html.PartialAsync("_AdminTopBar", (Title: "Supplier Management", Description: "Manage supplier information and relationships"))
+
+    <div class="content-wrapper">
             <div class="summary-cards">
             <div class="summary-card">
                 <div class="card-label">Total Suppliers</div>
@@ -573,7 +578,7 @@
                 </tbody>
             </table>
         </div>
-    </main>
+    </div>
 
     <!-- Add/Edit Supplier Modal -->
     <div id="supplierModal" class="modal">
@@ -658,6 +663,7 @@
         </div>
     </div>
 
+@section Scripts {
     <script>
         function openAddModal() {
             document.getElementById('modalTitle').textContent = 'Add Supplier';
@@ -794,5 +800,4 @@
             }
         }
     </script>
-</body>
-</html>
+}
