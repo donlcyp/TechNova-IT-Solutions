@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Services;
 using TechNova_IT_Solutions.Services.Interfaces;
 using TechNova_IT_Solutions.Models;
+using TechNova_IT_Solutions.Constants;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +30,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IComplianceManagerService, ComplianceManagerService>();
 builder.Services.AddScoped<IPolicyReferenceApiService, PolicyReferenceApiService>();
+builder.Services.AddTransient<IEmailService, EmailService>();
 
 // Add session support
 builder.Services.AddSession(options =>
@@ -54,6 +57,57 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthorization();
 
+using (var scope = app.Services.CreateScope())
+{
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    // Migrations are opt-in outside development to avoid schema changes on every production start.
+    var migrateOnStartup = app.Environment.IsDevelopment() ||
+        builder.Configuration.GetValue<bool>("Database:AutoMigrateOnStartup");
+
+    if (migrateOnStartup)
+    {
+        await dbContext.Database.MigrateAsync();
+        logger.LogInformation("Database migrations applied successfully.");
+    }
+    else
+    {
+        logger.LogInformation("Startup migrations are disabled. Set Database:AutoMigrateOnStartup=true to enable.");
+    }
+
+    // Super admin bootstrap is disabled by default and requires explicit credentials from configuration.
+    var bootstrapSuperAdmin = builder.Configuration.GetValue<bool>("BootstrapSuperAdmin:Enabled");
+    var bootstrapEmail = builder.Configuration["BootstrapSuperAdmin:Email"];
+    var bootstrapPassword = builder.Configuration["BootstrapSuperAdmin:Password"];
+
+    if (bootstrapSuperAdmin)
+    {
+        if (string.IsNullOrWhiteSpace(bootstrapEmail) || string.IsNullOrWhiteSpace(bootstrapPassword))
+        {
+            logger.LogWarning("BootstrapSuperAdmin is enabled but Email/Password is missing. Skipping bootstrap.");
+        }
+        else if (bootstrapPassword == "Admin@123")
+        {
+            logger.LogWarning("BootstrapSuperAdmin password is using a known default. Skipping bootstrap.");
+        }
+        else if (!await dbContext.Users.AnyAsync(u => u.Email == bootstrapEmail))
+        {
+            dbContext.Users.Add(new User
+            {
+                FirstName = "Super",
+                LastName = "Administrator",
+                Email = bootstrapEmail,
+                Password = PasswordHasher.HashPassword(bootstrapPassword),
+                Role = RoleNames.SuperAdmin,
+                Status = "Active"
+            });
+
+            await dbContext.SaveChangesAsync();
+            logger.LogInformation("Bootstrap super admin account created.");
+        }
+    }
+}
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");

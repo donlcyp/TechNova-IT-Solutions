@@ -37,6 +37,14 @@
         </main>
     </div>
 
+    <div id="globalAppModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:3000;align-items:center;justify-content:center;padding:16px;">
+        <div style="width:100%;max-width:420px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;box-shadow:0 20px 40px rgba(15,23,42,.2);">
+            <div id="globalAppModalTitle" style="padding:16px 18px 12px;border-bottom:1px solid #e5e7eb;font-size:18px;font-weight:700;color:#111827;">Notice</div>
+            <div id="globalAppModalBody" style="padding:14px 18px;font-size:14px;color:#374151;line-height:1.5;white-space:pre-wrap;"></div>
+            <div id="globalAppModalFooter" style="padding:14px 18px;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:10px;"></div>
+        </div>
+    </div>
+
     <footer class="border-top footer text-muted">
         <div class="container">
             &copy; 2026 - TechNova_IT_Solutions - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
@@ -45,6 +53,107 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            const modal = document.getElementById('globalAppModal');
+            const titleEl = document.getElementById('globalAppModalTitle');
+            const bodyEl = document.getElementById('globalAppModalBody');
+            const footerEl = document.getElementById('globalAppModalFooter');
+
+            function makeButton(text, primary, onClick) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = text;
+                btn.style.border = '1px solid ' + (primary ? '#1e40af' : '#d1d5db');
+                btn.style.background = primary ? '#1e40af' : '#ffffff';
+                btn.style.color = primary ? '#ffffff' : '#1f2937';
+                btn.style.borderRadius = '8px';
+                btn.style.padding = '8px 14px';
+                btn.style.fontSize = '14px';
+                btn.style.fontWeight = '600';
+                btn.style.cursor = 'pointer';
+                btn.addEventListener('click', onClick);
+                return btn;
+            }
+
+            function closeModal() {
+                modal.style.display = 'none';
+            }
+
+            window.showAppMessage = function (message, title) {
+                return new Promise(resolve => {
+                    titleEl.textContent = title || 'Notice';
+                    bodyEl.textContent = message || '';
+                    footerEl.innerHTML = '';
+
+                    const okBtn = makeButton('OK', true, () => {
+                        closeModal();
+                        resolve();
+                    });
+                    footerEl.appendChild(okBtn);
+
+                    const onOverlay = (e) => {
+                        if (e.target === modal) {
+                            modal.removeEventListener('click', onOverlay);
+                            closeModal();
+                            resolve();
+                        }
+                    };
+
+                    modal.addEventListener('click', onOverlay);
+                    modal.style.display = 'flex';
+                });
+            };
+
+            window.showAppConfirm = function (message, title) {
+                return new Promise(resolve => {
+                    titleEl.textContent = title || 'Confirm Action';
+                    bodyEl.textContent = message || '';
+                    footerEl.innerHTML = '';
+
+                    const cancelBtn = makeButton('Cancel', false, () => {
+                        closeModal();
+                        resolve(false);
+                    });
+                    const continueBtn = makeButton('Continue', true, () => {
+                        closeModal();
+                        resolve(true);
+                    });
+
+                    footerEl.appendChild(cancelBtn);
+                    footerEl.appendChild(continueBtn);
+
+                    const onOverlay = (e) => {
+                        if (e.target === modal) {
+                            modal.removeEventListener('click', onOverlay);
+                            closeModal();
+                            resolve(false);
+                        }
+                    };
+
+                    modal.addEventListener('click', onOverlay);
+                    modal.style.display = 'flex';
+                });
+            };
+
+            window.appConfirmNavigate = function (event, message, href) {
+                if (event && typeof event.preventDefault === 'function') {
+                    event.preventDefault();
+                }
+                const targetHref = href || (event && event.currentTarget ? event.currentTarget.getAttribute('href') : null);
+                window.showAppConfirm(message || 'Are you sure?').then(ok => {
+                    if (ok && targetHref) {
+                        window.location.href = targetHref;
+                    }
+                });
+                return false;
+            };
+
+            window.alert = function (message) {
+                window.showAppMessage(message, 'Notice');
+            };
+        })();
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

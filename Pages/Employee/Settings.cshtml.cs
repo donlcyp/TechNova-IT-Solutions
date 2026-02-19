@@ -1,8 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using TechNova_IT_Solutions.Data;
-using TechNova_IT_Solutions.Services;
 
 namespace TechNova_IT_Solutions.Pages.Employee
 {
@@ -30,18 +25,18 @@ namespace TechNova_IT_Solutions.Pages.Employee
         public async Task<IActionResult> OnGet()
         {
             // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
             if (string.IsNullOrEmpty(userIdString))
             {
                 return RedirectToPage("/Account/Login");
             }
 
             // Check user role - only Employee and Admin can access
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Employee" && userRole != "Admin")
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (userRole != RoleNames.Employee && userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
                 // Redirect to appropriate dashboard based on role
-                if (userRole == "ComplianceManager")
+                if (userRole == RoleNames.ComplianceManager)
                 {
                     return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 }
@@ -81,7 +76,7 @@ namespace TechNova_IT_Solutions.Pages.Employee
                 return Page();
             }
 
-            var userIdString = HttpContext.Session.GetString("UserId");
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
             if (string.IsNullOrEmpty(userIdString))
             {
                 return RedirectToPage("/Account/Login");
@@ -156,3 +151,8 @@ namespace TechNova_IT_Solutions.Pages.Employee
         public string Theme { get; set; } = "light";
     }
 }
+
+
+
+
+

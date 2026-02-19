@@ -1,8 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using TechNova_IT_Solutions.Data;
-using TechNova_IT_Solutions.Services;
 
 namespace TechNova_IT_Solutions.Pages.ComplianceManager
 {
@@ -24,17 +19,17 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
         public async Task<IActionResult> OnGet()
         {
             // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
             {
                 return RedirectToPage("/Account/Login");
             }
 
             // Check user role - only ComplianceManager and Admin can access
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "ComplianceManager" && userRole != "Admin")
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (userRole != RoleNames.ComplianceManager && userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
-                if (userRole == "Employee")
+                if (userRole == RoleNames.Employee)
                 {
                     return RedirectToPage("/Employee/Dashboard");
                 }
@@ -48,7 +43,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
                 Profile.FullName = $"{user.FirstName} {user.LastName}".Trim();
                 Profile.Email = user.Email ?? "";
                 Profile.Phone = "";
-                Profile.Role = user.Role ?? "ComplianceManager";
+                Profile.Role = user.Role ?? RoleNames.ComplianceManager;
             }
 
             return Page();
@@ -61,7 +56,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
                 return Page();
             }
 
-            var userIdString = HttpContext.Session.GetString("UserId");
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
             {
                 return RedirectToPage("/Account/Login");
@@ -77,8 +72,8 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
                 // Phone not stored in User model
                 await _context.SaveChangesAsync();
 
-                HttpContext.Session.SetString("UserName", Profile.FullName ?? "");
-                HttpContext.Session.SetString("UserEmail", Profile.Email ?? "");
+                HttpContext.Session.SetString(SessionKeys.UserName, Profile.FullName ?? "");
+                HttpContext.Session.SetString(SessionKeys.UserEmail, Profile.Email ?? "");
             }
 
             TempData["SuccessMessage"] = "Profile updated successfully!";
@@ -98,7 +93,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
                 return Page();
             }
 
-            var userIdString = HttpContext.Session.GetString("UserId");
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
             if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
             {
                 return RedirectToPage("/Account/Login");
@@ -142,3 +137,8 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 }
+
+
+
+
+

@@ -102,6 +102,35 @@ namespace TechNova_IT_Solutions.Services
                 })
                 .ToListAsync();
 
+            // Get total archived policies count
+            data.TotalArchivedPolicies = await _context.Policies
+                .Where(p => p.IsArchived)
+                .CountAsync();
+
+            // Get recently archived policies (latest 8)
+            data.RecentlyArchivedPolicies = await _context.Policies
+                .Include(p => p.UploadedByUser)
+                .Where(p => p.IsArchived)
+                .OrderByDescending(p => p.ArchivedDate)
+                .Take(8)
+                .Select(p => new ArchivedPolicyRecord
+                {
+                    PolicyId = p.PolicyId,
+                    PolicyTitle = p.PolicyTitle,
+                    Category = p.Category ?? "Uncategorized",
+                    Description = p.Description ?? "No description available",
+                    ArchivedDate = p.ArchivedDate.HasValue
+                        ? p.ArchivedDate.Value.ToString("yyyy-MM-dd")
+                        : "Unknown",
+                    UploadedBy = p.UploadedByUser != null
+                        ? $"{p.UploadedByUser.FirstName} {p.UploadedByUser.LastName}"
+                        : "Unknown",
+                    DateUploaded = p.DateUploaded.HasValue
+                        ? p.DateUploaded.Value.ToString("yyyy-MM-dd")
+                        : "Unknown"
+                })
+                .ToListAsync();
+
             return data;
         }
 
@@ -316,6 +345,70 @@ namespace TechNova_IT_Solutions.Services
         {
             // Fetch external policy references from the API
             return await _policyApiService.SearchPoliciesByCategoryAsync(category);
+        }
+
+        public async Task<PolicyArchivesData> GetPolicyArchivesAsync(string? searchTerm, string? categoryFilter)
+        {
+            var data = new PolicyArchivesData();
+
+            // Base query: only archived policies
+            var archivedQuery = _context.Policies
+                .Include(p => p.UploadedByUser)
+                .Where(p => p.IsArchived);
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var term = searchTerm.ToLower();
+                archivedQuery = archivedQuery.Where(p =>
+                    p.PolicyTitle.ToLower().Contains(term) ||
+                    (p.Description != null && p.Description.ToLower().Contains(term)) ||
+                    (p.Category != null && p.Category.ToLower().Contains(term)));
+            }
+
+            // Apply category filter
+            if (!string.IsNullOrWhiteSpace(categoryFilter) && categoryFilter != "all")
+            {
+                archivedQuery = archivedQuery.Where(p => p.Category == categoryFilter);
+            }
+
+            // Summary stats (before filtering for cards)
+            var allArchived = _context.Policies.Where(p => p.IsArchived);
+            data.TotalArchived = await allArchived.CountAsync();
+
+            var startOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            data.ArchivedThisMonth = await allArchived
+                .Where(p => p.ArchivedDate.HasValue && p.ArchivedDate.Value >= startOfMonth)
+                .CountAsync();
+
+            data.TotalCategories = await allArchived
+                .Where(p => p.Category != null)
+                .Select(p => p.Category)
+                .Distinct()
+                .CountAsync();
+
+            // Get filtered archived policies
+            data.ArchivedPolicies = await archivedQuery
+                .OrderByDescending(p => p.ArchivedDate)
+                .Select(p => new ArchivedPolicyRecord
+                {
+                    PolicyId = p.PolicyId,
+                    PolicyTitle = p.PolicyTitle,
+                    Category = p.Category ?? "Uncategorized",
+                    Description = p.Description ?? "No description available",
+                    ArchivedDate = p.ArchivedDate.HasValue
+                        ? p.ArchivedDate.Value.ToString("yyyy-MM-dd")
+                        : "Unknown",
+                    UploadedBy = p.UploadedByUser != null
+                        ? $"{p.UploadedByUser.FirstName} {p.UploadedByUser.LastName}"
+                        : "Unknown",
+                    DateUploaded = p.DateUploaded.HasValue
+                        ? p.DateUploaded.Value.ToString("yyyy-MM-dd")
+                        : "Unknown"
+                })
+                .ToListAsync();
+
+            return data;
         }
     }
 }

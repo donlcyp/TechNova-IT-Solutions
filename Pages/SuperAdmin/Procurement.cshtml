@@ -1,0 +1,51 @@
+@page
+@model TechNova_IT_Solutions.Pages.SuperAdmin.ProcurementModel
+@{
+    ViewData["Title"] = "Procurement";
+}
+
+@section Styles {
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; }
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        .content-wrapper { padding: 24px; max-width: 1280px; margin: 0 auto; }
+        .table-container { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 820px; }
+        th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+        th { font-size: 12px; color: #6b7280; text-transform: uppercase; background: #f9fafb; }
+        @@media (max-width: 991px) { .main-content { margin-left: 0; } }
+    </style>
+}
+
+@await Html.PartialAsync("_SuperAdminSidebar", "AllReports")
+
+<div class="main-content">
+    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Procurement", Description: "Super Admin-owned procurement records"))
+    <div class="content-wrapper">
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Item</th>
+                        <th>Supplier</th>
+                        <th>Linked Policy</th>
+                        <th>Purchase Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td>PROC-@row.ProcurementId.ToString("D4")</td>
+                            <td>@row.ItemName</td>
+                            <td>@row.Supplier</td>
+                            <td>@row.LinkedPolicy</td>
+                            <td>@(row.PurchaseDate?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

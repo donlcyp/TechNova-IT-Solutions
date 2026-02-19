@@ -314,6 +314,38 @@
             transition: opacity 0.2s;
         }
 
+        .login-type-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 14px 0 26px;
+        }
+
+        .login-type-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            color: #111827;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .login-type-btn.active {
+            border-color: #1e40af;
+            background: rgba(30, 64, 175, 0.06);
+        }
+
+        .login-type-btn:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+
         .btn-signin:hover {
             opacity: 0.9;
         }
@@ -496,6 +528,10 @@
 
             .info-box {
                 flex-direction: row;
+            }
+
+            .login-type-toggle {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -682,6 +718,11 @@
                 <h2>Company Sign In</h2>
                 <p>Use the credentials provided by your administrator</p>
 
+                <div class="login-type-toggle" aria-label="Choose login type">
+                    <a class="login-type-btn active" href="/Account/Login">Employee</a>
+                    <a class="login-type-btn" href="/Supplier/Login">Supplier</a>
+                </div>
+
                 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
                 {
                     <div class="error-message">
@@ -696,17 +737,18 @@
                     </div>
                 }
 
-                <form method="post">
+                <form method="post" novalidate>
+                    <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
                     <div class="form-group">
                         <label asp-for="Email">Company Email</label>
-                        <input asp-for="Email" type="email" placeholder="j.cruz@company.com" required />
+                        <input asp-for="Email" type="email" placeholder="j.cruz@company.com" />
                         <span asp-validation-for="Email" class="field-validation-error"></span>
                     </div>
 
                     <div class="form-group">
                         <label asp-for="Password">Password</label>
                         <div class="input-wrapper">
-                            <input asp-for="Password" type="password" id="passwordField" placeholder="Enter your password" required />
+                            <input asp-for="Password" type="password" id="passwordField" placeholder="Enter your password" />
                             <button type="button" class="toggle-password" onclick="togglePassword()" id="toggleBtn" aria-label="Toggle password visibility">
                                 <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path id="eyePath" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>

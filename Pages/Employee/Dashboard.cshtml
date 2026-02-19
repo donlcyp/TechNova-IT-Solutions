@@ -389,7 +389,7 @@
         @await Html.PartialAsync("_EmployeeTopBar", (Title: "Dashboard", Description: "Your Compliance Overview"))
 
         <!-- Content Wrapper -->
-        <div class="content-wrapper container-fluid">
+        <div class="content-wrapper">
             <!-- Top Summary Cards -->
             <div class="summary-cards">
                 <div class="card">
@@ -478,11 +478,8 @@
                     </div>
                 </div>
 
-
-            </div>
-
-            <!-- Recent Activities -->
-            <div class="section-card">
+                <!-- Recent Activities -->
+                <div class="section-card">
                 <div class="section-title">
                     <div class="section-title-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -527,6 +524,7 @@
                     </div>
                     }
                 </div>
+            </div>
             </div>
         </div>
     </div>

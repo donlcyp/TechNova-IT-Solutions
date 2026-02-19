@@ -8,10 +8,12 @@ namespace TechNova_IT_Solutions.Services
     public class AdminService : IAdminService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public AdminService(ApplicationDbContext context)
+        public AdminService(ApplicationDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         public async Task<AdminDashboardData> GetDashboardDataAsync()
@@ -131,6 +133,25 @@ namespace TechNova_IT_Solutions.Services
 
                 _context.Policies.Add(policy);
                 await _context.SaveChangesAsync();
+
+                // Notify all active users about the new policy
+                var users = await _context.Users.Where(u => u.Status == "Active" && u.Email != null).ToListAsync();
+                foreach (var user in users)
+                {
+                    if (!string.IsNullOrEmpty(user.Email))
+                    {
+                        var subject = $"New Policy: {policyData.PolicyTitle}";
+                        var body = $@"
+                            <h2>A new policy has been added</h2>
+                            <p><strong>Title:</strong> {policyData.PolicyTitle}</p>
+                            <p><strong>Category:</strong> {policyData.Category}</p>
+                            <p>Please log in to the portal to review it.</p>";
+                        
+                        // Fire and forget to avoid blocking
+                        _ = _emailService.SendEmailAsync(user.Email, subject, body);
+                    }
+                }
+
                 return true;
             }
             catch
@@ -174,8 +195,76 @@ namespace TechNova_IT_Solutions.Services
                 Category = policy.Category ?? string.Empty,
                 Description = policy.Description ?? string.Empty,
                 FilePath = policy.FilePath,
-                UploadedDate = policy.DateUploaded
+                UploadedDate = policy.DateUploaded,
+                IsArchived = policy.IsArchived,
+                ArchivedDate = policy.ArchivedDate
             };
+        }
+
+        public async Task<PolicyDetailData?> GetPolicyDetailAsync(int policyId)
+        {
+            var policy = await _context.Policies
+                .Include(p => p.UploadedByUser)
+                .Include(p => p.PolicyAssignments)
+                .Include(p => p.SupplierPolicies)
+                .FirstOrDefaultAsync(p => p.PolicyId == policyId);
+
+            if (policy == null) return null;
+
+            return new PolicyDetailData
+            {
+                PolicyId = policy.PolicyId,
+                PolicyTitle = policy.PolicyTitle,
+                Category = policy.Category ?? string.Empty,
+                Description = policy.Description ?? string.Empty,
+                FilePath = policy.FilePath,
+                DateUploaded = policy.DateUploaded,
+                UploadedBy = policy.UploadedByUser != null
+                    ? $"{policy.UploadedByUser.FirstName} {policy.UploadedByUser.LastName}"
+                    : "System",
+                IsArchived = policy.IsArchived,
+                ArchivedDate = policy.ArchivedDate,
+                AssignedEmployees = policy.PolicyAssignments.Count,
+                AssignedSuppliers = policy.SupplierPolicies.Count
+            };
+        }
+
+        public async Task<bool> ArchivePolicyAsync(int policyId)
+        {
+            try
+            {
+                var policy = await _context.Policies.FindAsync(policyId);
+                if (policy == null) return false;
+
+                policy.IsArchived = true;
+                policy.ArchivedDate = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> RestorePolicyAsync(int policyId)
+        {
+            try
+            {
+                var policy = await _context.Policies.FindAsync(policyId);
+                if (policy == null) return false;
+
+                policy.IsArchived = false;
+                policy.ArchivedDate = null;
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public async Task<bool> DeletePolicyAsync(int policyId)
@@ -198,8 +287,10 @@ namespace TechNova_IT_Solutions.Services
         // Supplier operations
         public async Task<bool> CreateSupplierAsync(SupplierData supplierData)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                // 1. Create Supplier Record
                 var supplier = new Models.Supplier
                 {
                     SupplierName = supplierData.SupplierName,
@@ -213,20 +304,45 @@ namespace TechNova_IT_Solutions.Services
 
                 _context.Suppliers.Add(supplier);
                 await _context.SaveChangesAsync();
+
+                // 2. Create User Record for Login
+                // Check if user already exists
+                var existingUser = await _context.Users.AnyAsync(u => u.Email == supplierData.Email);
+                if (!existingUser && !string.IsNullOrEmpty(supplierData.Password))
+                {
+                    var user = new User
+                    {
+                        FirstName = supplierData.ContactPersonFirstName,
+                        LastName = supplierData.ContactPersonLastName,
+                        Email = supplierData.Email,
+                        Password = PasswordHasher.HashPassword(supplierData.Password), // Hash the password
+                        Role = "Supplier",
+                        Status = "Active"
+                    };
+
+                    _context.Users.Add(user);
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
                 return true;
             }
             catch
             {
+                await transaction.RollbackAsync();
                 return false;
             }
         }
 
         public async Task<bool> UpdateSupplierAsync(SupplierData supplierData)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var supplier = await _context.Suppliers.FindAsync(supplierData.SupplierId);
                 if (supplier == null) return false;
+
+                var oldEmail = supplier.Email;
 
                 supplier.SupplierName = supplierData.SupplierName;
                 supplier.ContactPersonFirstName = supplierData.ContactPersonFirstName;
@@ -237,10 +353,55 @@ namespace TechNova_IT_Solutions.Services
                 supplier.Status = supplierData.Status;
 
                 await _context.SaveChangesAsync();
+
+                // Keep Supplier login in sync with Supplier record.
+                // Passwords are stored in Users table (not Suppliers).
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == supplierData.Email);
+                if (user == null && !string.IsNullOrWhiteSpace(oldEmail))
+                {
+                    user = await _context.Users.FirstOrDefaultAsync(u => u.Email == oldEmail);
+                }
+
+                // If there's a password provided, ensure a Supplier user exists.
+                if (user == null)
+                {
+                    if (!string.IsNullOrWhiteSpace(supplierData.Password))
+                    {
+                        user = new User
+                        {
+                            FirstName = supplierData.ContactPersonFirstName,
+                            LastName = supplierData.ContactPersonLastName,
+                            Email = supplierData.Email,
+                            Password = PasswordHasher.HashPassword(supplierData.Password),
+                            Role = "Supplier",
+                            Status = supplierData.Status
+                        };
+                        _context.Users.Add(user);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+                else
+                {
+                    user.FirstName = supplierData.ContactPersonFirstName;
+                    user.LastName = supplierData.ContactPersonLastName;
+                    user.Email = supplierData.Email;
+                    user.Role = "Supplier";
+                    user.Status = supplierData.Status;
+
+                    if (!string.IsNullOrWhiteSpace(supplierData.Password))
+                    {
+                        user.Password = PasswordHasher.HashPassword(supplierData.Password);
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+
+                await transaction.CommitAsync();
                 return true;
             }
             catch
             {
+                await transaction.RollbackAsync();
                 return false;
             }
         }
@@ -262,22 +423,72 @@ namespace TechNova_IT_Solutions.Services
             }
         }
 
+        public async Task<SupplierData?> GetSupplierByIdAsync(int supplierId)
+        {
+            var supplier = await _context.Suppliers.FindAsync(supplierId);
+            if (supplier == null) return null;
+
+            return new SupplierData
+            {
+                SupplierId = supplier.SupplierId,
+                SupplierName = supplier.SupplierName ?? string.Empty,
+                ContactPersonFirstName = supplier.ContactPersonFirstName ?? string.Empty,
+                ContactPersonLastName = supplier.ContactPersonLastName ?? string.Empty,
+                Email = supplier.Email ?? string.Empty,
+                ContactPersonNumber = supplier.ContactPersonNumber ?? string.Empty,
+                Address = supplier.Address ?? string.Empty,
+                Status = supplier.Status ?? "Active"
+                // Password is not returned for security
+            };
+        }
+
         // Procurement operations
         public async Task<bool> CreateProcurementAsync(ProcurementData procurementData)
         {
             try
             {
+                var isCompliant = await IsSupplierCompliantForPolicyAsync(procurementData.SupplierId, procurementData.PolicyId);
+                if (!isCompliant) return false;
+
+                var supplierItem = await _context.SupplierItems
+                    .FirstOrDefaultAsync(si => si.SupplierItemId == procurementData.SupplierItemId && si.SupplierId == procurementData.SupplierId);
+                if (supplierItem == null) return false;
+                if (!string.Equals(supplierItem.Status, "Available", StringComparison.OrdinalIgnoreCase)) return false;
+                if (procurementData.Quantity <= 0 || supplierItem.QuantityAvailable < procurementData.Quantity) return false;
+
+                supplierItem.QuantityAvailable -= procurementData.Quantity;
+                if (supplierItem.QuantityAvailable <= 0)
+                {
+                    supplierItem.QuantityAvailable = 0;
+                    supplierItem.Status = "OutOfStock";
+                }
+                supplierItem.LastUpdated = DateTime.UtcNow;
+
                 var procurement = new Models.Procurement
                 {
                     SupplierId = procurementData.SupplierId,
-                    ItemName = procurementData.ItemName,
-                    Category = procurementData.Category,
+                    ItemName = supplierItem.ItemName,
+                    Category = supplierItem.Category,
                     Quantity = procurementData.Quantity,
-                    PurchaseDate = procurementData.ProcurementDate,
-                    RelatedPolicyId = procurementData.PolicyId
+                    PurchaseDate = DateTime.UtcNow,
+                    RelatedPolicyId = procurementData.PolicyId,
+                    Status = ProcurementStatuses.Submitted,
+                    SupplierResponseDeadline = DateTime.UtcNow.AddDays(7)
                 };
 
                 _context.Procurements.Add(procurement);
+                await _context.SaveChangesAsync();
+
+                _context.ProcurementStatusHistory.Add(new ProcurementStatusHistory
+                {
+                    ProcurementId = procurement.ProcurementId,
+                    FromStatus = ProcurementStatuses.Draft,
+                    ToStatus = ProcurementStatuses.Submitted,
+                    ChangedAt = DateTime.UtcNow,
+                    ChangedByUserId = null,
+                    Reason = "Created by Admin"
+                });
+
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -293,13 +504,23 @@ namespace TechNova_IT_Solutions.Services
             {
                 var procurement = await _context.Procurements.FindAsync(procurementData.ProcurementId);
                 if (procurement == null) return false;
+                if (!string.Equals(procurement.Status, ProcurementStatuses.Draft, StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(procurement.Status, ProcurementStatuses.Submitted, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                var isCompliant = await IsSupplierCompliantForPolicyAsync(procurementData.SupplierId, procurementData.PolicyId);
+                if (!isCompliant) return false;
 
                 procurement.SupplierId = procurementData.SupplierId;
                 procurement.ItemName = procurementData.ItemName;
                 procurement.Category = procurementData.Category;
                 procurement.Quantity = procurementData.Quantity;
-                procurement.PurchaseDate = procurementData.ProcurementDate;
                 procurement.RelatedPolicyId = procurementData.PolicyId;
+                procurement.PurchaseDate = procurement.PurchaseDate ?? DateTime.UtcNow;
+                procurement.SupplierResponseDeadline = procurement.SupplierResponseDeadline ?? DateTime.UtcNow.AddDays(7);
+                procurement.Status = procurement.Status ?? ProcurementStatuses.Submitted;
 
                 await _context.SaveChangesAsync();
                 return true;
@@ -308,6 +529,136 @@ namespace TechNova_IT_Solutions.Services
             {
                 return false;
             }
+        }
+
+        public async Task<List<SupplierItemData>> GetSupplierItemsAsync(int supplierId)
+        {
+            return await _context.SupplierItems
+                .Where(si => si.SupplierId == supplierId)
+                .OrderBy(si => si.ItemName)
+                .Select(si => new SupplierItemData
+                {
+                    SupplierItemId = si.SupplierItemId,
+                    SupplierId = si.SupplierId,
+                    ItemName = si.ItemName,
+                    Category = si.Category ?? string.Empty,
+                    QuantityAvailable = si.QuantityAvailable,
+                    Status = si.Status
+                })
+                .ToListAsync();
+        }
+
+        public async Task<bool> UpsertSupplierItemAsync(int supplierId, SupplierItemData itemData)
+        {
+            try
+            {
+                var normalizedName = (itemData.ItemName ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(normalizedName)) return false;
+
+                var item = await _context.SupplierItems
+                    .FirstOrDefaultAsync(si => si.SupplierItemId == itemData.SupplierItemId && si.SupplierId == supplierId);
+
+                if (item == null)
+                {
+                    item = await _context.SupplierItems
+                        .FirstOrDefaultAsync(si => si.SupplierId == supplierId && si.ItemName == normalizedName);
+                }
+
+                if (item == null)
+                {
+                    item = new SupplierItem
+                    {
+                        SupplierId = supplierId,
+                        ItemName = normalizedName,
+                        Category = itemData.Category,
+                        QuantityAvailable = Math.Max(0, itemData.QuantityAvailable),
+                        Status = Math.Max(0, itemData.QuantityAvailable) > 0 ? "Available" : "OutOfStock",
+                        LastUpdated = DateTime.UtcNow
+                    };
+                    _context.SupplierItems.Add(item);
+                }
+                else
+                {
+                    item.ItemName = normalizedName;
+                    item.Category = itemData.Category;
+                    item.QuantityAvailable = Math.Max(0, itemData.QuantityAvailable);
+                    item.Status = Math.Max(0, itemData.QuantityAvailable) > 0 ? "Available" : "OutOfStock";
+                    item.LastUpdated = DateTime.UtcNow;
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> SupplierRespondToProcurementAsync(SupplierProcurementActionData actionData)
+        {
+            try
+            {
+                var procurement = await _context.Procurements
+                    .FirstOrDefaultAsync(p => p.ProcurementId == actionData.ProcurementId && p.SupplierId == actionData.SupplierId);
+                if (procurement == null) return false;
+                if (!string.Equals(procurement.Status, ProcurementStatuses.Submitted, StringComparison.OrdinalIgnoreCase)) return false;
+
+                var previousStatus = procurement.Status;
+                procurement.SupplierResponseDate = DateTime.UtcNow;
+
+                if (!actionData.Approve)
+                {
+                    if (string.IsNullOrWhiteSpace(actionData.RejectionReason)) return false;
+                    procurement.Status = ProcurementStatuses.SupplierRejected;
+                    procurement.RejectionReason = actionData.RejectionReason.Trim();
+                    procurement.SupplierCommitShipDate = null;
+                }
+                else
+                {
+                    if (actionData.SupplierCommitShipDate == null) return false;
+                    procurement.Status = ProcurementStatuses.SupplierApproved;
+                    procurement.SupplierCommitShipDate = actionData.SupplierCommitShipDate.Value.Date;
+                    procurement.RejectionReason = null;
+                }
+
+                _context.ProcurementStatusHistory.Add(new ProcurementStatusHistory
+                {
+                    ProcurementId = procurement.ProcurementId,
+                    FromStatus = previousStatus,
+                    ToStatus = procurement.Status,
+                    ChangedAt = DateTime.UtcNow,
+                    ChangedByUserId = actionData.ChangedByUserId,
+                    Reason = actionData.Approve ? "Supplier approved request" : actionData.RejectionReason
+                });
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async Task<bool> IsSupplierCompliantForPolicyAsync(int supplierId, int? policyId)
+        {
+            if (!policyId.HasValue)
+            {
+                // If no policy is linked, keep previous strict behavior.
+                var statuses = await _context.SupplierPolicies
+                    .Where(sp => sp.SupplierId == supplierId)
+                    .Select(sp => sp.ComplianceStatus)
+                    .ToListAsync();
+
+                if (!statuses.Any()) return false;
+                return statuses.All(status => string.Equals(status, "Compliant", StringComparison.OrdinalIgnoreCase));
+            }
+
+            return await _context.SupplierPolicies.AnyAsync(sp =>
+                sp.SupplierId == supplierId &&
+                sp.PolicyId == policyId.Value &&
+                sp.ComplianceStatus == "Compliant");
         }
 
         public async Task<bool> DeleteProcurementAsync(int procurementId)
@@ -397,6 +748,27 @@ namespace TechNova_IT_Solutions.Services
         }
 
         // ── Audit Logging ──────────────────────────────────────────
+
+        public async Task<PolicyAssignmentStatusData> GetPolicyAssignmentStatusAsync(int policyId)
+        {
+            var assignedEmployeeIds = await _context.PolicyAssignments
+                .Where(pa => pa.PolicyId == policyId)
+                .Select(pa => pa.UserId)
+                .Distinct()
+                .ToListAsync();
+
+            var assignedSupplierIds = await _context.SupplierPolicies
+                .Where(sp => sp.PolicyId == policyId)
+                .Select(sp => sp.SupplierId)
+                .Distinct()
+                .ToListAsync();
+
+            return new PolicyAssignmentStatusData
+            {
+                AssignedEmployeeIds = assignedEmployeeIds,
+                AssignedSupplierIds = assignedSupplierIds
+            };
+        }
 
         public async Task LogActivityAsync(int? userId, string action, string module)
         {

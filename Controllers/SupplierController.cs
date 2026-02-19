@@ -1,0 +1,189 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TechNova_IT_Solutions.Constants;
+using TechNova_IT_Solutions.Data;
+using TechNova_IT_Solutions.Infrastructure;
+using TechNova_IT_Solutions.Services.Interfaces;
+
+namespace TechNova_IT_Solutions.Controllers
+{
+    public class SupplierController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly IAdminService _adminService;
+
+        public SupplierController(ApplicationDbContext context, IAdminService adminService)
+        {
+            _context = context;
+            _adminService = adminService;
+        }
+
+        private async Task<int?> GetCurrentSupplierIdAsync()
+        {
+            var role = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (!string.Equals(role, RoleNames.Supplier, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var email = HttpContext.Session.GetString(SessionKeys.UserEmail);
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                var supplierId = await _context.Suppliers
+                    .Where(s => s.Email == email)
+                    .Select(s => (int?)s.SupplierId)
+                    .FirstOrDefaultAsync();
+
+                if (supplierId.HasValue)
+                {
+                    return supplierId;
+                }
+            }
+
+            // Fallback: supplier account exists in Users but missing linked Suppliers row.
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (!int.TryParse(userIdString, out var userId))
+            {
+                return null;
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (user == null || !string.Equals(user.Role, RoleNames.Supplier, StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var autoSupplier = new Models.Supplier
+            {
+                SupplierName = $"{user.FirstName} {user.LastName}".Trim(),
+                ContactPersonFirstName = user.FirstName,
+                ContactPersonLastName = user.LastName,
+                Email = user.Email,
+                Status = "Active"
+            };
+
+            _context.Suppliers.Add(autoSupplier);
+            await _context.SaveChangesAsync();
+            return autoSupplier.SupplierId;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetInventory()
+        {
+            var supplierId = await GetCurrentSupplierIdAsync();
+            if (!supplierId.HasValue) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var items = await _adminService.GetSupplierItemsAsync(supplierId.Value);
+            return Ok(new { success = true, items });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpsertInventoryItem([FromBody] SupplierItemData itemData)
+        {
+            var supplierId = await GetCurrentSupplierIdAsync();
+            if (!supplierId.HasValue) return Unauthorized(new { success = false, message = "Access denied" });
+            if (itemData == null) return BadRequest(new { success = false, message = "Invalid data" });
+
+            var sanitized = new SupplierItemData
+            {
+                SupplierItemId = itemData.SupplierItemId,
+                SupplierId = supplierId.Value,
+                ItemName = itemData.ItemName?.Trim() ?? string.Empty,
+                Category = itemData.Category?.Trim() ?? string.Empty,
+                QuantityAvailable = itemData.QuantityAvailable
+            };
+
+            if (string.IsNullOrWhiteSpace(sanitized.ItemName))
+            {
+                return BadRequest(new { success = false, message = "Item name is required" });
+            }
+
+            var result = await _adminService.UpsertSupplierItemAsync(supplierId.Value, sanitized);
+            if (!result)
+            {
+                return BadRequest(new { success = false, message = "Failed to save item" });
+            }
+
+            return Ok(new { success = true, message = "Item saved successfully" });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddInventoryStock([FromBody] AddStockRequest request)
+        {
+            var supplierId = await GetCurrentSupplierIdAsync();
+            if (!supplierId.HasValue) return Unauthorized(new { success = false, message = "Access denied" });
+            if (request == null) return BadRequest(new { success = false, message = "Invalid data" });
+            if (request.SupplierItemId <= 0) return BadRequest(new { success = false, message = "Invalid inventory item" });
+            if (request.AddQuantity <= 0) return BadRequest(new { success = false, message = "Add stock quantity must be greater than zero" });
+
+            var item = await _context.SupplierItems
+                .FirstOrDefaultAsync(si => si.SupplierItemId == request.SupplierItemId && si.SupplierId == supplierId.Value);
+
+            if (item == null)
+            {
+                return BadRequest(new { success = false, message = "Inventory item not found" });
+            }
+
+            item.QuantityAvailable += request.AddQuantity;
+            item.Status = item.QuantityAvailable > 0 ? "Available" : "OutOfStock";
+            item.LastUpdated = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true, message = "Stock updated successfully", quantityAvailable = item.QuantityAvailable });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetProcurementRequests()
+        {
+            var supplierId = await GetCurrentSupplierIdAsync();
+            if (!supplierId.HasValue) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var requests = await _context.Procurements
+                .Where(p => p.SupplierId == supplierId.Value)
+                .OrderByDescending(p => p.PurchaseDate)
+                .Select(p => new
+                {
+                    p.ProcurementId,
+                    p.ItemName,
+                    p.Category,
+                    p.Quantity,
+                    p.Status,
+                    p.PurchaseDate,
+                    p.SupplierResponseDeadline,
+                    p.SupplierCommitShipDate,
+                    p.RejectionReason
+                })
+                .ToListAsync();
+
+            return Ok(new { success = true, requests });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RespondToProcurement([FromBody] SupplierProcurementActionData actionData)
+        {
+            var supplierId = await GetCurrentSupplierIdAsync();
+            if (!supplierId.HasValue) return Unauthorized(new { success = false, message = "Access denied" });
+            if (actionData == null) return BadRequest(new { success = false, message = "Invalid data" });
+
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            int? changedByUserId = int.TryParse(userIdString, out var parsed) ? parsed : null;
+
+            actionData.SupplierId = supplierId.Value;
+            actionData.ChangedByUserId = changedByUserId;
+
+            var result = await _adminService.SupplierRespondToProcurementAsync(actionData);
+            if (!result)
+            {
+                return BadRequest(new { success = false, message = "Failed to submit response" });
+            }
+
+            return Ok(new { success = true, message = "Response submitted successfully" });
+        }
+    }
+
+    public class AddStockRequest
+    {
+        public int SupplierItemId { get; set; }
+        public int AddQuantity { get; set; }
+    }
+}

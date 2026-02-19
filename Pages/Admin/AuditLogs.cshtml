@@ -25,6 +25,12 @@
             overflow-y: auto;
         }
 
+        .content-wrapper {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
         /* Filters */
         .filters-section {
             background: #ffffff;
@@ -173,7 +179,14 @@
 
         @@media (max-width: 991px) {
             .main-content { margin-left: 0; }
+            .content-wrapper { padding: 20px; }
             .filters-grid { grid-template-columns: 1fr; }
+        }
+
+        @@media (max-width: 768px) {
+            th, td {
+                padding: 12px;
+            }
         }
 
         @@media (max-width: 576px) {
@@ -185,6 +198,11 @@
 
             .filters-section {
                 padding: 16px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10px;
             }
         }
     </style>

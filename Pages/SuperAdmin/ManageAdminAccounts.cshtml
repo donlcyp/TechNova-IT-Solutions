@@ -1,0 +1,425 @@
+@page
+@model TechNova_IT_Solutions.Pages.SuperAdmin.ManageAdminAccountsModel
+@{
+    ViewData["Title"] = "Manage Admin Accounts";
+}
+
+@section Styles {
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #1f2937;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+
+        .content-wrapper {
+            padding: 24px;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            background: #fff;
+            color: #1f2937;
+        }
+
+        .btn:hover {
+            background: #f3f4f6;
+        }
+
+        .btn-primary {
+            background: #1e40af;
+            border-color: #1e40af;
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .table-container {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 720px;
+        }
+
+        th {
+            text-align: left;
+            padding: 14px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .role-badge {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .status-badge {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            color: #166534;
+        }
+
+        .status-badge.inactive {
+            color: #991b1b;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-danger {
+            border-color: #ef4444;
+            color: #ef4444;
+            background: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #fef2f2;
+        }
+
+        .btn-success {
+            border-color: #059669;
+            color: #059669;
+            background: #fff;
+        }
+
+        .btn-success:hover {
+            background: #ecfdf5;
+        }
+
+        .action-protected {
+            color: #6b7280;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .app-dialog {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 1300;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .app-dialog.active {
+            display: flex;
+        }
+
+        .app-dialog-card {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+        }
+
+        .app-dialog-header {
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .app-dialog-body {
+            padding: 14px 18px;
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .app-dialog-footer {
+            padding: 14px 18px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        @@media (max-width: 991px) {
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+}
+
+@await Html.PartialAsync("_SuperAdminSidebar", "ManageAdminAccounts")
+
+<div class="main-content">
+    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Manage Admin Accounts", Description: "Create, edit, and control Admin and SuperAdmin accounts"))
+
+    <div class="content-wrapper">
+        <div class="actions-bar">
+            <button class="btn btn-primary" onclick="openCreateAdminModal()">Add Admin Account</button>
+            <a class="btn" href="/SuperAdmin/ResetDeactivateAccounts">Open Reset / Deactivate Accounts</a>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.AdminUsers)
+                    {
+                        <tr>
+                            <td>@user.FullName</td>
+                            <td>@user.Email</td>
+                            <td><span class="role-badge">@user.Role</span></td>
+                            <td><span class="status-badge @user.Status.ToLower()">@user.Status</span></td>
+                            <td>
+                                <div class="actions-cell">
+                                    @if (string.Equals(user.Role, "SuperAdmin", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <span class="action-protected">Protected</span>
+                                    }
+                                    else if (user.Status == "Active")
+                                    {
+                                        <button class="btn btn-danger" onclick="toggleAdminStatus('@user.UserId', 'deactivate')">Deactivate</button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-success" onclick="toggleAdminStatus('@user.UserId', 'reactivate')">Reactivate</button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="createAdminModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); align-items:center; justify-content:center; z-index:1100;">
+    <div style="background:#fff; width:90%; max-width:560px; border-radius:12px; border:1px solid #e5e7eb; overflow:hidden;">
+        <div style="padding:16px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
+            <h3 style="margin:0; font-size:18px;">Add Admin Account</h3>
+            <button class="btn" onclick="closeCreateAdminModal()">Close</button>
+        </div>
+        <div style="padding:20px; display:grid; gap:12px;">
+            <input id="firstName" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="First name" />
+            <input id="lastName" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="Last name" />
+            <input id="email" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="Email" />
+            <input id="password" type="password" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="Password (min 8 chars)" />
+            <select id="role" class="btn" style="width:100%; text-align:left; font-weight:400;">
+                <option value="Admin">Admin</option>
+                <option value="SuperAdmin">SuperAdmin</option>
+            </select>
+            <button class="btn btn-primary" onclick="createAdmin()">Create Account</button>
+        </div>
+    </div>
+</div>
+
+<div class="app-dialog" id="appMessageModal">
+    <div class="app-dialog-card">
+        <div class="app-dialog-header" id="appMessageTitle">Notice</div>
+        <div class="app-dialog-body" id="appMessageBody"></div>
+        <div class="app-dialog-footer">
+            <button class="btn btn-primary" type="button" id="appMessageOkBtn">OK</button>
+        </div>
+    </div>
+</div>
+
+<div class="app-dialog" id="appConfirmModal">
+    <div class="app-dialog-card">
+        <div class="app-dialog-header" id="appConfirmTitle">Confirm Action</div>
+        <div class="app-dialog-body" id="appConfirmBody"></div>
+        <div class="app-dialog-footer">
+            <button class="btn" type="button" id="appConfirmCancelBtn">Cancel</button>
+            <button class="btn btn-primary" type="button" id="appConfirmOkBtn">Continue</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function showMessageModal(message, title = 'Notice') {
+            return new Promise(resolve => {
+                const modal = document.getElementById('appMessageModal');
+                const titleEl = document.getElementById('appMessageTitle');
+                const bodyEl = document.getElementById('appMessageBody');
+                const okBtn = document.getElementById('appMessageOkBtn');
+
+                titleEl.textContent = title;
+                bodyEl.textContent = message || '';
+                modal.classList.add('active');
+
+                const close = () => {
+                    modal.classList.remove('active');
+                    okBtn.removeEventListener('click', onOk);
+                    modal.removeEventListener('click', onOverlay);
+                    resolve();
+                };
+
+                const onOk = () => close();
+                const onOverlay = (e) => {
+                    if (e.target === modal) close();
+                };
+
+                okBtn.addEventListener('click', onOk);
+                modal.addEventListener('click', onOverlay);
+            });
+        }
+
+        function showConfirmModal(message, title = 'Confirm Action') {
+            return new Promise(resolve => {
+                const modal = document.getElementById('appConfirmModal');
+                const titleEl = document.getElementById('appConfirmTitle');
+                const bodyEl = document.getElementById('appConfirmBody');
+                const okBtn = document.getElementById('appConfirmOkBtn');
+                const cancelBtn = document.getElementById('appConfirmCancelBtn');
+
+                titleEl.textContent = title;
+                bodyEl.textContent = message || '';
+                modal.classList.add('active');
+
+                const close = (result) => {
+                    modal.classList.remove('active');
+                    okBtn.removeEventListener('click', onOk);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    modal.removeEventListener('click', onOverlay);
+                    resolve(result);
+                };
+
+                const onOk = () => close(true);
+                const onCancel = () => close(false);
+                const onOverlay = (e) => {
+                    if (e.target === modal) close(false);
+                };
+
+                okBtn.addEventListener('click', onOk);
+                cancelBtn.addEventListener('click', onCancel);
+                modal.addEventListener('click', onOverlay);
+            });
+        }
+
+        function openCreateAdminModal() {
+            document.getElementById('createAdminModal').style.display = 'flex';
+        }
+
+        function closeCreateAdminModal() {
+            document.getElementById('createAdminModal').style.display = 'none';
+        }
+
+        async function createAdmin() {
+            const userData = {
+                userId: '0',
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                role: document.getElementById('role').value,
+                status: 'Active'
+            };
+
+            if (!userData.firstName || !userData.lastName || !userData.email || !userData.password) {
+                await showMessageModal('Please complete all fields.', 'Validation');
+                return;
+            }
+
+            if (userData.password.length < 8) {
+                await showMessageModal('Password must be at least 8 characters.', 'Validation');
+                return;
+            }
+
+            const response = await fetch('/SuperAdmin/CreateUser', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData)
+            });
+
+            const result = await response.json();
+            if (response.ok && result.success) {
+                await showMessageModal(result.message, 'Success');
+                window.location.reload();
+                return;
+            }
+
+            await showMessageModal(result.message || 'Failed to create admin account.', 'Error');
+        }
+
+        async function toggleAdminStatus(userId, action) {
+            const endpoint = action === 'deactivate' ? '/SuperAdmin/DeactivateUser' : '/SuperAdmin/ReactivateUser';
+            const confirmed = await showConfirmModal(`Are you sure you want to ${action} this account?`, 'Confirm Account Action');
+            if (!confirmed) return;
+
+            const response = await fetch(`${endpoint}?userId=${userId}`, { method: 'POST' });
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                await showMessageModal(result.message, 'Success');
+                window.location.reload();
+                return;
+            }
+
+            await showMessageModal(result.message || `Failed to ${action} account.`, 'Error');
+        }
+    </script>
+}

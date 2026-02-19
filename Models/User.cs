@@ -33,7 +33,7 @@ namespace TechNova_IT_Solutions.Models
         [Required]
         [StringLength(50)]
         [Column("role")]
-        public string Role { get; set; } = string.Empty; // Admin, ComplianceManager, Employee
+        public string Role { get; set; } = string.Empty; // SuperAdmin, Admin, ComplianceManager, Employee, Supplier
 
         [StringLength(20)]
         [Column("status")]

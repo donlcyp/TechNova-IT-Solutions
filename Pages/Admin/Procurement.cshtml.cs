@@ -1,7 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using TechNova_IT_Solutions.Data;
 
 namespace TechNova_IT_Solutions.Pages
 {
@@ -28,35 +24,34 @@ namespace TechNova_IT_Solutions.Pages
         // Reference Data
         public List<SupplierReference> Suppliers { get; set; } = new();
         public List<PolicyReference> Policies { get; set; } = new();
+        public List<SupplierItemReference> SupplierItems { get; set; } = new();
 
         public async Task<IActionResult> OnGet()
         {
             // Check authentication
-            var userIdString = HttpContext.Session.GetString("UserId");
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
             if (string.IsNullOrEmpty(userIdString))
             {
                 return RedirectToPage("/Account/Login");
             }
 
             // Check user role - only Admin can access
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Admin")
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
-                if (userRole == "Employee") return RedirectToPage("/Employee/Dashboard");
-                if (userRole == "ComplianceManager") return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
+                if (userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 return RedirectToPage("/Account/Login");
             }
 
-            UserEmail = HttpContext.Session.GetString("UserEmail") ?? "admin@technova.com";
-            UserName = HttpContext.Session.GetString("UserName") ?? "Administrator";
+            UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? "admin@technova.com";
+            UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
 
             // Calculate summary statistics
             TotalProcurements = await _context.Procurements.CountAsync();
             
-            // For this demo, assume recent ones are pending
-            var oneWeekAgo = DateTime.Now.AddDays(-7);
             PendingApprovals = await _context.Procurements
-                .Where(p => p.PurchaseDate >= oneWeekAgo)
+                .Where(p => p.Status == ProcurementStatuses.Submitted)
                 .CountAsync();
             
             // Count procurements this month
@@ -79,7 +74,11 @@ namespace TechNova_IT_Solutions.Pages
                     SupplierName = p.Supplier != null ? p.Supplier.SupplierName : "N/A",
                     LinkedPolicy = p.RelatedPolicy != null ? p.RelatedPolicy.PolicyTitle : "General",
                     PurchaseDate = p.PurchaseDate ?? DateTime.Now,
-                    ApprovalStatus = p.PurchaseDate >= oneWeekAgo ? "Pending" : "Approved"
+                    DeliveryBegin = p.SupplierCommitShipDate,
+                    // Inclusive 7-day window: Delivery Begin is Day 1, so Possible Arrival is +6 days.
+                    PossibleArrival = p.SupplierCommitShipDate.HasValue ? p.SupplierCommitShipDate.Value.AddDays(6) : null,
+                    ApprovalStatus = string.IsNullOrWhiteSpace(p.Status) ? ProcurementStatuses.Draft : p.Status,
+                    SupplierResponseDeadline = p.SupplierResponseDeadline
                 })
                 .ToListAsync();
 
@@ -104,6 +103,19 @@ namespace TechNova_IT_Solutions.Pages
                 })
                 .ToListAsync();
 
+            SupplierItems = await _context.SupplierItems
+                .OrderBy(i => i.ItemName)
+                .Select(i => new SupplierItemReference
+                {
+                    Id = i.SupplierItemId,
+                    SupplierId = i.SupplierId,
+                    Name = i.ItemName,
+                    Category = i.Category ?? string.Empty,
+                    QuantityAvailable = i.QuantityAvailable,
+                    Status = i.Status
+                })
+                .ToListAsync();
+
             return Page();
         }
     }
@@ -117,7 +129,10 @@ namespace TechNova_IT_Solutions.Pages
         public string SupplierName { get; set; } = string.Empty;
         public string LinkedPolicy { get; set; } = string.Empty;
         public DateTime PurchaseDate { get; set; }
+        public DateTime? DeliveryBegin { get; set; }
+        public DateTime? PossibleArrival { get; set; }
         public string ApprovalStatus { get; set; } = string.Empty;
+        public DateTime? SupplierResponseDeadline { get; set; }
     }
 
     public class SupplierReference
@@ -131,4 +146,19 @@ namespace TechNova_IT_Solutions.Pages
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
     }
+
+    public class SupplierItemReference
+    {
+        public int Id { get; set; }
+        public int SupplierId { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public int QuantityAvailable { get; set; }
+        public string Status { get; set; } = string.Empty;
+    }
 }
+
+
+
+
+

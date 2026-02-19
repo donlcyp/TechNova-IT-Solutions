@@ -2,7 +2,7 @@
 @* Current page name for active state *@
 
 <!-- Mobile Hamburger Button -->
-<button class="mobile-menu-btn d-lg-none" id="mobileMenuBtn" onclick="toggleMobileSidebar()" aria-label="Toggle Menu">
+<button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileSidebar()" aria-label="Toggle Menu">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="3" y1="12" x2="21" y2="12"></line>
         <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -11,7 +11,7 @@
 </button>
 
 <!-- Mobile Overlay -->
-<div class="mobile-overlay d-lg-none" id="mobileOverlay" onclick="closeMobileSidebar()"></div>
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileSidebar()"></div>
 
 <!-- Sidebar -->
 <div class="sidebar" id="adminSidebar">
@@ -20,7 +20,7 @@
         <span class="logo-text">TechNova</span>
     </div>
 
-    <button class="toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar">
+    <button class="toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar" aria-label="Toggle Sidebar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="3" y1="12" x2="21" y2="12"></line>
             <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -91,25 +91,18 @@
             </svg>
             <span class="nav-text">Reports</span>
         </a>
-        <a href="/ComplianceManager/ExternalPolicyReferences" class="nav-item @(Model == "ExternalPolicyReferences" ? "active" : "")" title="Policy API Reference">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="2" y1="12" x2="22" y2="12"></line>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-            </svg>
-            <span class="nav-text">Policy API Reference</span>
-        </a>
     </nav>
 
-    <a href="/Account/Logout" class="logout-btn" title="Logout" onclick="return confirm('Are you sure you want to logout?');">
+    <button type="button" class="logout-btn js-logout-trigger" title="Logout" aria-label="Logout">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <polyline points="16 17 21 12 16 7"></polyline>
             <line x1="21" y1="12" x2="9" y2="12"></line>
         </svg>
         <span class="logout-text">Logout</span>
-    </a>
+    </button>
 </div>
+@await Html.PartialAsync("_LogoutModal")
 
 <style>
     .sidebar {
@@ -190,6 +183,10 @@
         padding: 14px 24px;
         color: #6b7280;
         text-decoration: none;
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
         display: flex;
         align-items: center;
         gap: 12px;
@@ -217,6 +214,10 @@
     }
 
     .logout-btn {
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
         padding: 16px 24px;
         border-top: 1px solid #e5e7eb;
         display: flex;
@@ -257,6 +258,10 @@
     }
 
     .sidebar.collapsed .logout-btn {
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
         justify-content: center;
         padding: 16px;
     }
@@ -299,11 +304,18 @@
         opacity: 0;
         visibility: hidden;
         transition: all 0.3s;
+        display: none;
     }
 
     .mobile-overlay.active {
         opacity: 1;
         visibility: visible;
+    }
+
+    @@media (max-width: 991px) {
+        .mobile-overlay {
+            display: block;
+        }
     }
 
     /* Mobile Responsive Styles */
@@ -406,4 +418,15 @@
             closeMobileSidebar();
         }
     });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeMobileSidebar();
+        }
+    });
 </script>
+
+
+
+
+

@@ -94,6 +94,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29tcGxpYW5jZU1hbmFnZXJcRXh0ZXJuYWxQb2xpY3lSZWZlcmVuY2VzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/C\#/repos/TechNova IT Solutions/Pages/ComplianceManager/PolicyArchives.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29tcGxpYW5jZU1hbmFnZXJcUG9saWN5QXJjaGl2ZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/C\#/repos/TechNova IT Solutions/Pages/ComplianceManager/PolicyReview.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29tcGxpYW5jZU1hbmFnZXJcUG9saWN5UmV2aWV3LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -152,6 +156,86 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/C\#/repos/TechNova IT Solutions/Pages/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/Shared/_LogoutModal.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9Mb2dvdXRNb2RhbC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/Shared/_SuperAdminSidebar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9TdXBlckFkbWluU2lkZWJhci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/Shared/_SuperAdminTopBar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9TdXBlckFkbWluVG9wQmFyLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/Shared/_SupplierSidebar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9TdXBwbGllclNpZGViYXIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/Shared/_SupplierTopBar.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU2hhcmVkXF9TdXBwbGllclRvcEJhci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/SuperAdmin/AdminDashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwZXJBZG1pblxBZG1pbkRhc2hib2FyZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/SuperAdmin/AllReports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwZXJBZG1pblxBbGxSZXBvcnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/SuperAdmin/ComplianceMonitoring.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwZXJBZG1pblxDb21wbGlhbmNlTW9uaXRvcmluZy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/SuperAdmin/Dashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwZXJBZG1pblxEYXNoYm9hcmQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/SuperAdmin/DetailedReports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwZXJBZG1pblxEZXRhaWxlZFJlcG9ydHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/SuperAdmin/FullAuditLogs.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwZXJBZG1pblxGdWxsQXVkaXRMb2dzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/SuperAdmin/ManageAdminAccounts.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwZXJBZG1pblxNYW5hZ2VBZG1pbkFjY291bnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/SuperAdmin/PolicyManagement.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwZXJBZG1pblxQb2xpY3lNYW5hZ2VtZW50LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/SuperAdmin/Procurement.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwZXJBZG1pblxQcm9jdXJlbWVudC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/SuperAdmin/ResetDeactivateAccounts.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwZXJBZG1pblxSZXNldERlYWN0aXZhdGVBY2NvdW50cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/SuperAdmin/SystemSettingsPolicies.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwZXJBZG1pblxTeXN0ZW1TZXR0aW5nc1BvbGljaWVzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/Supplier/ComplianceStatus.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwcGxpZXJcQ29tcGxpYW5jZVN0YXR1cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/Supplier/Dashboard.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwcGxpZXJcRGFzaGJvYXJkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/Supplier/Login.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwcGxpZXJcTG9naW4uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/Supplier/Procurement.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwcGxpZXJcUHJvY3VyZW1lbnQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/C\#/repos/TechNova IT Solutions/Pages/_ViewImports.cshtml]

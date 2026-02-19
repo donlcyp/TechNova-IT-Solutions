@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using TechNova_IT_Solutions.Constants;
+using TechNova_IT_Solutions.Infrastructure;
+using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Services.Interfaces;
 
 namespace TechNova_IT_Solutions.Controllers
@@ -7,36 +10,41 @@ namespace TechNova_IT_Solutions.Controllers
     {
         private readonly IAdminService _adminService;
         private readonly IUserService _userService;
+        private readonly IEmailService _emailService;
         private readonly IWebHostEnvironment _environment;
+        private readonly ApplicationDbContext _context;
 
-        public AdminController(IAdminService adminService, IUserService userService, IWebHostEnvironment environment)
+        public AdminController(IAdminService adminService, IUserService userService, IEmailService emailService, IWebHostEnvironment environment, ApplicationDbContext context)
         {
             _adminService = adminService;
             _userService = userService;
+            _emailService = emailService;
             _environment = environment;
+            _context = context;
         }
 
         private bool IsAdmin()
         {
-            var userRole = HttpContext.Session.GetString("UserRole");
-            return userRole == "Admin";
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            return userRole == RoleNames.Admin || userRole == RoleNames.SuperAdmin;
+        }
+
+        private bool IsCurrentUserSuperAdmin()
+        {
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            return string.Equals(userRole, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsPrivilegedAdminRole(string? role)
+        {
+            return string.Equals(role, RoleNames.Admin, StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase);
         }
 
         public async Task<IActionResult> Dashboard()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             var data = await _adminService.GetDashboardDataAsync();
             return View(data);
@@ -44,19 +52,8 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> UserManagement()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             var users = await _userService.GetAllUsersAsync();
             return View(users);
@@ -70,12 +67,31 @@ namespace TechNova_IT_Solutions.Controllers
             {
                 return BadRequest(new { success = false, message = "Invalid user data" });
             }
+            if (!IsCurrentUserSuperAdmin() && IsPrivilegedAdminRole(userData.Role))
+            {
+                return BadRequest(new { success = false, message = "System Administrator cannot create Admin or Super Admin accounts." });
+            }
 
             var result = await _userService.CreateUserAsync(userData);
-            
-            if (result)
+
+            if (result.Success)
             {
-                return Ok(new { success = true, message = "User created successfully" });
+                var message = "User created successfully.";
+                if (result.EmailAttempted)
+                {
+                    message = result.EmailSent
+                        ? "User created successfully. Account email was sent."
+                        : $"User created successfully, but account email failed: {result.EmailError ?? "Unknown error"}";
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message,
+                    emailAttempted = result.EmailAttempted,
+                    emailSent = result.EmailSent,
+                    emailError = result.EmailError
+                });
             }
             
             return BadRequest(new { success = false, message = "Failed to create user" });
@@ -102,6 +118,10 @@ namespace TechNova_IT_Solutions.Controllers
             if (userData == null)
             {
                 return BadRequest(new { success = false, message = "Invalid user data" });
+            }
+            if (!IsCurrentUserSuperAdmin() && IsPrivilegedAdminRole(userData.Role))
+            {
+                return BadRequest(new { success = false, message = "System Administrator cannot assign Admin or Super Admin roles." });
             }
 
             var result = await _userService.UpdateUserAsync(userData);
@@ -132,6 +152,14 @@ namespace TechNova_IT_Solutions.Controllers
         public async Task<IActionResult> DeactivateUser(int userId)
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var user = await _userService.GetUserByIdAsync(userId);
+            if (user == null) return NotFound(new { success = false, message = "User not found" });
+            if (string.Equals(user.Role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { success = false, message = "Super Admin accounts are protected and cannot be deactivated." });
+            }
+
             var result = await _userService.DeactivateUserAsync(userId);
             
             if (result)
@@ -146,6 +174,14 @@ namespace TechNova_IT_Solutions.Controllers
         public async Task<IActionResult> ReactivateUser(int userId)
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var user = await _userService.GetUserByIdAsync(userId);
+            if (user == null) return NotFound(new { success = false, message = "User not found" });
+            if (string.Equals(user.Role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { success = false, message = "Super Admin accounts are protected and cannot be reactivated via this action." });
+            }
+
             var result = await _userService.ReactivateUserAsync(userId);
             
             if (result)
@@ -158,122 +194,151 @@ namespace TechNova_IT_Solutions.Controllers
 
         public IActionResult PolicyManagement()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             return View();
         }
 
         public IActionResult SupplierManagement()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             return View();
         }
 
         public IActionResult ComplianceMonitoring()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             return View();
         }
 
         public IActionResult AuditLogs()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             return View();
         }
 
         public IActionResult Reports()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             return View();
         }
 
         public IActionResult Procurement()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             return View();
         }
 
         private int? GetCurrentUserId()
         {
-            var s = HttpContext.Session.GetString("UserId");
+            var s = HttpContext.Session.GetString(SessionKeys.UserId);
             return int.TryParse(s, out var id) ? id : null;
+        }
+
+        private sealed class EmailNotificationSummary
+        {
+            public int Recipients { get; set; }
+            public int SentCount { get; set; }
+            public int FailedCount { get; set; }
+            public List<string> FailedRecipients { get; set; } = new();
+        }
+
+        private async Task<EmailNotificationSummary> NotifyEmployeesPolicyAssignedAsync(IEnumerable<int> policyIds, IEnumerable<int> employeeIds)
+        {
+            var summary = new EmailNotificationSummary();
+            var employeeIdList = employeeIds.Distinct().ToList();
+            var policyIdList = policyIds.Distinct().ToList();
+            if (!employeeIdList.Any() || !policyIdList.Any()) return summary;
+
+            var employees = await _context.Users
+                .Where(u => employeeIdList.Contains(u.UserId) &&
+                            u.Role == RoleNames.Employee &&
+                            !string.IsNullOrEmpty(u.Email))
+                .ToListAsync();
+
+            var policies = await _context.Policies
+                .Where(p => policyIdList.Contains(p.PolicyId))
+                .Select(p => new { p.PolicyId, p.PolicyTitle })
+                .ToListAsync();
+
+            var policyText = string.Join(", ", policies.Select(p => p.PolicyTitle));
+            summary.Recipients = employees.Count;
+            foreach (var employee in employees)
+            {
+                var subject = "New Policy Assignment";
+                var body = $@"
+                    <h2>New policy assigned</h2>
+                    <p>Hello {employee.FirstName},</p>
+                    <p>The following policy/policies were assigned to you:</p>
+                    <p><strong>{policyText}</strong></p>
+                    <p>Please log in to your TechNova account and acknowledge them.</p>";
+
+                var emailResult = await _emailService.SendEmailAsync(employee.Email!, subject, body);
+                if (emailResult.Success)
+                {
+                    summary.SentCount++;
+                }
+                else
+                {
+                    summary.FailedCount++;
+                    summary.FailedRecipients.Add(employee.Email!);
+                }
+            }
+
+            return summary;
+        }
+
+        private async Task<EmailNotificationSummary> NotifyEmployeesPolicyUpdatedAsync(int policyId, string policyTitle)
+        {
+            var summary = new EmailNotificationSummary();
+            var employeeIds = await _context.PolicyAssignments
+                .Where(pa => pa.PolicyId == policyId)
+                .Select(pa => pa.UserId)
+                .Distinct()
+                .ToListAsync();
+
+            if (!employeeIds.Any()) return summary;
+
+            var employees = await _context.Users
+                .Where(u => employeeIds.Contains(u.UserId) &&
+                            u.Role == RoleNames.Employee &&
+                            !string.IsNullOrEmpty(u.Email))
+                .ToListAsync();
+
+            summary.Recipients = employees.Count;
+            foreach (var employee in employees)
+            {
+                var subject = "Assigned Policy Updated";
+                var body = $@"
+                    <h2>Policy update notice</h2>
+                    <p>Hello {employee.FirstName},</p>
+                    <p>Your assigned policy <strong>{policyTitle}</strong> has been updated.</p>
+                    <p>Please review the updated policy in your TechNova account.</p>";
+
+                var emailResult = await _emailService.SendEmailAsync(employee.Email!, subject, body);
+                if (emailResult.Success)
+                {
+                    summary.SentCount++;
+                }
+                else
+                {
+                    summary.FailedCount++;
+                    summary.FailedRecipients.Add(employee.Email!);
+                }
+            }
+
+            return summary;
         }
 
         // Policy Management POST actions
@@ -303,7 +368,21 @@ namespace TechNova_IT_Solutions.Controllers
             if (result)
             {
                 await _adminService.LogActivityAsync(GetCurrentUserId(), $"Updated policy: {policyData.PolicyTitle}", "Policy");
-                return Ok(new { success = true, message = "Policy updated successfully" });
+                var emailSummary = new EmailNotificationSummary();
+                if (policyData.PolicyId > 0)
+                {
+                    emailSummary = await NotifyEmployeesPolicyUpdatedAsync(policyData.PolicyId, policyData.PolicyTitle);
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = $"Policy updated successfully. Email sent: {emailSummary.SentCount}, failed: {emailSummary.FailedCount}.",
+                    emailRecipients = emailSummary.Recipients,
+                    emailSent = emailSummary.SentCount,
+                    emailFailed = emailSummary.FailedCount,
+                    failedRecipients = emailSummary.FailedRecipients
+                });
             }
             return BadRequest(new { success = false, message = "Failed to update policy" });
         }
@@ -357,7 +436,10 @@ namespace TechNova_IT_Solutions.Controllers
                     policyData.FilePath = null!; // signal to keep existing
                 }
                 result = await _adminService.UpdatePolicyAsync(policyData);
-                if (result) await _adminService.LogActivityAsync(GetCurrentUserId(), $"Updated policy with file: {policyTitle}", "Policy");
+                if (result)
+                {
+                    await _adminService.LogActivityAsync(GetCurrentUserId(), $"Updated policy with file: {policyTitle}", "Policy");
+                }
             }
             else
             {
@@ -366,7 +448,23 @@ namespace TechNova_IT_Solutions.Controllers
             }
 
             if (result)
-                return Ok(new { success = true, message = "Policy saved successfully" });
+            {
+                var emailSummary = new EmailNotificationSummary();
+                if (policyId.HasValue && policyId.Value > 0)
+                {
+                    emailSummary = await NotifyEmployeesPolicyUpdatedAsync(policyData.PolicyId, policyTitle);
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = $"Policy saved successfully. Email sent: {emailSummary.SentCount}, failed: {emailSummary.FailedCount}.",
+                    emailRecipients = emailSummary.Recipients,
+                    emailSent = emailSummary.SentCount,
+                    emailFailed = emailSummary.FailedCount,
+                    failedRecipients = emailSummary.FailedRecipients
+                });
+            }
             return BadRequest(new { success = false, message = "Failed to save policy" });
         }
 
@@ -377,7 +475,7 @@ namespace TechNova_IT_Solutions.Controllers
         public IActionResult DownloadPolicyFile(int policyId)
         {
             // Allow any authenticated user to download
-            var userIdString = HttpContext.Session.GetString("UserId");
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
             if (string.IsNullOrEmpty(userIdString))
                 return Unauthorized();
 
@@ -428,31 +526,130 @@ namespace TechNova_IT_Solutions.Controllers
             return BadRequest(new { success = false, message = "Failed to delete policy" });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetPolicyDetail(int policyId)
+        {
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (string.IsNullOrEmpty(userIdString))
+                return Unauthorized(new { success = false, message = "Not authenticated" });
+
+            var detail = await _adminService.GetPolicyDetailAsync(policyId);
+            if (detail == null)
+                return NotFound(new { success = false, message = "Policy not found" });
+
+            return Ok(new
+            {
+                success = true,
+                policy = new
+                {
+                    detail.PolicyId,
+                    detail.PolicyTitle,
+                    detail.Category,
+                    detail.Description,
+                    detail.FilePath,
+                    DateUploaded = detail.DateUploaded?.ToString("MMM dd, yyyy"),
+                    detail.UploadedBy,
+                    detail.IsArchived,
+                    ArchivedDate = detail.ArchivedDate?.ToString("MMM dd, yyyy"),
+                    detail.AssignedEmployees,
+                    detail.AssignedSuppliers
+                }
+            });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ArchivePolicy(int policyId)
+        {
+            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            var result = await _adminService.ArchivePolicyAsync(policyId);
+            if (result)
+            {
+                await _adminService.LogActivityAsync(GetCurrentUserId(), $"Archived policy ID: {policyId}", "Policy");
+                return Ok(new { success = true, message = "Policy archived successfully" });
+            }
+            return BadRequest(new { success = false, message = "Failed to archive policy" });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RestorePolicy(int policyId)
+        {
+            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            var result = await _adminService.RestorePolicyAsync(policyId);
+            if (result)
+            {
+                await _adminService.LogActivityAsync(GetCurrentUserId(), $"Restored policy ID: {policyId}", "Policy");
+                return Ok(new { success = true, message = "Policy restored successfully" });
+            }
+            return BadRequest(new { success = false, message = "Failed to restore policy" });
+        }
+
         [HttpPost]
         public async Task<IActionResult> AssignPolicy([FromBody] PolicyAssignmentRequest request)
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
             if (request == null) return BadRequest(new { success = false, message = "Invalid request" });
 
-            bool success = true;
-
-            if (request.EmployeeIds.Any())
+            var policyIds = request.PolicyIds?.Where(id => id > 0).Distinct().ToList() ?? new List<int>();
+            if (!policyIds.Any() && request.PolicyId > 0)
             {
-                success &= await _adminService.AssignPolicyToEmployeesAsync(request.PolicyId, request.EmployeeIds);
+                policyIds.Add(request.PolicyId);
             }
-            if (request.SupplierIds.Any())
+
+            if (!policyIds.Any())
             {
-                success &= await _adminService.AssignPolicyToSuppliersAsync(request.PolicyId, request.SupplierIds);
+                return BadRequest(new { success = false, message = "At least one policy must be selected." });
+            }
+
+            bool success = true;
+            foreach (var policyId in policyIds)
+            {
+                if (request.EmployeeIds.Any())
+                {
+                    success &= await _adminService.AssignPolicyToEmployeesAsync(policyId, request.EmployeeIds);
+                }
+                if (request.SupplierIds.Any())
+                {
+                    success &= await _adminService.AssignPolicyToSuppliersAsync(policyId, request.SupplierIds);
+                }
             }
 
             if (success)
             {
                 await _adminService.LogActivityAsync(GetCurrentUserId(),
-                    $"Assigned policy {request.PolicyId} to {request.EmployeeIds.Count} employee(s) and {request.SupplierIds.Count} supplier(s)",
+                    $"Assigned {policyIds.Count} policy(ies) to {request.EmployeeIds.Count} employee(s) and {request.SupplierIds.Count} supplier(s)",
                     "Policy");
-                return Ok(new { success = true, message = "Policy assigned successfully" });
+                var emailSummary = new EmailNotificationSummary();
+                if (request.EmployeeIds.Any())
+                {
+                    emailSummary = await NotifyEmployeesPolicyAssignedAsync(policyIds, request.EmployeeIds);
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = $"Policy assignment completed successfully. Email sent: {emailSummary.SentCount}, failed: {emailSummary.FailedCount}.",
+                    emailRecipients = emailSummary.Recipients,
+                    emailSent = emailSummary.SentCount,
+                    emailFailed = emailSummary.FailedCount,
+                    failedRecipients = emailSummary.FailedRecipients
+                });
             }
             return BadRequest(new { success = false, message = "Failed to assign policy" });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetPolicyAssignmentStatus(int policyId)
+        {
+            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (policyId <= 0) return BadRequest(new { success = false, message = "Invalid policy id" });
+
+            var status = await _adminService.GetPolicyAssignmentStatusAsync(policyId);
+            return Ok(new
+            {
+                success = true,
+                assignedEmployeeIds = status.AssignedEmployeeIds,
+                assignedSupplierIds = status.AssignedSupplierIds
+            });
         }
 
         // Supplier Management POST actions
@@ -499,6 +696,50 @@ namespace TechNova_IT_Solutions.Controllers
             return BadRequest(new { success = false, message = "Failed to delete supplier" });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetSupplier(int supplierId)
+        {
+            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            var supplier = await _adminService.GetSupplierByIdAsync(supplierId);
+            
+            if (supplier != null)
+            {
+                return Ok(new { success = true, supplier = supplier });
+            }
+            
+            return NotFound(new { success = false, message = "Supplier not found" });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetSupplierItems(int supplierId)
+        {
+            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (supplierId <= 0) return BadRequest(new { success = false, message = "Invalid supplier id" });
+
+            var items = await _adminService.GetSupplierItemsAsync(supplierId);
+            return Ok(new { success = true, items });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetSupplierCompliantPolicies(int supplierId)
+        {
+            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (supplierId <= 0) return BadRequest(new { success = false, message = "Invalid supplier id" });
+
+            var policies = await _context.SupplierPolicies
+                .Where(sp => sp.SupplierId == supplierId && sp.ComplianceStatus == "Compliant")
+                .Select(sp => new
+                {
+                    Id = sp.Policy.PolicyId,
+                    Title = sp.Policy.PolicyTitle
+                })
+                .Distinct()
+                .OrderBy(p => p.Title)
+                .ToListAsync();
+
+            return Ok(new { success = true, policies });
+        }
+
         // Procurement POST actions
         [HttpPost]
         public async Task<IActionResult> CreateProcurement([FromBody] ProcurementData procurementData)
@@ -506,13 +747,54 @@ namespace TechNova_IT_Solutions.Controllers
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
             if (procurementData == null) return BadRequest(new { success = false, message = "Invalid procurement data" });
 
+            if (procurementData.SupplierId <= 0)
+                return BadRequest(new { success = false, message = "Please select a supplier." });
+
+            if (!procurementData.SupplierItemId.HasValue || procurementData.SupplierItemId.Value <= 0)
+                return BadRequest(new { success = false, message = "Please select an available supplier item." });
+
+            if (procurementData.Quantity <= 0)
+                return BadRequest(new { success = false, message = "Quantity must be greater than zero." });
+
+            if (!procurementData.PolicyId.HasValue || procurementData.PolicyId.Value <= 0)
+                return BadRequest(new { success = false, message = "Please select a linked policy." });
+
+            var supplier = await _context.Suppliers
+                .FirstOrDefaultAsync(s => s.SupplierId == procurementData.SupplierId);
+            if (supplier == null)
+                return BadRequest(new { success = false, message = "Selected supplier was not found." });
+
+            if (!string.Equals(supplier.Status, "Active", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { success = false, message = "Selected supplier is not active." });
+
+            var supplierItem = await _context.SupplierItems.FirstOrDefaultAsync(si =>
+                si.SupplierItemId == procurementData.SupplierItemId.Value &&
+                si.SupplierId == procurementData.SupplierId);
+
+            if (supplierItem == null)
+                return BadRequest(new { success = false, message = "Selected supplier item was not found." });
+
+            if (!string.Equals(supplierItem.Status, "Available", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { success = false, message = "Selected supplier item is not available." });
+
+            if (supplierItem.QuantityAvailable < procurementData.Quantity)
+                return BadRequest(new { success = false, message = $"Only {supplierItem.QuantityAvailable} item(s) are available in stock." });
+
+            var isCompliantForPolicy = await _context.SupplierPolicies.AnyAsync(sp =>
+                sp.SupplierId == procurementData.SupplierId &&
+                sp.PolicyId == procurementData.PolicyId.Value &&
+                sp.ComplianceStatus == "Compliant");
+
+            if (!isCompliantForPolicy)
+                return BadRequest(new { success = false, message = "Supplier is not compliant with the selected linked policy." });
+
             var result = await _adminService.CreateProcurementAsync(procurementData);
             if (result)
             {
                 await _adminService.LogActivityAsync(GetCurrentUserId(), $"Created procurement: {procurementData.ItemName}", "Procurement");
                 return Ok(new { success = true, message = "Procurement created successfully" });
             }
-            return BadRequest(new { success = false, message = "Failed to create procurement" });
+            return BadRequest(new { success = false, message = "Failed to create procurement due to validation or stock updates." });
         }
 
         [HttpPost]
@@ -544,3 +826,4 @@ namespace TechNova_IT_Solutions.Controllers
         }
     }
 }
+

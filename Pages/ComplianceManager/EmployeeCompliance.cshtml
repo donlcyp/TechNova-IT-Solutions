@@ -572,7 +572,7 @@
         function showDetails(employeeId) {
             const employee = employeeData.find(e => e.employeeId === employeeId);
             if (!employee) {
-                alert('Employee details not found.');
+                window.showAppMessage('Employee details not found.', 'Error');
                 return;
             }
 

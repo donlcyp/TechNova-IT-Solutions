@@ -42,5 +42,6 @@ namespace TechNova_IT_Solutions.Models
         // Navigation properties
         public virtual ICollection<SupplierPolicy> SupplierPolicies { get; set; } = new List<SupplierPolicy>();
         public virtual ICollection<Procurement> Procurements { get; set; } = new List<Procurement>();
+        public virtual ICollection<SupplierItem> SupplierItems { get; set; } = new List<SupplierItem>();
     }
 }

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.ComponentModel.DataAnnotations;
+
 using TechNova_IT_Solutions.Services.Interfaces;
 
 namespace TechNova_IT_Solutions.Pages.Account
@@ -7,16 +9,21 @@ namespace TechNova_IT_Solutions.Pages.Account
     public class LoginModel : PageModel
     {
         private readonly IAuthenticationService _authService;
+        private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(IAuthenticationService authService)
+        public LoginModel(IAuthenticationService authService, ILogger<LoginModel> logger)
         {
             _authService = authService;
+            _logger = logger;
         }
 
         [BindProperty]
+        [Required(ErrorMessage = "Company email is required.")]
+        [EmailAddress(ErrorMessage = "Enter a valid company email address.")]
         public string Email { get; set; } = string.Empty;
 
         [BindProperty]
+        [Required(ErrorMessage = "Password is required.")]
         public string Password { get; set; } = string.Empty;
 
         [BindProperty]
@@ -33,39 +40,64 @@ namespace TechNova_IT_Solutions.Pages.Account
 
         public async Task<IActionResult> OnPost()
         {
-            // Authenticate using the service
-            var result = await _authService.AuthenticateUserAsync(Email, Password);
+            Email = Email?.Trim() ?? string.Empty;
 
-            if (!result.Success)
+            if (!ModelState.IsValid)
             {
-                ErrorMessage = result.ErrorMessage;
+                ErrorMessage = "Please correct the highlighted fields and try again.";
                 return Page();
             }
 
-            // Store user info in Session
-            HttpContext.Session.SetString("UserId", result.User!.UserId.ToString());
-            HttpContext.Session.SetString("UserEmail", result.User.Email);
-            HttpContext.Session.SetString("UserName", $"{result.User.FirstName} {result.User.LastName}");
-            HttpContext.Session.SetString("UserRole", result.User.Role);
-            
-            if (RememberMe)
+            try
             {
-                HttpContext.Session.SetString("RememberMe", "true");
-            }
+                var result = await _authService.AuthenticateUserAsync(Email, Password);
 
-            // Route based on user role
-            if (result.User.Role == "ComplianceManager")
-            {
-                return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                if (!result.Success || result.User == null)
+                {
+                    ErrorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
+                        ? "Invalid email or password."
+                        : result.ErrorMessage;
+                    return Page();
+                }
+
+                // Store user info in Session
+                HttpContext.Session.SetString(SessionKeys.UserId, result.User.UserId.ToString());
+                HttpContext.Session.SetString(SessionKeys.UserEmail, result.User.Email);
+                HttpContext.Session.SetString(SessionKeys.UserName, $"{result.User.FirstName} {result.User.LastName}");
+                HttpContext.Session.SetString(SessionKeys.UserRole, result.User.Role);
+
+                if (RememberMe)
+                {
+                    HttpContext.Session.SetString(SessionKeys.RememberMe, "true");
+                }
+
+                // Route based on user role
+                if (result.User.Role == RoleNames.SuperAdmin)
+                {
+                    return RedirectToPage("/SuperAdmin/Dashboard");
+                }
+                else if (result.User.Role == RoleNames.ComplianceManager)
+                {
+                    return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                }
+                else if (result.User.Role == RoleNames.Employee)
+                {
+                    return RedirectToPage("/Employee/Dashboard");
+                }
+                else
+                {
+                    return RedirectToPage("/Admin/AdminDashboard");
+                }
             }
-            else if (result.User.Role == "Employee")
+            catch (Exception ex)
             {
-                return RedirectToPage("/Employee/Dashboard");
-            }
-            else
-            {
-                return RedirectToPage("/Admin/AdminDashboard");
+                _logger.LogError(ex, "Unexpected login error for {Email}.", Email);
+                ErrorMessage = "Something went wrong while signing in. Please try again.";
+                return Page();
             }
         }
     }
 }
+
+
+

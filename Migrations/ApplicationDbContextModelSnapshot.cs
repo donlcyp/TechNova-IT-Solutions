@@ -17,7 +17,7 @@ namespace TechNova_IT_Solutions.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -96,6 +96,10 @@ namespace TechNova_IT_Solutions.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PolicyId"));
 
+                    b.Property<DateTime?>("ArchivedDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("archived_date");
+
                     b.Property<string>("Category")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
@@ -113,6 +117,10 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("file_path");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit")
+                        .HasColumnName("is_archived");
 
                     b.Property<string>("PolicyTitle")
                         .IsRequired()
@@ -189,13 +197,44 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnType("int")
                         .HasColumnName("quantity");
 
+                    b.Property<DateTime?>("ReceivedDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("received_date");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("rejection_reason");
+
                     b.Property<int?>("RelatedPolicyId")
                         .HasColumnType("int")
                         .HasColumnName("related_policyID");
 
+                    b.Property<DateTime?>("ShipmentDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("shipment_date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime?>("SupplierCommitShipDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("supplier_commit_ship_date");
+
                     b.Property<int?>("SupplierId")
                         .HasColumnType("int")
                         .HasColumnName("supplierID");
+
+                    b.Property<DateTime?>("SupplierResponseDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("supplier_response_date");
+
+                    b.Property<DateTime?>("SupplierResponseDeadline")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("supplier_response_deadline");
 
                     b.HasKey("ProcurementId");
 
@@ -204,6 +243,51 @@ namespace TechNova_IT_Solutions.Migrations
                     b.HasIndex("SupplierId");
 
                     b.ToTable("Procurement");
+                });
+
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.ProcurementStatusHistory", b =>
+                {
+                    b.Property<int>("HistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("historyID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HistoryId"));
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("changed_at");
+
+                    b.Property<int?>("ChangedByUserId")
+                        .HasColumnType("int")
+                        .HasColumnName("changed_by_userID");
+
+                    b.Property<string>("FromStatus")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("from_status");
+
+                    b.Property<int>("ProcurementId")
+                        .HasColumnType("int")
+                        .HasColumnName("procurementID");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("reason");
+
+                    b.Property<string>("ToStatus")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("to_status");
+
+                    b.HasKey("HistoryId");
+
+                    b.HasIndex("ProcurementId");
+
+                    b.ToTable("Procurement_Status_History");
                 });
 
             modelBuilder.Entity("TechNova_IT_Solutions.Models.Supplier", b =>
@@ -255,6 +339,52 @@ namespace TechNova_IT_Solutions.Migrations
                     b.HasKey("SupplierId");
 
                     b.ToTable("Suppliers");
+                });
+
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierItem", b =>
+                {
+                    b.Property<int>("SupplierItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("supplier_itemID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SupplierItemId"));
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("category");
+
+                    b.Property<string>("ItemName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("item_name");
+
+                    b.Property<DateTime>("LastUpdated")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("last_updated");
+
+                    b.Property<int>("QuantityAvailable")
+                        .HasColumnType("int")
+                        .HasColumnName("quantity_available");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("status");
+
+                    b.Property<int>("SupplierId")
+                        .HasColumnType("int")
+                        .HasColumnName("supplierID");
+
+                    b.HasKey("SupplierItemId");
+
+                    b.HasIndex("SupplierId", "ItemName")
+                        .IsUnique();
+
+                    b.ToTable("Supplier_Items");
                 });
 
             modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierPolicy", b =>
@@ -426,6 +556,28 @@ namespace TechNova_IT_Solutions.Migrations
                     b.Navigation("Supplier");
                 });
 
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.ProcurementStatusHistory", b =>
+                {
+                    b.HasOne("TechNova_IT_Solutions.Models.Procurement", "Procurement")
+                        .WithMany("StatusHistory")
+                        .HasForeignKey("ProcurementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Procurement");
+                });
+
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierItem", b =>
+                {
+                    b.HasOne("TechNova_IT_Solutions.Models.Supplier", "Supplier")
+                        .WithMany("SupplierItems")
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Supplier");
+                });
+
             modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierPolicy", b =>
                 {
                     b.HasOne("TechNova_IT_Solutions.Models.Policy", "Policy")
@@ -459,9 +611,16 @@ namespace TechNova_IT_Solutions.Migrations
                     b.Navigation("ComplianceStatus");
                 });
 
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.Procurement", b =>
+                {
+                    b.Navigation("StatusHistory");
+                });
+
             modelBuilder.Entity("TechNova_IT_Solutions.Models.Supplier", b =>
                 {
                     b.Navigation("Procurements");
+
+                    b.Navigation("SupplierItems");
 
                     b.Navigation("SupplierPolicies");
                 });

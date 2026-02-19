@@ -9,7 +9,7 @@
     <div class="account-section">
         <div class="account-info">
             <h4>@Context.Session.GetString("UserName")</h4>
-            <p>Administrator</p>
+            <p>@(Context.Session.GetString("UserRole") == "SuperAdmin" ? "Super Administrator" : "Administrator")</p>
         </div>
         <div class="account-avatar">
             @{
@@ -108,16 +108,15 @@
     /* Mobile Responsive Styles */
     @@media (max-width: 991px) {
         .top-bar {
-            padding: 16px 20px;
-            margin-left: 60px;
+            padding: 16px 20px 16px 70px;
         }
 
         .page-header h1 {
-            font-size: 22px;
+            font-size: 24px;
         }
 
         .page-header p {
-            font-size: 13px;
+            font-size: 14px;
         }
 
         .account-info {
@@ -125,32 +124,44 @@
         }
 
         .account-avatar {
-            width: 38px;
-            height: 38px;
-            font-size: 14px;
-        }
-
-        .content-wrapper {
-            padding: 20px;
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+            border-radius: 10px;
         }
     }
 
     @@media (max-width: 576px) {
         .top-bar {
-            padding: 12px 16px;
-            margin-left: 56px;
+            padding: 12px 16px 12px 60px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .page-header h1 {
-            font-size: 18px;
+            font-size: 20px;
         }
 
         .page-header p {
             font-size: 12px;
+            display: none;
         }
 
-        .content-wrapper {
-            padding: 16px;
+        .account-avatar {
+            width: 36px;
+            height: 36px;
+            font-size: 14px;
+            border-radius: 8px;
+        }
+    }
+
+    @@media (max-width: 400px) {
+        .top-bar {
+            padding: 10px 12px 10px 56px;
+        }
+
+        .page-header h1 {
+            font-size: 18px;
         }
     }
 </style>

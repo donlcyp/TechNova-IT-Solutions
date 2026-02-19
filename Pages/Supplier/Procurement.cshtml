@@ -1,0 +1,660 @@
+@page
+@model TechNova_IT_Solutions.Pages.Supplier.ProcurementModel
+@{
+    ViewData["Title"] = "Procurement Requests";
+    Layout = "_Layout";
+}
+
+@section Styles {
+    <style>
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .content-wrapper {
+            padding: 24px;
+            max-width: 1260px;
+            margin: 0 auto;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+
+        .summary-label {
+            color: #6b7280;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .summary-value {
+            color: #1f2937;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .section-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            color: #1f2937;
+            letter-spacing: 0.2px;
+        }
+
+        .section-subtitle {
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 14px;
+        }
+
+        .stock-alerts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .stock-alert {
+            border-radius: 10px;
+            padding: 10px 12px;
+            border: 1px solid #e5e7eb;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .stock-alert.low {
+            color: #92400e;
+            background: #fffbeb;
+            border-color: #fcd34d;
+        }
+
+        .stock-alert.out {
+            color: #991b1b;
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .form-input {
+            width: 100%;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+            background: #ffffff;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.12);
+        }
+
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary { background: #1e40af; color: #fff; }
+        .btn-success { background: #16a34a; color: #fff; }
+        .btn-danger { background: #dc2626; color: #fff; }
+        .btn-light { background: #eef2ff; color: #1e40af; border: 1px solid #c7d2fe; }
+
+        .table-wrap {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+        }
+
+        th, td {
+            text-align: left;
+            border-top: 1px solid #e5e7eb;
+            padding: 10px;
+            font-size: 14px;
+            color: #1f2937;
+            vertical-align: top;
+        }
+
+        thead th {
+            color: #64748b;
+            text-transform: uppercase;
+            font-size: 12px;
+            background: #f8fafc;
+            border-top: none;
+            font-weight: 700;
+        }
+
+        .empty-row {
+            color: #64748b;
+            text-align: center;
+            padding: 22px 10px;
+            font-style: italic;
+            background: #fcfdff;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            padding: 2px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #f1f5f9;
+        }
+
+        .status-available {
+            color: #166534;
+            background: #dcfce7;
+        }
+
+        .status-low {
+            color: #92400e;
+            background: #fef3c7;
+        }
+
+        .status-out {
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .status-submitted { color: #d97706; }
+        .status-supplierapproved { color: #16a34a; }
+        .status-supplierrejected { color: #dc2626; }
+        .status-shipped { color: #2563eb; }
+        .status-received, .status-closed { color: #047857; }
+
+        .response-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            z-index: 1100;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 540px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 20px 48px rgba(15, 23, 42, 0.2);
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .modal-close {
+            border: none;
+            background: #f1f5f9;
+            color: #334155;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .modal-body {
+            padding: 18px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #e5e7eb;
+            padding: 14px 18px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .toast-wrap {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 1200;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            min-width: 260px;
+            max-width: 360px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid #1e40af;
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: #0f172a;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .toast.error {
+            border-left-color: #dc2626;
+        }
+
+        .toast.success {
+            border-left-color: #16a34a;
+        }
+
+        @@media (max-width: 991px) {
+            .main-content { margin-left: 0; }
+            .summary-grid { grid-template-columns: 1fr; }
+            .stock-alerts { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+            .response-grid { grid-template-columns: 1fr; }
+            .section-title { font-size: 20px; }
+            .content-wrapper { padding: 16px; }
+        }
+    </style>
+}
+
+@await Html.PartialAsync("_SupplierSidebar", "Procurement")
+
+<div class="main-content">
+    @await Html.PartialAsync("_SupplierTopBar", (Title: "Procurement Requests", Description: "Manage inventory and respond to procurement steps"))
+
+    <div class="content-wrapper">
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-label">Inventory Items</div>
+                <div class="summary-value" id="inventoryCount">0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Pending Requests</div>
+                <div class="summary-value" id="pendingCount">0</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Approved Requests</div>
+                <div class="summary-value" id="approvedCount">0</div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-head">
+                <div class="section-title">Inventory Management</div>
+                <button class="btn btn-light" type="button" onclick="openItemModal()">Add Item</button>
+            </div>
+            <div class="section-subtitle">Add or update items that admins can request from your catalog.</div>
+            <div class="stock-alerts">
+                <div id="lowStockAlert" class="stock-alert low" style="display:none;"></div>
+                <div id="outStockAlert" class="stock-alert out" style="display:none;"></div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Category</th>
+                            <th>Qty Available</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryRows"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-title">Procurement Requests</div>
+            <div class="section-subtitle">Respond to submitted requests with approval + ship date, or reject with a reason.</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Status</th>
+                            <th>Response Deadline</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="procurementRows"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="itemModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title">Add Inventory Item</div>
+            <button type="button" class="modal-close" onclick="closeItemModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input id="itemName" class="form-input" placeholder="Item name">
+            <input id="itemCategory" class="form-input" placeholder="Category">
+            <input id="itemQuantity" type="number" min="0" class="form-input" placeholder="Quantity">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-light" type="button" onclick="closeItemModal()">Cancel</button>
+            <button class="btn btn-primary" type="button" onclick="saveItem()">Save Item</button>
+        </div>
+    </div>
+</div>
+
+<div id="stockModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title">Add Stock</div>
+            <button type="button" class="modal-close" onclick="closeStockModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <input id="stockItemName" class="form-input" readonly>
+            <input id="addStockQty" type="number" min="1" class="form-input" placeholder="Quantity to add">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-light" type="button" onclick="closeStockModal()">Cancel</button>
+            <button class="btn btn-primary" type="button" onclick="saveAddedStock()">Add Stock</button>
+        </div>
+    </div>
+</div>
+
+<div id="toastWrap" class="toast-wrap"></div>
+
+@section Scripts {
+    <script>
+        function showToast(message, type = 'success') {
+            const wrap = document.getElementById('toastWrap');
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.textContent = message;
+            wrap.appendChild(el);
+            setTimeout(() => {
+                el.remove();
+            }, 2800);
+        }
+
+        function openItemModal() {
+            document.getElementById('itemModal').classList.add('active');
+            document.getElementById('itemName').focus();
+        }
+
+        function closeItemModal() {
+            document.getElementById('itemModal').classList.remove('active');
+        }
+
+        let selectedStockItemId = 0;
+        function openStockModal(itemId, itemName) {
+            selectedStockItemId = itemId;
+            document.getElementById('stockItemName').value = itemName;
+            document.getElementById('addStockQty').value = '';
+            document.getElementById('stockModal').classList.add('active');
+            document.getElementById('addStockQty').focus();
+        }
+
+        function closeStockModal() {
+            document.getElementById('stockModal').classList.remove('active');
+            selectedStockItemId = 0;
+        }
+
+        async function saveAddedStock() {
+            const addQty = parseInt(document.getElementById('addStockQty').value || '0');
+            if (!selectedStockItemId || addQty <= 0) {
+                showToast('Please enter a valid stock quantity.', 'error');
+                return;
+            }
+
+            const res = await fetch('/Supplier/AddInventoryStock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    supplierItemId: selectedStockItemId,
+                    addQuantity: addQty
+                })
+            });
+            const json = await res.json();
+            if (!json.success) {
+                showToast(json.message || 'Failed to add stock', 'error');
+                return;
+            }
+
+            closeStockModal();
+            showToast('Stock added successfully.', 'success');
+            await loadInventory();
+        }
+
+        async function loadInventory() {
+            const res = await fetch('/Supplier/GetInventory');
+            const json = await res.json();
+            if (!json.success) return;
+            const tbody = document.getElementById('inventoryRows');
+            tbody.innerHTML = '';
+            document.getElementById('inventoryCount').textContent = json.items.length;
+            const lowStockItems = (json.items || []).filter(i => i.quantityAvailable > 0 && i.quantityAvailable <= 10);
+            const outStockItems = (json.items || []).filter(i => i.quantityAvailable <= 0 || i.status === 'OutOfStock');
+
+            const lowAlert = document.getElementById('lowStockAlert');
+            const outAlert = document.getElementById('outStockAlert');
+            if (lowStockItems.length) {
+                lowAlert.style.display = '';
+                lowAlert.textContent = `Low stock warning: ${lowStockItems.length} item(s) are at or below 10 units.`;
+            } else {
+                lowAlert.style.display = 'none';
+            }
+
+            if (outStockItems.length) {
+                outAlert.style.display = '';
+                outAlert.textContent = `Out of stock alert: ${outStockItems.length} item(s) need replenishment.`;
+            } else {
+                outAlert.style.display = 'none';
+            }
+
+            if (!json.items.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-row">No inventory items yet. Add your first item above.</td></tr>';
+                return;
+            }
+
+            json.items.forEach(item => {
+                let statusClass = 'status-available';
+                if (item.quantityAvailable <= 0 || item.status === 'OutOfStock') statusClass = 'status-out';
+                else if (item.quantityAvailable <= 10) statusClass = 'status-low';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.itemName}</td>
+                        <td>${item.category || ''}</td>
+                        <td>${item.quantityAvailable}</td>
+                        <td><span class="status-pill ${statusClass}">${item.status}</span></td>
+                        <td><button class="btn btn-light" type="button" onclick="openStockModal(${item.supplierItemId}, '${(item.itemName || '').replace(/'/g, "\\'")}')">Add Stock</button></td>
+                    </tr>`;
+            });
+        }
+
+        async function saveItem() {
+            const itemName = document.getElementById('itemName').value.trim();
+            const category = document.getElementById('itemCategory').value.trim();
+            const quantity = parseInt(document.getElementById('itemQuantity').value || '0');
+            if (!itemName) { showToast('Item name is required', 'error'); return; }
+
+            const res = await fetch('/Supplier/UpsertInventoryItem', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    itemName,
+                    category,
+                    quantityAvailable: quantity
+                })
+            });
+
+            const json = await res.json();
+            if (!json.success) { showToast(json.message || 'Save failed', 'error'); return; }
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemCategory').value = '';
+            document.getElementById('itemQuantity').value = '';
+            closeItemModal();
+            showToast('Inventory item saved', 'success');
+            await loadInventory();
+        }
+
+        async function loadProcurements() {
+            const res = await fetch('/Supplier/GetProcurementRequests');
+            const json = await res.json();
+            if (!json.success) return;
+            const tbody = document.getElementById('procurementRows');
+            tbody.innerHTML = '';
+            const requests = json.requests || [];
+
+            const pending = requests.filter(r => r.status === 'Submitted').length;
+            const approved = requests.filter(r => r.status === 'SupplierApproved').length;
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('approvedCount').textContent = approved;
+
+            if (!requests.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-row">No procurement requests yet.</td></tr>';
+                return;
+            }
+
+            requests.forEach(req => {
+                const canRespond = req.status === 'Submitted';
+                const deadline = req.supplierResponseDeadline ? new Date(req.supplierResponseDeadline).toLocaleDateString() : '';
+                const rejectReason = req.rejectionReason ? `<div style="font-size:12px;color:#dc2626;">Reason: ${req.rejectionReason}</div>` : '';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>PROC-${String(req.procurementId).padStart(3, '0')}</td>
+                        <td>${req.itemName || ''}</td>
+                        <td>${req.quantity || 0}</td>
+                        <td>
+                            <span class="status-pill status-${(req.status || '').toLowerCase()}">${req.status || ''}</span>
+                            ${rejectReason}
+                        </td>
+                        <td>${deadline}</td>
+                        <td>
+                            ${canRespond ? `
+                            <div class="response-grid">
+                                <input type="date" class="form-input" id="ship-${req.procurementId}">
+                                <button class="btn btn-success" type="button" onclick="respondApprove(${req.procurementId})">Approve</button>
+                                <input class="form-input" id="reason-${req.procurementId}" placeholder="Reject reason (required)">
+                                <button class="btn btn-danger" type="button" onclick="respondReject(${req.procurementId})">Reject</button>
+                            </div>` : `<span style="color:#6b7280;">No action</span>`}
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        async function respondApprove(procurementId) {
+            const shipDate = document.getElementById(`ship-${procurementId}`).value;
+            if (!shipDate) { showToast('Ship date is required', 'error'); return; }
+            const res = await fetch('/Supplier/RespondToProcurement', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    procurementId,
+                    approve: true,
+                    supplierCommitShipDate: shipDate
+                })
+            });
+            const json = await res.json();
+            if (!json.success) { showToast(json.message || 'Failed', 'error'); return; }
+            showToast('Request approved', 'success');
+            await loadProcurements();
+        }
+
+        async function respondReject(procurementId) {
+            const reason = document.getElementById(`reason-${procurementId}`).value.trim();
+            if (!reason) { showToast('Reject reason is required', 'error'); return; }
+            const res = await fetch('/Supplier/RespondToProcurement', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    procurementId,
+                    approve: false,
+                    rejectionReason: reason
+                })
+            });
+            const json = await res.json();
+            if (!json.success) { showToast(json.message || 'Failed', 'error'); return; }
+            showToast('Request rejected', 'success');
+            await loadProcurements();
+        }
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            await loadInventory();
+            await loadProcurements();
+
+            document.getElementById('itemModal').addEventListener('click', function (e) {
+                if (e.target === this) closeItemModal();
+            });
+            document.getElementById('stockModal').addEventListener('click', function (e) {
+                if (e.target === this) closeStockModal();
+            });
+        });
+    </script>
+}

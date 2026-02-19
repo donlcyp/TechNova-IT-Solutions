@@ -17,7 +17,7 @@ namespace TechNova_IT_Solutions.Pages.Account
         public async Task<IActionResult> OnGet()
         {
             // Log the logout action
-            var userIdString = HttpContext.Session.GetString("UserId");
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
             if (!string.IsNullOrEmpty(userIdString) && int.TryParse(userIdString, out int userId))
             {
                 var auditLog = new AuditLog
@@ -39,3 +39,6 @@ namespace TechNova_IT_Solutions.Pages.Account
         }
     }
 }
+
+
+

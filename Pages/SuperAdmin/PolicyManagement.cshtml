@@ -1,0 +1,55 @@
+@page
+@model TechNova_IT_Solutions.Pages.SuperAdmin.PolicyManagementModel
+@{
+    ViewData["Title"] = "Policy Management";
+}
+
+@section Styles {
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; }
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        .content-wrapper { padding: 24px; max-width: 1280px; margin: 0 auto; }
+        .table-container { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 760px; }
+        th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+        th { font-size: 12px; color: #6b7280; text-transform: uppercase; background: #f9fafb; }
+        .btn { border: 1px solid #1e40af; background: #fff; color: #1e40af; border-radius: 8px; padding: 8px 10px; text-decoration: none; font-size: 13px; font-weight: 600; }
+        .btn:hover { background: #eff6ff; }
+        .actions { margin-bottom: 14px; display: flex; gap: 10px; }
+        @@media (max-width: 991px) { .main-content { margin-left: 0; } }
+    </style>
+}
+
+@await Html.PartialAsync("_SuperAdminSidebar", "SystemSettingsPolicies")
+
+<div class="main-content">
+    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Policy Management", Description: "Super Admin-owned policy listing and controls"))
+    <div class="content-wrapper">
+        <div class="actions">
+            <a class="btn" href="/SuperAdmin/SystemSettingsPolicies">Back to Settings & Policies</a>
+        </div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Policy Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Date Uploaded</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Policies)
+                    {
+                        <tr>
+                            <td>@p.PolicyTitle</td>
+                            <td>@p.Category</td>
+                            <td>@(p.IsArchived ? "Archived" : "Active")</td>
+                            <td>@(p.DateUploaded?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

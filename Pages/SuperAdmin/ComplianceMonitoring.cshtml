@@ -1,0 +1,38 @@
+@page
+@model TechNova_IT_Solutions.Pages.SuperAdmin.ComplianceMonitoringModel
+@{
+    ViewData["Title"] = "Compliance Monitoring";
+}
+
+@section Styles {
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; }
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        .content-wrapper { padding: 24px; max-width: 1200px; margin: 0 auto; }
+        .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+        .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; }
+        .value { font-size: 30px; font-weight: 700; color: #0f172a; }
+        .label { font-size: 13px; color: #6b7280; }
+        .action { margin-top: 14px; }
+        .btn { border: 1px solid #1e40af; background: #fff; color: #1e40af; border-radius: 8px; padding: 9px 12px; text-decoration: none; font-size: 13px; font-weight: 600; }
+        .btn:hover { background: #eff6ff; }
+        @@media (max-width: 991px) { .main-content { margin-left: 0; } }
+    </style>
+}
+
+@await Html.PartialAsync("_SuperAdminSidebar", "SystemSettingsPolicies")
+
+<div class="main-content">
+    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Compliance Monitoring", Description: "Super Admin-owned compliance overview"))
+    <div class="content-wrapper">
+        <div class="cards">
+            <div class="card"><div class="value">@Model.TotalAssignments</div><div class="label">Total Policy Assignments</div></div>
+            <div class="card"><div class="value">@Model.CompliantEmployees</div><div class="label">Compliant Employees</div></div>
+            <div class="card"><div class="value">@Model.NonCompliantEmployees</div><div class="label">Not Compliant Employees</div></div>
+            <div class="card"><div class="value">@Model.CompliantSuppliers</div><div class="label">Compliant Suppliers</div></div>
+        </div>
+        <div class="action">
+            <a class="btn" href="/SuperAdmin/SystemSettingsPolicies">Back to System Settings & Policies</a>
+        </div>
+    </div>
+</div>

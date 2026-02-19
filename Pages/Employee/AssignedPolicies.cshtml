@@ -505,7 +505,8 @@
                 flex-direction: column;
             }
 
-            .modal-footer button {
+            .modal-footer button,
+            .modal-footer a {
                 width: 100%;
             }
         }
@@ -653,6 +654,10 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <a class="btn btn-secondary" id="openFileBtn" target="_blank" style="display: none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    Open Attached File
+                </a>
                 <button class="btn btn-secondary" onclick="closeModal()">Close</button>
                 <button class="btn btn-primary" id="acknowledgeBtn" style="display: none;" onclick="acknowledgePolicy()" disabled>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -664,6 +669,7 @@
 
     <script>
         let currentPolicyId = null;
+        let currentPolicyFileUrl = null;
 
         const searchInput = document.getElementById('searchInput');
         const statusFilter = document.getElementById('statusFilter');
@@ -694,7 +700,9 @@
 
         function viewPolicy(policyName, status, policyId, filePath, description) {
             currentPolicyId = policyId;
+            currentPolicyFileUrl = null;
             document.getElementById('modalPolicyName').textContent = policyName;
+            const openFileBtn = document.getElementById('openFileBtn');
 
             let contentHtml = '';
 
@@ -708,6 +716,7 @@
             // Show file viewer if file is attached
             if (filePath && filePath.trim() !== '') {
                 const fileUrl = '/Admin/DownloadPolicyFile?policyId=' + policyId;
+                currentPolicyFileUrl = fileUrl;
                 const ext = filePath.split('.').pop().toLowerCase();
 
                 contentHtml += `<h3 style="margin-top:20px;">Attached Document</h3>`;
@@ -749,6 +758,14 @@
 
             document.getElementById('policyContent').innerHTML = contentHtml;
 
+            if (currentPolicyFileUrl) {
+                openFileBtn.href = currentPolicyFileUrl;
+                openFileBtn.style.display = 'inline-flex';
+            } else {
+                openFileBtn.removeAttribute('href');
+                openFileBtn.style.display = 'none';
+            }
+
             const form = document.getElementById('acknowledgmentForm');
             const btn = document.getElementById('acknowledgeBtn');
             const checkbox = document.getElementById('acknowledgeCheckbox');
@@ -783,17 +800,17 @@
                 body: JSON.stringify({ policyId: currentPolicyId })
             })
             .then(res => res.json())
-            .then(result => {
+            .then(async result => {
                 if (result.success) {
                     closeModal();
                     location.reload();
                 } else {
-                    alert(result.message || 'Failed to acknowledge policy');
+                    await window.showAppMessage(result.message || 'Failed to acknowledge policy', 'Error');
                     closeModal();
                 }
             })
-            .catch(() => {
-                alert('Error acknowledging policy');
+            .catch(async () => {
+                await window.showAppMessage('Error acknowledging policy', 'Error');
                 closeModal();
             });
         }

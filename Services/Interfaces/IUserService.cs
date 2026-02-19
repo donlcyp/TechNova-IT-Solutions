@@ -4,11 +4,30 @@ namespace TechNova_IT_Solutions.Services.Interfaces
     {
         Task<List<UserData>> GetAllUsersAsync();
         Task<UserData?> GetUserByIdAsync(int userId);
-        Task<bool> CreateUserAsync(UserData userData);
+        Task<UserCreationResult> CreateUserAsync(UserData userData);
         Task<bool> UpdateUserAsync(UserData userData);
         Task<bool> DeleteUserAsync(int userId);
         Task<bool> DeactivateUserAsync(int userId);
         Task<bool> ReactivateUserAsync(int userId);
+        Task<PasswordResetResult> ResetPasswordByRoleAsync(int userId);
+    }
+
+    public class UserCreationResult
+    {
+        public bool Success { get; set; }
+        public bool EmailAttempted { get; set; }
+        public bool EmailSent { get; set; }
+        public string? EmailError { get; set; }
+    }
+
+    public class PasswordResetResult
+    {
+        public bool Success { get; set; }
+        public string Password { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string ErrorMessage { get; set; } = string.Empty;
     }
 
     public class UserData

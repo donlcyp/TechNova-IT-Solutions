@@ -1,0 +1,180 @@
+@page
+@model TechNova_IT_Solutions.Pages.SuperAdmin.DetailedReportsModel
+@{
+    ViewData["Title"] = "Operational Drilldown Reports";
+}
+
+@section Styles {
+    <style>
+        .main-content { margin-left: 260px; min-height: 100vh; background: #f8fafc; }
+        .content-wrapper { padding: 24px; max-width: 1360px; margin: 0 auto; }
+        .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+        .panel-title { margin: 0 0 10px; color: #0f172a; font-size: 1rem; font-weight: 700; }
+        .meta { font-size: 0.9rem; color: #475569; }
+        .toolbar { display: grid; grid-template-columns: repeat(6, minmax(110px, 1fr)); gap: 10px; align-items: end; }
+        .toolbar label { display: block; font-size: 12px; color: #475569; margin-bottom: 4px; }
+        .toolbar select, .toolbar input { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 10px; }
+        .toolbar .actions { display: flex; gap: 8px; }
+        .btn { border: 1px solid #2563eb; background: #2563eb; color: #fff; border-radius: 8px; padding: 9px 12px; text-decoration: none; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .btn.secondary { background: #fff; color: #2563eb; border-color: #2563eb; }
+        .cards { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 10px; }
+        .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; }
+        .card .label { font-size: 12px; color: #64748b; }
+        .card .value { font-size: 1.35rem; font-weight: 700; color: #0f172a; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border-bottom: 1px solid #e2e8f0; padding: 10px 8px; text-align: left; font-size: 0.9rem; }
+        th { color: #475569; font-size: 0.75rem; text-transform: uppercase; }
+        .status { padding: 0; border-radius: 0; font-size: 0.9rem; font-weight: 600; background: transparent; }
+        .status.compliant { color: #166534; }
+        .status.pending { color: #92400e; }
+        .status.non-compliant { color: #991b1b; }
+        .pager { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+        .pager-links { display: flex; gap: 8px; }
+        @@media (max-width: 991px) {
+            .main-content { margin-left: 0; }
+            .toolbar { grid-template-columns: 1fr 1fr; }
+            .cards { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+}
+
+@await Html.PartialAsync("_SuperAdminSidebar", "AllReports")
+
+<div class="main-content">
+    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Operational Drilldown Reports", Description: "Investigative, record-level view for exceptions and audit tracing"))
+
+    <div class="content-wrapper">
+        <div class="panel">
+            <h3 class="panel-title">Drilldown Filters</h3>
+            <form method="get" class="toolbar">
+                <div>
+                    <label for="moduleType">Module</label>
+                    <select id="moduleType" name="moduleType">
+                        @if (Model.ModuleType == "all") { <option value="all" selected>All</option> } else { <option value="all">All</option> }
+                        @if (Model.ModuleType == "employee") { <option value="employee" selected>Employee</option> } else { <option value="employee">Employee</option> }
+                        @if (Model.ModuleType == "supplier") { <option value="supplier" selected>Supplier</option> } else { <option value="supplier">Supplier</option> }
+                    </select>
+                </div>
+                <div>
+                    <label for="status">Status</label>
+                    <select id="status" name="status">
+                        @if (Model.Status == "all") { <option value="all" selected>All</option> } else { <option value="all">All</option> }
+                        @if (Model.Status == "compliant") { <option value="compliant" selected>Compliant</option> } else { <option value="compliant">Compliant</option> }
+                        @if (Model.Status == "pending") { <option value="pending" selected>Pending</option> } else { <option value="pending">Pending</option> }
+                        @if (Model.Status == "non-compliant") { <option value="non-compliant" selected>Non-Compliant</option> } else { <option value="non-compliant">Non-Compliant</option> }
+                    </select>
+                </div>
+                <div>
+                    <label for="fromDate">From Date</label>
+                    <input id="fromDate" name="fromDate" type="date" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div>
+                    <label for="toDate">To Date</label>
+                    <input id="toDate" name="toDate" type="date" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div>
+                    <label for="pageSize">Page Size</label>
+                    <select id="pageSize" name="pageSize">
+                        @if (Model.PageSize == 10) { <option value="10" selected>10</option> } else { <option value="10">10</option> }
+                        @if (Model.PageSize == 25) { <option value="25" selected>25</option> } else { <option value="25">25</option> }
+                        @if (Model.PageSize == 50) { <option value="50" selected>50</option> } else { <option value="50">50</option> }
+                    </select>
+                </div>
+                <div class="actions">
+                    <input type="hidden" name="pageNumber" value="1" />
+                    <button type="submit" class="btn">Apply</button>
+                    <a class="btn secondary"
+                       asp-page-handler="ExportCsv"
+                       asp-route-moduleType="@Model.ModuleType"
+                       asp-route-status="@Model.Status"
+                       asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                       asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">
+                        Export CSV
+                    </a>
+                </div>
+            </form>
+            <div class="meta" style="margin-top:10px;">
+                Strategic summary remains in
+                <a href="/SuperAdmin/AllReports">System Oversight Reports</a>.
+                This page is record-level drilldown for investigation.
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3 class="panel-title">Filtered Summary</h3>
+            <div class="cards">
+                <div class="card"><div class="label">Total Records</div><div class="value">@Model.TotalRecords</div></div>
+                <div class="card"><div class="label">Compliant</div><div class="value">@Model.CompliantCount</div></div>
+                <div class="card"><div class="label">Pending</div><div class="value">@Model.PendingCount</div></div>
+                <div class="card"><div class="label">Non-Compliant</div><div class="value">@Model.NonCompliantCount</div></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3 class="panel-title">Record-Level Evidence</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Module</th>
+                        <th>Entity</th>
+                        <th>Policy</th>
+                        <th>Status</th>
+                        <th>Assigned Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="5">No records found for selected filters.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in Model.Rows)
+                        {
+                            var statusCss = row.Status.ToLowerInvariant();
+                            <tr>
+                                <td>@row.Module</td>
+                                <td>@row.EntityName</td>
+                                <td>@row.Policy</td>
+                                <td><span class="status @statusCss">@row.Status</span></td>
+                                <td>@row.AssignedDate?.ToString("MMM dd, yyyy")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+
+            <div class="pager">
+                <div class="meta">Page @Model.PageNumber of @Model.TotalPages</div>
+                <div class="pager-links">
+                    @if (Model.PageNumber > 1)
+                    {
+                        <a class="btn secondary"
+                           asp-route-moduleType="@Model.ModuleType"
+                           asp-route-status="@Model.Status"
+                           asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                           asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")"
+                           asp-route-pageSize="@Model.PageSize"
+                           asp-route-pageNumber="@(Model.PageNumber - 1)">
+                            Previous
+                        </a>
+                    }
+                    @if (Model.PageNumber < Model.TotalPages)
+                    {
+                        <a class="btn secondary"
+                           asp-route-moduleType="@Model.ModuleType"
+                           asp-route-status="@Model.Status"
+                           asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                           asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")"
+                           asp-route-pageSize="@Model.PageSize"
+                           asp-route-pageNumber="@(Model.PageNumber + 1)">
+                            Next
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -20,118 +20,17 @@
             min-height: 100vh;
         }
 
-        .sidebar {
-            width: 260px;
-            background: #ffffff;
-            border-right: 1px solid #e5e7eb;
-            position: fixed;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            z-index: 100;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            padding: 28px 20px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .logo-icon {
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-            width: 48px;
-            height: 48px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 24px;
-            color: white;
-        }
-
-        .logo-text {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1f2937;
-        }
-
-        .nav-menu {
-            padding: 20px 16px;
-            flex: 1;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            color: #6b7280;
-            text-decoration: none;
-            border-radius: 8px;
-            margin-bottom: 4px;
-            transition: all 0.2s;
-            font-size: 15px;
-            font-weight: 500;
-        }
-
-        .nav-item svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        .nav-item:hover {
-            background: #f3f4f6;
-            color: #1e40af;
-        }
-
-        .nav-item.active {
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-            color: white;
-        }
-
-        .user-profile {
-            padding: 20px;
-            border-top: 1px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 16px;
-            color: white;
-        }
-
-        .user-info h4 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1f2937;
-        }
-
-        .user-info p {
-            font-size: 12px;
-            color: #6b7280;
-        }
-
         .main-content {
             margin-left: 260px;
             flex: 1;
             overflow-y: auto;
         }
 
-
+        .content-wrapper {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
         .btn {
             padding: 10px 20px;
@@ -251,12 +150,13 @@
             background: #ffffff;
             border: 1px solid #e5e7eb;
             border-radius: 12px;
-            overflow: hidden;
+            overflow-x: auto;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 800px;
         }
 
         thead {
@@ -424,6 +324,106 @@
             font-size: 14px;
         }
 
+        .policy-steps {
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            color: #1e3a8a;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .policy-tools {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .policy-tools input {
+            flex: 1;
+            min-width: 220px;
+            padding: 12px 14px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        .policy-tools .btn-mini {
+            padding: 10px 14px;
+            border: 1px solid #94a3b8;
+            background: #f8fafc;
+            color: #1f2937;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .policy-tools .btn-mini:hover {
+            background: #e2e8f0;
+        }
+
+        .policy-selected-summary {
+            margin-bottom: 10px;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: #ffffff;
+            font-size: 15px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .policy-checklist {
+            max-height: 230px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f8fafc;
+            padding: 10px;
+        }
+
+        .policy-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 6px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+        }
+
+        .policy-option:hover {
+            background: #eff6ff;
+            border-color: #bfdbfe;
+        }
+
+        .policy-option input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            accent-color: #1e40af;
+            cursor: pointer;
+        }
+
+        .policy-option-label {
+            font-size: 16px;
+            color: #1f2937;
+            user-select: none;
+        }
+
+        .policy-help {
+            margin-top: 8px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
@@ -444,6 +444,10 @@
                 margin-left: 0;
             }
 
+            .content-wrapper {
+                padding: 20px;
+            }
+
             .summary-cards {
                 grid-template-columns: 1fr;
             }
@@ -451,9 +455,21 @@
             .filters-grid {
                 grid-template-columns: 1fr;
             }
+        }
 
-            .table-container {
-                overflow-x: auto;
+        @@media (max-width: 768px) {
+            th, td {
+                padding: 12px;
+            }
+
+            .actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .btn-action {
+                width: 100%;
+                text-align: center;
             }
         }
 
@@ -472,12 +488,72 @@
                 padding: 16px;
             }
 
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+
             .actions {
                 flex-direction: column;
             }
+
+            th, td {
+                padding: 10px;
+                font-size: 13px;
+            }
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 2000;
+        }
+
+        .toast {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            transform: translateX(120%);
+            transition: transform 0.3s ease-out;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success { border-left-color: #10b981; }
+        .toast.error { border-left-color: #ef4444; }
+
+        .toast-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+
+        .toast.success .toast-icon { color: #10b981; background: #d1fae5; }
+        .toast.error .toast-icon { color: #ef4444; background: #fee2e2; }
+
+        .toast-message {
+            font-size: 14px;
+            color: #1f2937;
+            font-weight: 500;
         }
     </style>
 }
+
+<div id="toastContainer" class="toast-container"></div>
 
 @await Html.PartialAsync("_AdminSidebar", "SupplierManagement")
 
@@ -589,6 +665,7 @@
             </div>
             <div class="modal-body">
                 <form id="supplierForm">
+                    <input type="hidden" id="supplierId" />
                     <div class="form-group">
                         <label for="supplierName">Supplier Name *</label>
                         <input type="text" id="supplierName" required />
@@ -606,6 +683,10 @@
                     <div class="form-group">
                         <label for="email">Email *</label>
                         <input type="email" id="email" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password <small class="text-muted">(Leave blank to keep current)</small></label>
+                        <input type="password" id="password" />
                     </div>
                     <div class="form-group">
                         <label for="contactNumber">Contact Number *</label>
@@ -631,6 +712,22 @@
         </div>
     </div>
 
+    <!-- View Supplier Modal -->
+    <div id="viewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Supplier Details</h3>
+                <button class="close-modal" onclick="closeModal('viewModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="viewModalContent">
+                <!-- Content will be populated by JS -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('viewModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Assign Policy Modal -->
     <div id="policyModal" class="modal">
         <div class="modal-content">
@@ -641,14 +738,26 @@
             <div class="modal-body">
                 <form id="policyForm">
                     <div class="form-group">
-                        <label for="policySelect">Active Policies *</label>
-                        <select id="policySelect" required>
-                            <option value="">Select Policy</option>
+                        <label>Active Policies *</label>
+                        <div class="policy-steps">
+                            1) Search policy name if needed. 2) Click policies to check them. 3) Click Save.
+                        </div>
+                        <div class="policy-tools">
+                            <input type="text" id="policySearchInput" placeholder="Type to search policy..." aria-label="Search policies" />
+                            <button type="button" class="btn-mini" onclick="selectAllPolicies()">Select All Visible</button>
+                            <button type="button" class="btn-mini" onclick="clearPolicySelection()">Clear All</button>
+                        </div>
+                        <div id="policySelectedCount" class="policy-selected-summary">Selected: 0 policies</div>
+                        <div id="policyChecklist" class="policy-checklist">
                             @foreach (var policy in Model.ActivePolicies)
                             {
-                                <option value="@policy.PolicyId">@policy.Title</option>
+                                <label class="policy-option" data-policy-title="@policy.Title.ToLower()">
+                                    <input type="checkbox" class="policy-checkbox" value="@policy.PolicyId" />
+                                    <span class="policy-option-label">@policy.Title</span>
+                                </label>
                             }
-                        </select>
+                        </div>
+                        <div class="policy-help">Tip: just click policies to mark them. No keyboard shortcut needed.</div>
                     </div>
                     <div class="form-group">
                         <label for="assignedDate">Assigned Date *</label>
@@ -665,9 +774,46 @@
 
 @section Scripts {
     <script>
+        // --- Toast Notifications ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let iconSvg = '';
+            if (type === 'success') {
+                iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            } else {
+                iconSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+            }
+
+            toast.innerHTML = `
+                <div class="toast-icon">${iconSvg}</div>
+                <div class="toast-message">${message}</div>
+            `;
+
+            container.appendChild(toast);
+
+            // Trigger animation
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        // --- Modal & Form Logic ---
+
         function openAddModal() {
             document.getElementById('modalTitle').textContent = 'Add Supplier';
             document.getElementById('supplierForm').reset();
+            document.getElementById('supplierId').value = ''; // Clear ID for new supplier
             document.getElementById('supplierModal').classList.add('active');
         }
 
@@ -676,23 +822,70 @@
         }
 
         function viewSupplier(id) {
-            alert('Viewing supplier: ' + id);
+            // Extract numeric ID
+            const supplierId = parseInt(id.toString().replace('SUP-', '')) || parseInt(id);
+            
+            fetch(`/Admin/GetSupplier?supplierId=${supplierId}`)
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        const s = result.supplier;
+                        const content = `
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div><strong>Name:</strong></div><div>${s.supplierName}</div>
+                                <div><strong>Contact:</strong></div><div>${s.contactPersonFirstName} ${s.contactPersonLastName}</div>
+                                <div><strong>Email:</strong></div><div>${s.email}</div>
+                                <div><strong>Phone:</strong></div><div>${s.contactPersonNumber}</div>
+                                <div><strong>Address:</strong></div><div>${s.address}</div>
+                                <div><strong>Status:</strong></div><div><span class="status-badge ${s.status === 'Active' ? 'status-active' : 'status-inactive'}">${s.status}</span></div>
+                            </div>
+                        `;
+                        document.getElementById('viewModalContent').innerHTML = content;
+                        document.getElementById('viewModal').classList.add('active');
+                    } else {
+                        showToast(result.message || 'Failed to fetch details', 'error');
+                    }
+                })
+                .catch(() => showToast('Error fetching details', 'error'));
         }
 
         function editSupplier(id) {
-            document.getElementById('modalTitle').textContent = 'Edit Supplier';
-            document.getElementById('supplierModal').classList.add('active');
-            alert('Editing supplier: ' + id);
+            const supplierId = parseInt(id.toString().replace('SUP-', '')) || parseInt(id);
+
+            fetch(`/Admin/GetSupplier?supplierId=${supplierId}`)
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        const s = result.supplier;
+                        document.getElementById('modalTitle').textContent = 'Edit Supplier';
+                        document.getElementById('supplierId').value = s.supplierId;
+                        document.getElementById('supplierName').value = s.supplierName;
+                        document.getElementById('contactFirstName').value = s.contactPersonFirstName;
+                        document.getElementById('contactLastName').value = s.contactPersonLastName;
+                        document.getElementById('email').value = s.email;
+                        document.getElementById('contactNumber').value = s.contactPersonNumber;
+                        document.getElementById('address').value = s.address;
+                        document.getElementById('status').value = s.status;
+                        document.getElementById('password').value = ''; // Don't show password
+                        
+                        document.getElementById('supplierModal').classList.add('active');
+                    } else {
+                        showToast(result.message || 'Failed to fetch details', 'error');
+                    }
+                })
+                .catch(() => showToast('Error fetching details', 'error'));
         }
 
         let currentSupplierId = null;
 
         function assignPolicy(id) {
-            // Extract numeric DB ID from the supplier ID (e.g., "SUP-001" -> 1)
             currentSupplierId = parseInt(id.toString().replace('SUP-', '')) || parseInt(id);
             document.getElementById('policyModal').classList.add('active');
-            // Set today's date as default
             document.getElementById('assignedDate').valueAsDate = new Date();
+            clearPolicySelection();
+            document.getElementById('policySearchInput').value = '';
+            filterPolicyChecklist();
+            updatePolicySelectedCount();
         }
 
         function saveSupplier() {
@@ -702,6 +895,9 @@
                 return;
             }
 
+            const id = document.getElementById('supplierId').value;
+            const isUpdate = id ? true : false;
+            
             const data = {
                 supplierName: document.getElementById('supplierName').value,
                 contactPersonFirstName: document.getElementById('contactFirstName').value,
@@ -709,10 +905,17 @@
                 email: document.getElementById('email').value,
                 contactPersonNumber: document.getElementById('contactNumber').value,
                 address: document.getElementById('address').value,
-                status: document.getElementById('status').value
+                status: document.getElementById('status').value,
+                password: document.getElementById('password').value || null // Send null if empty
             };
 
-            fetch('/Admin/CreateSupplier', {
+            if (isUpdate) {
+                data.supplierId = parseInt(id);
+            }
+
+            const url = isUpdate ? '/Admin/UpdateSupplier' : '/Admin/CreateSupplier';
+
+            fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -721,12 +924,13 @@
             .then(result => {
                 if (result.success) {
                     closeModal('supplierModal');
-                    location.reload();
+                    showToast(result.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
                 } else {
-                    alert(result.message || 'Failed to save supplier');
+                    showToast(result.message || 'Failed to save supplier', 'error');
                 }
             })
-            .catch(() => alert('Error saving supplier'));
+            .catch(() => showToast('Error saving supplier', 'error'));
         }
 
         function savePolicy() {
@@ -736,14 +940,17 @@
                 return;
             }
 
-            const policyId = parseInt(document.getElementById('policySelect').value);
-            if (!policyId || !currentSupplierId) {
-                alert('Please select a policy');
+            const selectedPolicyIds = Array.from(document.querySelectorAll('.policy-checkbox:checked'))
+                .map(opt => parseInt(opt.value))
+                .filter(id => !isNaN(id) && id > 0);
+
+            if (!selectedPolicyIds.length || !currentSupplierId) {
+                showToast('Please select at least one policy', 'error');
                 return;
             }
 
             const data = {
-                policyId: policyId,
+                policyIds: selectedPolicyIds,
                 employeeIds: [],
                 supplierIds: [currentSupplierId]
             };
@@ -757,12 +964,51 @@
             .then(result => {
                 if (result.success) {
                     closeModal('policyModal');
-                    location.reload();
+                    showToast(result.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
                 } else {
-                    alert(result.message || 'Failed to assign policy');
+                    showToast(result.message || 'Failed to assign policy', 'error');
                 }
             })
-            .catch(() => alert('Error assigning policy'));
+            .catch(() => showToast('Error assigning policy', 'error'));
+        }
+
+        function selectAllPolicies() {
+            document.querySelectorAll('.policy-option').forEach(option => {
+                if (option.style.display !== 'none') {
+                    const checkbox = option.querySelector('.policy-checkbox');
+                    if (checkbox) checkbox.checked = true;
+                }
+            });
+            updatePolicySelectedCount();
+        }
+
+        function clearPolicySelection() {
+            document.querySelectorAll('.policy-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updatePolicySelectedCount();
+        }
+
+        function filterPolicyChecklist() {
+            const keyword = (document.getElementById('policySearchInput').value || '').toLowerCase().trim();
+            document.querySelectorAll('.policy-option').forEach(option => {
+                const title = option.getAttribute('data-policy-title') || '';
+                option.style.display = title.includes(keyword) ? '' : 'none';
+            });
+        }
+
+        document.getElementById('policySearchInput').addEventListener('input', filterPolicyChecklist);
+        document.getElementById('policyChecklist').addEventListener('change', function (event) {
+            if (event.target.classList.contains('policy-checkbox')) {
+                updatePolicySelectedCount();
+            }
+        });
+
+        function updatePolicySelectedCount() {
+            const selectedCount = document.querySelectorAll('.policy-checkbox:checked').length;
+            const label = selectedCount === 1 ? 'policy' : 'policies';
+            document.getElementById('policySelectedCount').textContent = `Selected: ${selectedCount} ${label}`;
         }
 
         function filterTable() {
@@ -792,12 +1038,11 @@
         window.onclick = function(event) {
             const supplierModal = document.getElementById('supplierModal');
             const policyModal = document.getElementById('policyModal');
-            if (event.target === supplierModal) {
-                closeModal('supplierModal');
-            }
-            if (event.target === policyModal) {
-                closeModal('policyModal');
-            }
+            const viewModal = document.getElementById('viewModal');
+            
+            if (event.target === supplierModal) closeModal('supplierModal');
+            if (event.target === policyModal) closeModal('policyModal');
+            if (event.target === viewModal) closeModal('viewModal');
         }
     </script>
 }

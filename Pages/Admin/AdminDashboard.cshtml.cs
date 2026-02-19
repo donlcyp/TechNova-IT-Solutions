@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using TechNova_IT_Solutions.Services.Interfaces;
 
 namespace TechNova_IT_Solutions.Pages
 {
@@ -37,23 +34,23 @@ namespace TechNova_IT_Solutions.Pages
         public async Task<IActionResult> OnGet()
         {
             // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
             if (string.IsNullOrEmpty(userIdString))
             {
                 return RedirectToPage("/Account/Login");
             }
 
             // Check user role - only Admin can access
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Admin")
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
-                if (userRole == "Employee") return RedirectToPage("/Employee/Dashboard");
-                if (userRole == "ComplianceManager") return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
+                if (userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 return RedirectToPage("/Account/Login");
             }
 
-            UserEmail = HttpContext.Session.GetString("UserEmail") ?? "admin@technova.com";
-            UserName = HttpContext.Session.GetString("UserName") ?? "Administrator";
+            UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? "admin@technova.com";
+            UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
 
             // Get dashboard data from service
             var dashboardData = await _adminService.GetDashboardDataAsync();
@@ -74,3 +71,8 @@ namespace TechNova_IT_Solutions.Pages
         }
     }
 }
+
+
+
+
+

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TechNova_IT_Solutions.Constants;
 using TechNova_IT_Solutions.Services.Interfaces;
 
 namespace TechNova_IT_Solutions.Controllers
@@ -16,7 +17,7 @@ namespace TechNova_IT_Solutions.Controllers
         public IActionResult Login()
         {
             // If already logged in, redirect to appropriate dashboard
-            var userRole = HttpContext.Session.GetString("UserRole");
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
             if (!string.IsNullOrEmpty(userRole))
             {
                 return RedirectToDashboard(userRole);
@@ -45,13 +46,13 @@ namespace TechNova_IT_Solutions.Controllers
             var user = result.User;
 
             // Store user information in session
-            HttpContext.Session.SetString("UserId", user.UserId.ToString());
-            HttpContext.Session.SetString("UserRole", user.Role ?? "Employee");
-            HttpContext.Session.SetString("UserEmail", user.Email);
-            HttpContext.Session.SetString("UserName", $"{user.FirstName} {user.LastName}");
+            HttpContext.Session.SetString(SessionKeys.UserId, user.UserId.ToString());
+            HttpContext.Session.SetString(SessionKeys.UserRole, user.Role ?? RoleNames.Employee);
+            HttpContext.Session.SetString(SessionKeys.UserEmail, user.Email);
+            HttpContext.Session.SetString(SessionKeys.UserName, $"{user.FirstName} {user.LastName}");
 
             // Redirect based on role
-            return RedirectToDashboard(user.Role ?? "Employee");
+            return RedirectToDashboard(user.Role ?? RoleNames.Employee);
         }
 
         public IActionResult Logout()
@@ -68,13 +69,24 @@ namespace TechNova_IT_Solutions.Controllers
 
         private IActionResult RedirectToDashboard(string role)
         {
-            return role switch
-            {
-                "Admin" => RedirectToAction("Dashboard", "Admin"),
-                "ComplianceManager" => RedirectToAction("Dashboard", "ComplianceManager"),
-                "Employee" => RedirectToAction("Dashboard", "Employee"),
-                _ => RedirectToAction("Dashboard", "Employee")
-            };
+            role = role?.Trim() ?? string.Empty;
+
+            if (role.Equals(RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
+                return RedirectToPage("/SuperAdmin/Dashboard");
+
+            if (role.Equals(RoleNames.Admin, StringComparison.OrdinalIgnoreCase))
+                return RedirectToAction("Dashboard", "Admin");
+
+            if (role.Equals(RoleNames.ComplianceManager, StringComparison.OrdinalIgnoreCase))
+                return RedirectToAction("Dashboard", "ComplianceManager");
+
+            if (role.Equals(RoleNames.Supplier, StringComparison.OrdinalIgnoreCase))
+                return RedirectToPage("/Supplier/Dashboard");
+
+            if (role.Equals(RoleNames.Employee, StringComparison.OrdinalIgnoreCase))
+                return RedirectToAction("Dashboard", "Employee");
+
+            return RedirectToAction("Dashboard", "Employee");
         }
     }
 }

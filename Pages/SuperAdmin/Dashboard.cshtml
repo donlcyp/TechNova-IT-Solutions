@@ -1,0 +1,174 @@
+@page
+@model TechNova_IT_Solutions.Pages.SuperAdmin.DashboardModel
+@{
+    ViewData["Title"] = "Super Admin Dashboard";
+}
+
+@section Styles {
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+
+        .content-wrapper {
+            padding: 24px;
+        }
+
+        .hero {
+            background: #1e40af;
+            color: #fff;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 22px;
+        }
+
+        .hero h2 {
+            margin: 0 0 8px;
+            font-size: 30px;
+            font-weight: 700;
+        }
+
+        .hero p {
+            margin: 0;
+            opacity: 0.95;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+        }
+
+        .reset-content {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 14px;
+        }
+
+        .reset-content h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: #0f172a;
+        }
+
+        .reset-content ul {
+            margin: 0;
+            padding-left: 18px;
+            color: #475569;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .reset-content li {
+            margin-bottom: 6px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .card h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #0f172a;
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 14px;
+            color: #475569;
+            min-height: 42px;
+        }
+
+        .card a {
+            align-self: flex-start;
+            text-decoration: none;
+            background: #1d4ed8;
+            color: #fff;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .card a:hover {
+            background: #1e40af;
+        }
+
+        @@media (max-width: 991px) {
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+}
+
+@await Html.PartialAsync("_SuperAdminSidebar", "Dashboard")
+
+<div class="main-content">
+    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Super Admin Dashboard", Description: "Global account control and compliance oversight"))
+
+    <div class="content-wrapper">
+        <div class="hero">
+            <h2>Global Control Panel</h2>
+            <p>Manage system administrators, reset or lock accounts, enforce settings, and review platform-wide reports.</p>
+        </div>
+
+        <div class="reset-content">
+            <h3>Reset / Deactivate Account Contents</h3>
+            <ul>
+                <li>Deactivate account: immediately blocks user login while preserving audit and assignment history.</li>
+                <li>Reactivate account: restores access with the same role and profile details.</li>
+                <li>Password reset flow: edit user record and set a new secure password for account recovery.</li>
+                <li>Scope: applies to Admin, SuperAdmin, Employee, ComplianceManager, and Supplier accounts.</li>
+                <li>Access path: use <strong>Manage Admin Accounts</strong> for admin roles and <strong>User Management</strong> for all roles.</li>
+            </ul>
+        </div>
+
+        <div class="cards">
+            <div class="card">
+                <h3>Manage System Admin Accounts</h3>
+                <p>Create, update, deactivate, and reactivate Admin and Super Admin users.</p>
+                <a href="/SuperAdmin/ManageAdminAccounts">Open Manage Admin Accounts</a>
+            </div>
+
+            <div class="card">
+                <h3>Reset / Lock Any Accounts</h3>
+                <p>Use account status controls in User Management to lock, disable, or restore user access.</p>
+                <a href="/SuperAdmin/ResetDeactivateAccounts">Open Account Controls</a>
+            </div>
+
+            <div class="card">
+                <h3>Change System Settings</h3>
+                <p>Manage policy definitions and assignment flows across employees and suppliers.</p>
+                <a href="/SuperAdmin/SystemSettingsPolicies">Open System Settings</a>
+            </div>
+
+            <div class="card">
+                <h3>View All Reports</h3>
+                <p>Open cross-functional compliance, procurement, and supplier reporting.</p>
+                <a href="/SuperAdmin/AllReports">Open Reports</a>
+            </div>
+
+            <div class="card">
+                <h3>Override Permissions</h3>
+                <p>Super Admin access is enabled across Admin, Compliance Manager, and Employee modules.</p>
+                <a href="/SuperAdmin/AdminDashboard">Open Admin Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>

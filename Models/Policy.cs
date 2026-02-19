@@ -33,6 +33,12 @@ namespace TechNova_IT_Solutions.Models
         [Column("date_uploaded")]
         public DateTime? DateUploaded { get; set; }
 
+        [Column("is_archived")]
+        public bool IsArchived { get; set; } = false;
+
+        [Column("archived_date")]
+        public DateTime? ArchivedDate { get; set; }
+
         // Navigation properties
         public virtual User? UploadedByUser { get; set; }
         public virtual ICollection<PolicyAssignment> PolicyAssignments { get; set; } = new List<PolicyAssignment>();

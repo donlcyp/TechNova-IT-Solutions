@@ -8,10 +8,12 @@ namespace TechNova_IT_Solutions.Services
     public class UserService : IUserService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public UserService(ApplicationDbContext context)
+        public UserService(ApplicationDbContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         public async Task<List<UserData>> GetAllUsersAsync()
@@ -47,7 +49,7 @@ namespace TechNova_IT_Solutions.Services
             };
         }
 
-        public async Task<bool> CreateUserAsync(UserData userData)
+        public async Task<UserCreationResult> CreateUserAsync(UserData userData)
         {
             try
             {
@@ -69,11 +71,32 @@ namespace TechNova_IT_Solutions.Services
 
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
-                return true;
+
+                var result = new UserCreationResult { Success = true };
+
+                if (!string.IsNullOrWhiteSpace(user.Email))
+                {
+                    var roleLabel = string.IsNullOrWhiteSpace(user.Role) ? "User" : user.Role;
+                    var subject = $"Your TechNova {roleLabel} Account Has Been Created";
+                    var body = $@"
+                        <h2>Welcome to TechNova</h2>
+                        <p>Your account has been created.</p>
+                        <p><strong>Role:</strong> {roleLabel}</p>
+                        <p><strong>Email:</strong> {user.Email}</p>
+                        <p><strong>Temporary Password:</strong> {passwordToHash}</p>
+                        <p>Please log in and change your password immediately.</p>";
+
+                    result.EmailAttempted = true;
+                    var emailResult = await _emailService.SendEmailAsync(user.Email, subject, body);
+                    result.EmailSent = emailResult.Success;
+                    result.EmailError = emailResult.ErrorMessage;
+                }
+
+                return result;
             }
             catch
             {
-                return false;
+                return new UserCreationResult { Success = false };
             }
         }
 
@@ -150,6 +173,58 @@ namespace TechNova_IT_Solutions.Services
             catch
             {
                 return false;
+            }
+        }
+
+        public async Task<PasswordResetResult> ResetPasswordByRoleAsync(int userId)
+        {
+            try
+            {
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null)
+                {
+                    return new PasswordResetResult
+                    {
+                        Success = false,
+                        ErrorMessage = "User not found."
+                    };
+                }
+
+                var role = user.Role ?? string.Empty;
+                string resetPassword;
+
+                if (role.Contains("Compliance", StringComparison.OrdinalIgnoreCase))
+                {
+                    resetPassword = "compliance123";
+                }
+                else if (role.Contains("Employee", StringComparison.OrdinalIgnoreCase))
+                {
+                    resetPassword = "employee123";
+                }
+                else
+                {
+                    resetPassword = "TempPassword123!";
+                }
+
+                user.Password = PasswordHasher.HashPassword(resetPassword);
+                await _context.SaveChangesAsync();
+
+                return new PasswordResetResult
+                {
+                    Success = true,
+                    Password = resetPassword,
+                    Role = role,
+                    Email = user.Email ?? string.Empty,
+                    FirstName = user.FirstName ?? "User"
+                };
+            }
+            catch
+            {
+                return new PasswordResetResult
+                {
+                    Success = false,
+                    ErrorMessage = "Failed to reset password."
+                };
             }
         }
     }

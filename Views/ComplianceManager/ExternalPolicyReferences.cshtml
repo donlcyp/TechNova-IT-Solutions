@@ -257,9 +257,94 @@
         .empty-state svg { width: 64px; height: 64px; color: #d1d5db; margin-bottom: 16px; }
         .empty-state h3 { font-size: 18px; color: #374151; margin-bottom: 8px; }
         .empty-state p { font-size: 14px; color: #9ca3af; }
+
+        /* ==================== MOBILE MENU BUTTON ==================== */
+        .mobile-menu-btn {
+            display: none;
+            background: #f3f4f6;
+            border: none;
+            color: #6b7280;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .mobile-menu-btn svg { width: 24px; height: 24px; }
+        .mobile-menu-btn:hover { background: #e5e7eb; color: #1e40af; }
+
+        /* ==================== MOBILE OVERLAY ==================== */
+        .mobile-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+        }
+        .mobile-overlay.active { display: block; }
+
+        /* ==================== RESPONSIVE ==================== */
+        @@media (max-width: 991px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: none;
+            }
+            .sidebar.mobile-active {
+                transform: translateX(0);
+                box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+            }
+            .sidebar.collapsed { width: 260px; }
+            .sidebar.collapsed .nav-text,
+            .sidebar.collapsed .logout-text,
+            .sidebar.collapsed .logo-text { display: inline; }
+            .sidebar.collapsed .nav-item { justify-content: flex-start; padding: 14px 24px; }
+            .sidebar.collapsed .logout-btn { justify-content: flex-start; padding: 16px 24px; }
+            .sidebar.collapsed .logo { justify-content: center; }
+            .sidebar.collapsed .logo-image { height: 45px; }
+            .toggle-btn { display: none; }
+            .mobile-menu-btn { display: flex; }
+            .main-content { margin-left: 0 !important; }
+            body:has(.sidebar.collapsed) .main-content { margin-left: 0 !important; }
+            .top-bar { padding: 16px 20px; gap: 12px; }
+            .top-bar .page-title-area h1 { font-size: 22px; }
+            .top-bar .page-title-area p { font-size: 13px; }
+            .account-info { display: none; }
+            .content-wrapper { padding: 20px; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        }
+
+        @@media (max-width: 768px) {
+            .stats-row { grid-template-columns: 1fr; }
+            .content-wrapper { padding: 16px; }
+            .top-bar { padding: 14px 16px; }
+            .top-bar .page-title-area h1 { font-size: 20px; }
+            .filter-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; }
+            .filter-tab { white-space: nowrap; flex-shrink: 0; }
+            .category-header { flex-wrap: wrap; gap: 10px; padding: 16px; }
+            .category-body { padding: 12px 16px; }
+            .policy-card { padding: 16px; }
+            .api-status-bar { flex-direction: column; gap: 10px; align-items: flex-start; padding: 14px 16px; }
+        }
+
+        @@media (max-width: 576px) {
+            .top-bar .page-title-area h1 { font-size: 18px; }
+            .content-wrapper { padding: 12px; }
+            .stat-card { padding: 16px; }
+            .stat-value { font-size: 22px; }
+            .stat-icon { width: 42px; height: 42px; }
+            .stat-icon svg { width: 22px; height: 22px; }
+            .policy-card-header { flex-direction: column; gap: 6px; }
+            .policy-footer { gap: 8px; }
+            .view-link { margin-left: 0; }
+            .account-avatar { width: 36px; height: 36px; font-size: 15px; border-radius: 10px; }
+        }
     </style>
 </head>
 <body>
+    <!-- Mobile Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileSidebar()"></div>
+
     <!-- ==================== SIDEBAR ==================== -->
     @if (userRole == "Admin")
     {
@@ -311,7 +396,7 @@
                 <span class="nav-text">Policy API Reference</span>
             </a>
         </nav>
-        <a href="/Account/Logout" class="logout-btn" title="Logout" onclick="return confirm('Are you sure you want to logout?');">
+        <a href="/Account/Logout" class="logout-btn" title="Logout" onclick="return appConfirmNavigate(event, 'Are you sure you want to logout?');">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
             <span class="logout-text">Logout</span>
         </a>
@@ -363,7 +448,7 @@
                 <span class="nav-text">Policy API Reference</span>
             </a>
         </nav>
-        <a href="/Account/Logout" class="logout-btn" title="Logout" onclick="return confirm('Are you sure you want to logout?');">
+        <a href="/Account/Logout" class="logout-btn" title="Logout" onclick="return appConfirmNavigate(event, 'Are you sure you want to logout?');">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
             <span class="logout-text">Logout</span>
         </a>
@@ -374,6 +459,11 @@
     <main class="main-content">
         <!-- Top Bar -->
         <div class="top-bar">
+            <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Open Menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
             <div class="page-title-area">
                 <h1>External Policy References</h1>
                 <p>Federal regulations mapped to TechNova's compliance policy areas</p>
@@ -540,9 +630,23 @@
             localStorage.setItem('apiPageSidebarCollapsed', sidebar.classList.contains('collapsed'));
         }
 
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('pageSidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            sidebar.classList.toggle('mobile-active');
+            overlay.classList.toggle('active');
+        }
+
+        function closeMobileSidebar() {
+            const sidebar = document.getElementById('pageSidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            sidebar.classList.remove('mobile-active');
+            overlay.classList.remove('active');
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.getElementById('pageSidebar');
-            if (localStorage.getItem('apiPageSidebarCollapsed') === 'true') {
+            if (window.innerWidth > 991 && localStorage.getItem('apiPageSidebarCollapsed') === 'true') {
                 sidebar.classList.add('collapsed');
             }
         });

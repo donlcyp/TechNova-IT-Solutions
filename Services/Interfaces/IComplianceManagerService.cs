@@ -9,6 +9,7 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         Task<AuditTrailData> GetAuditTrailDataAsync();
         Task<ComplianceReportsData> GetComplianceReportsDataAsync();
         Task<List<ExternalPolicyData>> GetExternalPolicyReferencesAsync(string category);
+        Task<PolicyArchivesData> GetPolicyArchivesAsync(string? searchTerm, string? categoryFilter);
     }
 
     public class ComplianceDashboardData
@@ -17,9 +18,11 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public int EmployeesCompliant { get; set; }
         public int EmployeesNotCompliant { get; set; }
         public int SuppliersCompliant { get; set; }
+        public int TotalArchivedPolicies { get; set; }
         public List<EmployeeComplianceData> EmployeeCompliance { get; set; } = new();
         public List<SupplierComplianceData> SupplierCompliance { get; set; } = new();
         public List<RecentlyAssignedData> RecentlyAssigned { get; set; } = new();
+        public List<ArchivedPolicyRecord> RecentlyArchivedPolicies { get; set; } = new();
     }
 
     public class EmployeeComplianceData
@@ -124,5 +127,24 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public int Compliant { get; set; }
         public int NonCompliant { get; set; }
         public double ComplianceRate { get; set; }
+    }
+
+    public class PolicyArchivesData
+    {
+        public int TotalArchived { get; set; }
+        public int ArchivedThisMonth { get; set; }
+        public int TotalCategories { get; set; }
+        public List<ArchivedPolicyRecord> ArchivedPolicies { get; set; } = new();
+    }
+
+    public class ArchivedPolicyRecord
+    {
+        public int PolicyId { get; set; }
+        public string PolicyTitle { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string ArchivedDate { get; set; } = string.Empty;
+        public string UploadedBy { get; set; } = string.Empty;
+        public string DateUploaded { get; set; } = string.Empty;
     }
 }

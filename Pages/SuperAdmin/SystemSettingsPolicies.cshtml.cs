@@ -1,0 +1,78 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+
+using TechNova_IT_Solutions.Data;
+using TechNova_IT_Solutions.Infrastructure;
+using TechNova_IT_Solutions.Models;
+
+namespace TechNova_IT_Solutions.Pages.SuperAdmin
+{
+    public class SystemSettingsPoliciesModel : PageModel
+    {
+        private readonly ApplicationDbContext _context;
+
+        public SystemSettingsPoliciesModel(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public int TotalPolicies { get; set; }
+        public int ActivePolicies { get; set; }
+        public int ArchivedPolicies { get; set; }
+        public List<Policy> RecentPolicies { get; set; } = new();
+        public List<ComplianceTableRow> ComplianceRows { get; set; } = new();
+
+        public async Task<IActionResult> OnGet()
+        {
+            var denied = RoleAccess.RequireRoleOrRedirect(
+                this,
+                new[] { RoleNames.SuperAdmin },
+                new Dictionary<string, string>
+                {
+                    [RoleNames.ComplianceManager] = "/ComplianceManager/ComplianceDashboard",
+                    [RoleNames.Employee] = "/Employee/Dashboard",
+                    [RoleNames.Supplier] = "/Supplier/Dashboard"
+                });
+            if (denied != null) return denied;
+
+            TotalPolicies = await _context.Policies.CountAsync();
+            ActivePolicies = await _context.Policies.CountAsync(p => !p.IsArchived);
+            ArchivedPolicies = await _context.Policies.CountAsync(p => p.IsArchived);
+            RecentPolicies = await _context.Policies
+                .OrderByDescending(p => p.DateUploaded)
+                .Take(10)
+                .ToListAsync();
+
+            ComplianceRows = await _context.PolicyAssignments
+                .Include(pa => pa.User)
+                .Include(pa => pa.Policy)
+                .Include(pa => pa.ComplianceStatus)
+                .OrderByDescending(pa => pa.AssignedDate)
+                .Take(10)
+                .Select(pa => new ComplianceTableRow
+                {
+                    Assignee = pa.User.FirstName + " " + pa.User.LastName,
+                    PolicyTitle = pa.Policy.PolicyTitle,
+                    ComplianceStatus = pa.ComplianceStatus != null && pa.ComplianceStatus.Status == "Acknowledged"
+                        ? "Compliant"
+                        : "Not Compliant",
+                    DateAssigned = pa.AssignedDate
+                })
+                .ToListAsync();
+
+            return Page();
+        }
+
+        public class ComplianceTableRow
+        {
+            public string Assignee { get; set; } = string.Empty;
+            public string PolicyTitle { get; set; } = string.Empty;
+            public string ComplianceStatus { get; set; } = string.Empty;
+            public DateTime? DateAssigned { get; set; }
+        }
+    }
+}
+
+
+

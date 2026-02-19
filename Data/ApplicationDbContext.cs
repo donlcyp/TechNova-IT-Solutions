@@ -17,7 +17,9 @@ namespace TechNova_IT_Solutions.Data
         public DbSet<ComplianceStatus> ComplianceStatuses { get; set; }
         public DbSet<Supplier> Suppliers { get; set; }
         public DbSet<SupplierPolicy> SupplierPolicies { get; set; }
+        public DbSet<SupplierItem> SupplierItems { get; set; }
         public DbSet<Procurement> Procurements { get; set; }
+        public DbSet<ProcurementStatusHistory> ProcurementStatusHistory { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -84,6 +86,18 @@ namespace TechNova_IT_Solutions.Data
                 .HasForeignKey(p => p.SupplierId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            modelBuilder.Entity<Supplier>()
+                .HasMany(s => s.SupplierItems)
+                .WithOne(si => si.Supplier)
+                .HasForeignKey(si => si.SupplierId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Procurement>()
+                .HasMany(p => p.StatusHistory)
+                .WithOne(h => h.Procurement)
+                .HasForeignKey(h => h.ProcurementId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             // Add indexes for better query performance
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
@@ -95,6 +109,10 @@ namespace TechNova_IT_Solutions.Data
 
             modelBuilder.Entity<SupplierPolicy>()
                 .HasIndex(sp => new { sp.SupplierId, sp.PolicyId })
+                .IsUnique();
+
+            modelBuilder.Entity<SupplierItem>()
+                .HasIndex(si => new { si.SupplierId, si.ItemName })
                 .IsUnique();
 
             // ========== SEED DATA ==========

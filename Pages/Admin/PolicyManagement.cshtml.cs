@@ -1,7 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-using TechNova_IT_Solutions.Data;
 
 namespace TechNova_IT_Solutions.Pages
 {
@@ -20,6 +16,7 @@ namespace TechNova_IT_Solutions.Pages
         // Summary Data
         public int TotalPolicies { get; set; }
         public int ActivePolicies { get; set; }
+        public int ArchivedPolicies { get; set; }
         public int RecentlyUploaded { get; set; }
 
         // Policy List
@@ -32,27 +29,28 @@ namespace TechNova_IT_Solutions.Pages
         public async Task<IActionResult> OnGet()
         {
             // Check authentication
-            var userIdString = HttpContext.Session.GetString("UserId");
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
             if (string.IsNullOrEmpty(userIdString))
             {
                 return RedirectToPage("/Account/Login");
             }
 
             // Check user role - only Admin can access
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Admin")
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
-                if (userRole == "Employee") return RedirectToPage("/Employee/Dashboard");
-                if (userRole == "ComplianceManager") return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
+                if (userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 return RedirectToPage("/Account/Login");
             }
 
-            UserEmail = HttpContext.Session.GetString("UserEmail") ?? "admin@technova.com";
-            UserName = HttpContext.Session.GetString("UserName") ?? "Administrator";
+            UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? "admin@technova.com";
+            UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
 
             // Calculate summary statistics
             TotalPolicies = await _context.Policies.CountAsync();
-            ActivePolicies = TotalPolicies; // All policies are considered active by default
+            ActivePolicies = await _context.Policies.Where(p => !p.IsArchived).CountAsync();
+            ArchivedPolicies = await _context.Policies.Where(p => p.IsArchived).CountAsync();
             
             // Count recently uploaded (last 30 days)
             var thirtyDaysAgo = DateTime.Now.AddDays(-30);
@@ -67,19 +65,23 @@ namespace TechNova_IT_Solutions.Pages
                 .Select(p => new PolicyMgmtItem
                 {
                     PolicyId = "POL-" + p.PolicyId.ToString("D3"),
+                    RawId = p.PolicyId,
                     Title = p.PolicyTitle ?? string.Empty,
                     Category = p.Category ?? string.Empty,
-                    Status = "Active", // Default status
+                    Description = p.Description ?? string.Empty,
+                    Status = p.IsArchived ? "Archived" : "Active",
+                    IsArchived = p.IsArchived,
                     DateUploaded = p.DateUploaded ?? DateTime.Now,
                     UploadedBy = p.UploadedByUser != null 
                         ? $"{p.UploadedByUser.FirstName} {p.UploadedByUser.LastName}" 
-                        : "System"
+                        : "System",
+                    FilePath = p.FilePath
                 })
                 .ToListAsync();
 
             // Fetch employees for policy assignment
             Employees = await _context.Users
-                .Where(u => u.Role == "Employee" && u.Status == "Active")
+                .Where(u => u.Role == RoleNames.Employee && u.Status == "Active")
                 .OrderBy(u => u.FirstName)
                 .Select(u => new PolicyEmployee
                 {
@@ -106,11 +108,15 @@ namespace TechNova_IT_Solutions.Pages
     public class PolicyMgmtItem
     {
         public string PolicyId { get; set; } = string.Empty;
+        public int RawId { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+        public bool IsArchived { get; set; }
         public DateTime DateUploaded { get; set; }
         public string UploadedBy { get; set; } = string.Empty;
+        public string? FilePath { get; set; }
     }
 
     public class PolicyEmployee
@@ -125,3 +131,8 @@ namespace TechNova_IT_Solutions.Pages
         public string Name { get; set; } = string.Empty;
     }
 }
+
+
+
+
+

@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using TechNova_IT_Solutions.Constants;
+using TechNova_IT_Solutions.Infrastructure;
 using TechNova_IT_Solutions.Services.Interfaces;
 
 namespace TechNova_IT_Solutions.Controllers
@@ -14,19 +16,8 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> Dashboard()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "ComplianceManager" && userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             var data = await _complianceService.GetComplianceDashboardDataAsync();
             return View(data);
@@ -34,19 +25,8 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> EmployeeCompliance()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "ComplianceManager" && userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             var data = await _complianceService.GetEmployeeComplianceReportAsync();
             return View(data);
@@ -54,19 +34,8 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> AuditTrail()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "ComplianceManager" && userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             var data = await _complianceService.GetAuditTrailDataAsync();
             return View(data);
@@ -74,19 +43,8 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> ComplianceReports()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "ComplianceManager" && userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             var data = await _complianceService.GetComplianceReportsDataAsync();
             return View(data);
@@ -94,76 +52,33 @@ namespace TechNova_IT_Solutions.Controllers
 
         public IActionResult PolicyReview()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "ComplianceManager" && userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             return View();
         }
 
         public IActionResult SupplierCompliance()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "ComplianceManager" && userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             return View();
         }
 
         public IActionResult Settings()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "ComplianceManager" && userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             return View();
         }
 
         public async Task<IActionResult> ExternalPolicyReferences(string category = "all")
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "ComplianceManager" && userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole) ?? string.Empty;
 
             // Fetch external policy references by category
             var externalPolicies = await _complianceService.GetExternalPolicyReferencesAsync(category);
@@ -176,12 +91,8 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> GetExternalPolicyJson(string policyId)
         {
-            // Check role - only ComplianceManager and Admin can access
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "ComplianceManager" && userRole != "Admin")
-            {
-                return Unauthorized(new { success = false, message = "Access denied" });
-            }
+            var unauthorized = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (unauthorized != null) return unauthorized;
 
             // API endpoint for AJAX calls to get specific policy details
             var externalPolicies = await _complianceService.GetExternalPolicyReferencesAsync("");

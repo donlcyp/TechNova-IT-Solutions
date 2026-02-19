@@ -1,0 +1,9 @@
+global using Microsoft.AspNetCore.Mvc;
+global using Microsoft.AspNetCore.Mvc.RazorPages;
+global using Microsoft.EntityFrameworkCore;
+global using TechNova_IT_Solutions.Data;
+global using TechNova_IT_Solutions.Constants;
+global using TechNova_IT_Solutions.Infrastructure;
+global using TechNova_IT_Solutions.Models;
+global using TechNova_IT_Solutions.Services;
+global using TechNova_IT_Solutions.Services.Interfaces;

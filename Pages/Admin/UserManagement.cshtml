@@ -26,6 +26,12 @@
             overflow-y: auto;
         }
 
+        .content-wrapper {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
         /* Filter Section */
         .filter-section {
             background: #ffffff;
@@ -37,7 +43,7 @@
 
         .filter-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            grid-template-columns: 2fr 1fr 1fr auto;
             gap: 16px;
             align-items: end;
         }
@@ -240,6 +246,12 @@
             background: #d1fae5;
         }
 
+        .action-protected {
+            color: #6b7280;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
         /* Modal */
         .modal {
             display: none;
@@ -335,6 +347,55 @@
             background: #f9fafb;
         }
 
+        .app-dialog {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 1300;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .app-dialog.active {
+            display: flex;
+        }
+
+        .app-dialog-card {
+            width: 100%;
+            max-width: 420px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+        }
+
+        .app-dialog-header {
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .app-dialog-body {
+            padding: 14px 18px;
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .app-dialog-footer {
+            padding: 14px 18px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
         @@keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -355,6 +416,10 @@
         @@media (max-width: 991px) {
             .main-content {
                 margin-left: 0;
+            }
+
+            .content-wrapper {
+                padding: 20px;
             }
 
             .filter-grid {
@@ -429,22 +494,10 @@
                     <label>Role</label>
                     <select id="roleFilter">
                         <option value="">All Roles</option>
-                        <option value="System Admin">System Admin</option>
-                        <option value="Compliance Officer">Compliance Officer</option>
-                        <option value="Procurement Officer">Procurement Officer</option>
+                        <option value="SuperAdmin">Super Admin</option>
+                        <option value="Admin">Admin</option>
+                        <option value="ComplianceManager">Compliance Manager</option>
                         <option value="Employee">Employee</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Department</label>
-                    <select id="departmentFilter">
-                        <option value="">All Departments</option>
-                        <option value="IT">IT</option>
-                        <option value="Compliance">Compliance</option>
-                        <option value="Procurement">Procurement</option>
-                        <option value="Finance">Finance</option>
-                        <option value="HR">HR</option>
-                        <option value="Operations">Operations</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -495,14 +548,21 @@
                             <td><span class="status-badge @user.Status.ToLower()">@user.Status</span></td>
                             <td>
                                 <div class="actions">
-                                    <button class="btn-action" onclick="openModal('edit', '@user.UserId')">Edit</button>
-                                    @if (user.Status == "Active")
+                                    @if (string.Equals(user.Role, "SuperAdmin", StringComparison.OrdinalIgnoreCase))
                                     {
-                                        <button class="btn-action danger" onclick="toggleUserStatus('@user.UserId', 'deactivate')">Deactivate</button>
+                                        <span class="action-protected">Protected</span>
                                     }
                                     else
                                     {
-                                        <button class="btn-action success" onclick="toggleUserStatus('@user.UserId', 'reactivate')">Reactivate</button>
+                                        <button class="btn-action" onclick="openModal('edit', '@user.UserId')">Edit</button>
+                                        @if (user.Status == "Active")
+                                        {
+                                            <button class="btn-action danger" onclick="toggleUserStatus('@user.UserId', 'deactivate')">Deactivate</button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn-action success" onclick="toggleUserStatus('@user.UserId', 'reactivate')">Reactivate</button>
+                                        }
                                     }
                                 </div>
                             </td>
@@ -543,7 +603,6 @@
                             <label>Role</label>
                             <select id="role" required onchange="toggleDepartmentField()">
                                 <option value="">Select Role</option>
-                                <option value="Admin">Admin</option>
                                 <option value="ComplianceManager">Compliance Manager</option>
                                 <option value="Employee">Employee</option>
                             </select>
@@ -577,10 +636,91 @@
         </div>
     </div>
 
+    <div class="app-dialog" id="appMessageModal">
+        <div class="app-dialog-card">
+            <div class="app-dialog-header" id="appMessageTitle">Notice</div>
+            <div class="app-dialog-body" id="appMessageBody"></div>
+            <div class="app-dialog-footer">
+                <button class="btn-primary" type="button" id="appMessageOkBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-dialog" id="appConfirmModal">
+        <div class="app-dialog-card">
+            <div class="app-dialog-header" id="appConfirmTitle">Confirm Action</div>
+            <div class="app-dialog-body" id="appConfirmBody"></div>
+            <div class="app-dialog-footer">
+                <button class="btn-secondary" type="button" id="appConfirmCancelBtn">Cancel</button>
+                <button class="btn-primary" type="button" id="appConfirmOkBtn">Continue</button>
+            </div>
+        </div>
+    </div>
+
     @section Scripts {
         <script>
             let currentMode = 'add';
             let currentUserId = null;
+
+            function showMessageModal(message, title = 'Notice') {
+                return new Promise(resolve => {
+                    const modal = document.getElementById('appMessageModal');
+                    const titleEl = document.getElementById('appMessageTitle');
+                    const bodyEl = document.getElementById('appMessageBody');
+                    const okBtn = document.getElementById('appMessageOkBtn');
+
+                    titleEl.textContent = title;
+                    bodyEl.textContent = message || '';
+                    modal.classList.add('active');
+
+                    const close = () => {
+                        modal.classList.remove('active');
+                        okBtn.removeEventListener('click', onOk);
+                        modal.removeEventListener('click', onOverlay);
+                        resolve();
+                    };
+
+                    const onOk = () => close();
+                    const onOverlay = (e) => {
+                        if (e.target === modal) close();
+                    };
+
+                    okBtn.addEventListener('click', onOk);
+                    modal.addEventListener('click', onOverlay);
+                });
+            }
+
+            function showConfirmModal(message, title = 'Confirm Action') {
+                return new Promise(resolve => {
+                    const modal = document.getElementById('appConfirmModal');
+                    const titleEl = document.getElementById('appConfirmTitle');
+                    const bodyEl = document.getElementById('appConfirmBody');
+                    const okBtn = document.getElementById('appConfirmOkBtn');
+                    const cancelBtn = document.getElementById('appConfirmCancelBtn');
+
+                    titleEl.textContent = title;
+                    bodyEl.textContent = message || '';
+                    modal.classList.add('active');
+
+                    const close = (result) => {
+                        modal.classList.remove('active');
+                        okBtn.removeEventListener('click', onOk);
+                        cancelBtn.removeEventListener('click', onCancel);
+                        modal.removeEventListener('click', onOverlay);
+                        resolve(result);
+                    };
+
+                    const onOk = () => close(true);
+                    const onCancel = () => close(false);
+                    const onOverlay = (e) => {
+                        if (e.target === modal) close(false);
+                    };
+
+                    okBtn.addEventListener('click', onOk);
+                    cancelBtn.addEventListener('click', onCancel);
+                    modal.addEventListener('click', onOverlay);
+                });
+            }
 
             function toggleDepartmentField() {
                 const role = document.getElementById('role').value;
@@ -632,12 +772,12 @@
                         document.getElementById('status').value = user.status;
                         toggleDepartmentField();
                     } else {
-                        alert('Failed to load user data');
+                        await showMessageModal('Failed to load user data', 'Error');
                         return;
                     }
                 } catch (error) {
                     console.error('Error loading user:', error);
-                    alert('An error occurred while loading user data');
+                    await showMessageModal('An error occurred while loading user data', 'Error');
                     return;
                 }
             }
@@ -660,24 +800,24 @@
             const status = document.getElementById('status').value;
 
             if (!firstName || !lastName || !email || !role) {
-                alert('Please fill in all required fields');
+                await showMessageModal('Please fill in all required fields', 'Validation');
                 return;
             }
 
             // Check password is provided when creating new user
             if (currentMode === 'add' && !password) {
-                alert('Please enter a password for the new user');
+                await showMessageModal('Please enter a password for the new user', 'Validation');
                 return;
             }
 
             // Validate password strength when provided
             if (currentMode === 'add' && password && password.length < 8) {
-                alert('Password must be at least 8 characters long');
+                await showMessageModal('Password must be at least 8 characters long', 'Validation');
                 return;
             }
 
             if (role === 'Employee' && !department) {
-                alert('Please select a department for Employee role');
+                await showMessageModal('Please select a department for Employee role', 'Validation');
                 return;
             }
 
@@ -705,16 +845,16 @@
                 const result = await response.json();
 
                 if (response.ok && result.success) {
-                    alert(result.message);
+                    await showMessageModal(result.message, 'Success');
                     closeModal();
                     // Reload page to show updated user list
                     window.location.reload();
                 } else {
-                    alert(result.message || 'Failed to save user');
+                    await showMessageModal(result.message || 'Failed to save user', 'Error');
                 }
             } catch (error) {
                 console.error('Error saving user:', error);
-                alert('An error occurred while saving the user');
+                await showMessageModal('An error occurred while saving the user', 'Error');
             }
         }
 
@@ -722,7 +862,11 @@
             const actionText = action === 'deactivate' ? 'deactivate' : 'reactivate';
             const endpoint = action === 'deactivate' ? '/Admin/DeactivateUser' : '/Admin/ReactivateUser';
             
-            if (confirm(`Are you sure you want to ${actionText} this user?`)) {
+            const confirmed = await showConfirmModal(
+                `Are you sure you want to ${actionText} this user?`,
+                'Confirm User Action'
+            );
+            if (confirmed) {
                 try {
                     const response = await fetch(`${endpoint}?userId=${userId}`, {
                         method: 'POST'
@@ -731,14 +875,14 @@
                     const result = await response.json();
 
                     if (response.ok && result.success) {
-                        alert(result.message);
+                        await showMessageModal(result.message, 'Success');
                         window.location.reload();
                     } else {
-                        alert(result.message || `Failed to ${actionText} user`);
+                        await showMessageModal(result.message || `Failed to ${actionText} user`, 'Error');
                     }
                 } catch (error) {
                     console.error(`Error ${actionText}ing user:`, error);
-                    alert(`An error occurred while ${actionText}ing the user`);
+                    await showMessageModal(`An error occurred while ${actionText}ing the user`, 'Error');
                 }
             }
         }
@@ -746,13 +890,11 @@
         // Search and filter functionality
         document.getElementById('searchInput').addEventListener('input', filterTable);
         document.getElementById('roleFilter').addEventListener('change', filterTable);
-        document.getElementById('departmentFilter').addEventListener('change', filterTable);
         document.getElementById('statusFilter').addEventListener('change', filterTable);
 
         function filterTable() {
             const searchValue = document.getElementById('searchInput').value.toLowerCase();
             const roleValue = document.getElementById('roleFilter').value;
-            const departmentValue = document.getElementById('departmentFilter').value;
             const statusValue = document.getElementById('statusFilter').value;
 
             const rows = document.querySelectorAll('#userTable tbody tr');
@@ -761,15 +903,13 @@
                 const name = row.querySelector('.user-cell-name').textContent.toLowerCase();
                 const email = row.cells[1].textContent.toLowerCase();
                 const role = row.cells[2].textContent;
-                const department = row.cells[3].textContent;
                 const status = row.querySelector('.status-badge').textContent;
 
                 const matchesSearch = name.includes(searchValue) || email.includes(searchValue);
                 const matchesRole = !roleValue || role === roleValue;
-                const matchesDepartment = !departmentValue || department === departmentValue;
                 const matchesStatus = !statusValue || status === statusValue;
 
-                if (matchesSearch && matchesRole && matchesDepartment && matchesStatus) {
+                if (matchesSearch && matchesRole && matchesStatus) {
                     row.style.display = '';
                 } else {
                     row.style.display = 'none';

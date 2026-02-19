@@ -1,0 +1,125 @@
+<div class="logout-modal-overlay" id="logoutModalOverlay" hidden>
+    <div class="logout-modal" role="dialog" aria-modal="true" aria-labelledby="logoutModalTitle" aria-describedby="logoutModalDescription">
+        <h3 id="logoutModalTitle">Confirm Logout</h3>
+        <p id="logoutModalDescription">Are you sure you want to logout?</p>
+        <div class="logout-modal-actions">
+            <button type="button" class="logout-cancel-btn" id="logoutCancelBtn">Cancel</button>
+            <a href="/Account/Logout" class="logout-confirm-btn" id="logoutConfirmBtn">Logout</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .logout-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1200;
+        padding: 16px;
+    }
+
+    .logout-modal {
+        width: 100%;
+        max-width: 360px;
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        padding: 18px;
+    }
+
+    .logout-modal h3 {
+        margin: 0 0 6px;
+        font-size: 18px;
+        color: #0f172a;
+    }
+
+    .logout-modal p {
+        margin: 0 0 14px;
+        font-size: 14px;
+        color: #475569;
+    }
+
+    .logout-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .logout-cancel-btn,
+    .logout-confirm-btn {
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        padding: 8px 12px;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .logout-cancel-btn {
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #334155;
+    }
+
+    .logout-confirm-btn {
+        border: 1px solid #ef4444;
+        background: #ef4444;
+        color: #fff;
+    }
+</style>
+
+<script>
+    (function () {
+        if (window.__logoutModalInitialized) return;
+        window.__logoutModalInitialized = true;
+
+        function getModalElements() {
+            const overlay = document.getElementById('logoutModalOverlay');
+            const cancel = document.getElementById('logoutCancelBtn');
+            const confirm = document.getElementById('logoutConfirmBtn');
+            return { overlay, cancel, confirm };
+        }
+
+        function openLogoutModal() {
+            const { overlay } = getModalElements();
+            if (!overlay) return;
+            overlay.hidden = false;
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLogoutModal() {
+            const { overlay } = getModalElements();
+            if (!overlay) return;
+            overlay.hidden = true;
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('click', function (event) {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+
+            if (target.closest('.js-logout-trigger')) {
+                event.preventDefault();
+                openLogoutModal();
+                return;
+            }
+
+            const { overlay, cancel } = getModalElements();
+            if (!overlay) return;
+
+            if (target === overlay || target === cancel) {
+                event.preventDefault();
+                closeLogoutModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape') {
+                closeLogoutModal();
+            }
+        });
+    })();
+</script>

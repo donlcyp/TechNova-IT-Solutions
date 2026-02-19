@@ -29,6 +29,7 @@ namespace TechNova_IT_Solutions.Data
 
             await SeedComplianceStatusesAsync(context).ConfigureAwait(false);
             await SeedSupplierPoliciesAsync(context).ConfigureAwait(false);
+            await SeedSupplierItemsAsync(context).ConfigureAwait(false);
             await SeedProcurementsAsync(context).ConfigureAwait(false);
             await SeedAuditLogsAsync(context).ConfigureAwait(false);
 
@@ -37,10 +38,25 @@ namespace TechNova_IT_Solutions.Data
 
         private static async Task SeedUsersAsync(ApplicationDbContext context)
         {
-            if (await context.Users.CountAsync().ConfigureAwait(false) > 1)
-                return;
+            var hasSeedUsers = await context.Users.CountAsync().ConfigureAwait(false) > 1;
 
             var hashedPassword = BCrypt.Net.BCrypt.HashPassword(SeededUserPassword);
+
+            if (!await context.Users.AnyAsync(u => u.Email == "superadmin@technova.com").ConfigureAwait(false))
+            {
+                context.Users.Add(new User
+                {
+                    FirstName = "Super",
+                    LastName = "Administrator",
+                    Email = "superadmin@technova.com",
+                    Password = hashedPassword,
+                    Role = "SuperAdmin",
+                    Status = "Active"
+                });
+            }
+
+            if (hasSeedUsers)
+                return;
 
             context.Users.Add(new User
             {
@@ -171,6 +187,43 @@ namespace TechNova_IT_Solutions.Data
             context.SupplierPolicies.Add(new SupplierPolicy { SupplierId = supplierIds[1], PolicyId = policyIds[1], AssignedDate = assigned.AddDays(-18), ComplianceStatus = "Non-Compliant" });
         }
 
+        private static async Task SeedSupplierItemsAsync(ApplicationDbContext context)
+        {
+            if (await context.SupplierItems.AnyAsync().ConfigureAwait(false))
+                return;
+
+            var supplierIds = await context.Suppliers.OrderBy(s => s.SupplierId).Select(s => s.SupplierId).Take(2).ToListAsync().ConfigureAwait(false);
+            if (supplierIds.Count < 2) return;
+
+            context.SupplierItems.Add(new SupplierItem
+            {
+                SupplierId = supplierIds[0],
+                ItemName = "Laptop Workstation",
+                Category = "Hardware",
+                QuantityAvailable = 25,
+                Status = "Available",
+                LastUpdated = DateTime.UtcNow
+            });
+            context.SupplierItems.Add(new SupplierItem
+            {
+                SupplierId = supplierIds[0],
+                ItemName = "Security Software License",
+                Category = "Software",
+                QuantityAvailable = 10,
+                Status = "Available",
+                LastUpdated = DateTime.UtcNow
+            });
+            context.SupplierItems.Add(new SupplierItem
+            {
+                SupplierId = supplierIds[1],
+                ItemName = "Network Switches",
+                Category = "Hardware",
+                QuantityAvailable = 8,
+                Status = "Available",
+                LastUpdated = DateTime.UtcNow
+            });
+        }
+
         private static async Task SeedProcurementsAsync(ApplicationDbContext context)
         {
             if (await context.Procurements.AnyAsync().ConfigureAwait(false))
@@ -180,9 +233,43 @@ namespace TechNova_IT_Solutions.Data
             var policyIds = await context.Policies.OrderBy(p => p.PolicyId).Select(p => p.PolicyId).Take(2).ToListAsync().ConfigureAwait(false);
             if (supplierIds.Count < 2 || policyIds.Count < 2) return;
 
-            context.Procurements.Add(new Procurement { ItemName = "Laptop Workstation", Category = "Hardware", Quantity = 10, SupplierId = supplierIds[0], RelatedPolicyId = policyIds[0], PurchaseDate = DateTime.UtcNow.AddDays(-14) });
-            context.Procurements.Add(new Procurement { ItemName = "Security Software License", Category = "Software", Quantity = 1, SupplierId = supplierIds[0], RelatedPolicyId = policyIds[1], PurchaseDate = DateTime.UtcNow.AddDays(-7) });
-            context.Procurements.Add(new Procurement { ItemName = "Network Switches", Category = "Hardware", Quantity = 5, SupplierId = supplierIds[1], RelatedPolicyId = policyIds[0], PurchaseDate = DateTime.UtcNow.AddDays(-3) });
+            context.Procurements.Add(new Procurement
+            {
+                ItemName = "Laptop Workstation",
+                Category = "Hardware",
+                Quantity = 10,
+                SupplierId = supplierIds[0],
+                RelatedPolicyId = policyIds[0],
+                PurchaseDate = DateTime.UtcNow.AddDays(-14),
+                Status = ProcurementStatuses.SupplierApproved,
+                SupplierResponseDate = DateTime.UtcNow.AddDays(-13),
+                SupplierResponseDeadline = DateTime.UtcNow.AddDays(-7),
+                SupplierCommitShipDate = DateTime.UtcNow.AddDays(-10)
+            });
+            context.Procurements.Add(new Procurement
+            {
+                ItemName = "Security Software License",
+                Category = "Software",
+                Quantity = 1,
+                SupplierId = supplierIds[0],
+                RelatedPolicyId = policyIds[1],
+                PurchaseDate = DateTime.UtcNow.AddDays(-7),
+                Status = ProcurementStatuses.Submitted,
+                SupplierResponseDeadline = DateTime.UtcNow
+            });
+            context.Procurements.Add(new Procurement
+            {
+                ItemName = "Network Switches",
+                Category = "Hardware",
+                Quantity = 5,
+                SupplierId = supplierIds[1],
+                RelatedPolicyId = policyIds[0],
+                PurchaseDate = DateTime.UtcNow.AddDays(-3),
+                Status = ProcurementStatuses.SupplierRejected,
+                SupplierResponseDate = DateTime.UtcNow.AddDays(-2),
+                SupplierResponseDeadline = DateTime.UtcNow.AddDays(4),
+                RejectionReason = "Insufficient warehouse stock for this batch size"
+            });
         }
 
         private static async Task SeedAuditLogsAsync(ApplicationDbContext context)

@@ -26,6 +26,12 @@
             overflow-y: auto;
         }
 
+        .content-wrapper {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
         /* Summary Cards */
         .summary-cards {
             display: grid;
@@ -229,6 +235,7 @@
 
         .filter-group {
             display: flex;
+            flex-direction: row;
             gap: 12px;
             flex-wrap: wrap;
         }
@@ -404,6 +411,10 @@
                 margin-left: 0;
             }
 
+            .content-wrapper {
+                padding: 20px;
+            }
+
             .summary-cards {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -413,6 +424,13 @@
             }
 
             .filter-group select {
+                width: 100%;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .filter-group select {
+                min-width: auto;
                 width: 100%;
             }
         }
@@ -436,6 +454,18 @@
 
             table {
                 font-size: 12px;
+            }
+
+            .section-title {
+                font-size: 16px;
+            }
+
+            .modal-content {
+                width: 95%;
+            }
+
+            .detail-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>

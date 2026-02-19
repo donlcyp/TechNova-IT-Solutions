@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using TechNova_IT_Solutions.Constants;
+using TechNova_IT_Solutions.Infrastructure;
 using TechNova_IT_Solutions.Services.Interfaces;
 
 namespace TechNova_IT_Solutions.Controllers
@@ -14,19 +16,11 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> Dashboard()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Employee" && userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (string.IsNullOrEmpty(userIdString)) return RedirectToAction("Login", "Account");
 
             if (!int.TryParse(userIdString, out int userId))
             {
@@ -39,19 +33,11 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> ComplianceStatus()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Employee" && userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (string.IsNullOrEmpty(userIdString)) return RedirectToAction("Login", "Account");
 
             if (!int.TryParse(userIdString, out int userId))
             {
@@ -64,19 +50,11 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> AssignedPolicies()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Employee" && userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (string.IsNullOrEmpty(userIdString)) return RedirectToAction("Login", "Account");
 
             if (!int.TryParse(userIdString, out int userId))
             {
@@ -89,19 +67,8 @@ namespace TechNova_IT_Solutions.Controllers
 
         public IActionResult Settings()
         {
-            // Check if user is logged in
-            var userIdString = HttpContext.Session.GetString("UserId");
-            if (string.IsNullOrEmpty(userIdString))
-            {
-                return RedirectToAction("Login", "Account");
-            }
-
-            // Check user role
-            var userRole = HttpContext.Session.GetString("UserRole");
-            if (userRole != "Employee" && userRole != "Admin")
-            {
-                return RedirectToAction("AccessDenied", "Account");
-            }
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
 
             return View();
         }
@@ -109,7 +76,10 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> AcknowledgePolicy([FromBody] AcknowledgeRequest request)
         {
-            var userIdString = HttpContext.Session.GetString("UserId");
+            var unauthorized = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.Employee, RoleNames.Admin, RoleNames.SuperAdmin);
+            if (unauthorized != null) return unauthorized;
+
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
             if (string.IsNullOrEmpty(userIdString))
                 return Unauthorized(new { success = false, message = "Not logged in" });
 

@@ -20,111 +20,6 @@
             min-height: 100vh;
         }
 
-        /* Sidebar */
-        .sidebar {
-            width: 260px;
-            background: #ffffff;
-            border-right: 1px solid #e5e7eb;
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100vh;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            padding: 28px 20px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .logo-icon {
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-            width: 48px;
-            height: 48px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 24px;
-            color: white;
-        }
-
-        .logo-text {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1f2937;
-        }
-
-        .nav-menu {
-            padding: 20px 16px;
-            flex: 1;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            color: #6b7280;
-            text-decoration: none;
-            border-radius: 8px;
-            margin-bottom: 4px;
-            transition: all 0.2s;
-            font-size: 15px;
-            font-weight: 500;
-        }
-
-        .nav-item:hover {
-            background: #f3f4f6;
-            color: #1f2937;
-        }
-
-        .nav-item.active {
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-            color: white;
-        }
-
-        .nav-item svg {
-            width: 20px;
-            height: 20px;
-        }
-
-        .user-profile {
-            padding: 20px;
-            border-top: 1px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 16px;
-            color: white;
-        }
-
-        .user-info h4 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #1f2937;
-        }
-
-        .user-info p {
-            font-size: 12px;
-            color: #6b7280;
-        }
-
         /* Main Content */
         .main-content {
             margin-left: 260px;
@@ -132,7 +27,11 @@
             overflow-y: auto;
         }
 
-
+        .content-wrapper {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
 
         .btn-primary {
             padding: 12px 24px;
@@ -282,6 +181,11 @@
             font-weight: 600;
         }
 
+        .status-badge.archived {
+            color: #e53e3e;
+            background: #fff5f5;
+        }
+
         .status-badge.draft {
             color: #9ca3af;
         }
@@ -320,6 +224,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 20px;
+            margin-bottom: 16px;
         }
 
         .card {
@@ -509,6 +414,40 @@
             margin: 0;
             font-weight: normal;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-item.already-assigned {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .checkbox-item.already-assigned label {
+            color: #64748b;
+            cursor: not-allowed;
+        }
+
+        .already-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1e40af;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .assign-status-note {
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            background: #eff6ff;
+            color: #1e3a8a;
+            font-size: 13px;
         }
 
         .modal-footer {
@@ -552,12 +491,32 @@
                 margin-left: 0;
             }
 
+            .content-wrapper {
+                padding: 20px;
+            }
+
             .filter-section {
                 flex-direction: column;
             }
 
             .search-box {
                 min-width: 100%;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            th, td {
+                padding: 12px;
+            }
+
+            .actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .btn-action {
+                width: 100%;
+                text-align: center;
             }
         }
 
@@ -570,6 +529,7 @@
 
             th, td {
                 padding: 8px 10px;
+                font-size: 13px;
             }
 
             .actions {
@@ -580,6 +540,15 @@
             .modal-body,
             .modal-footer {
                 padding: 16px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -614,6 +583,18 @@
                         </div>
                     <div class="card-value">@Model.ActivePolicies</div>
                     <div class="card-label">Active Policies</div>
+                </div>
+
+                <div class="card">
+                        <div class="card-icon" style="color: #e53e3e;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 8v13H3V8"></path>
+                                <path d="M1 3h22v5H1z"></path>
+                                <path d="M10 12h4"></path>
+                            </svg>
+                        </div>
+                    <div class="card-value">@Model.ArchivedPolicies</div>
+                    <div class="card-label">Archived Policies</div>
                 </div>
 
                 <div class="card">
@@ -695,10 +676,17 @@
                                 <td>@policy.UploadedBy</td>
                                 <td>
                                     <div class="actions">
-                                        <button class="btn-action" onclick="viewPolicy('@policy.PolicyId')">View</button>
-                                        <button class="btn-action" onclick="editPolicy('@policy.PolicyId', '@policy.Title', '@policy.Category', '@policy.Status')">Edit</button>
-                                        <button class="btn-action" onclick="openAssignModal('@policy.PolicyId', '@policy.Title')">Assign</button>
-                                        <button class="btn-action" onclick="archivePolicy('@policy.PolicyId')">Archive</button>
+                                        <button class="btn-action" onclick="viewPolicy(@policy.RawId)">View</button>
+                                        @if (!policy.IsArchived)
+                                        {
+                                            <button class="btn-action" onclick="editPolicy('@policy.PolicyId', '@policy.Title', '@policy.Category', '@policy.Status')">Edit</button>
+                                            <button class="btn-action" onclick="openAssignModal('@policy.PolicyId', '@policy.Title')">Assign</button>
+                                            <button class="btn-action" onclick="archivePolicy(@policy.RawId, '@policy.Title')" style="color: #e53e3e;">Archive</button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn-action" onclick="restorePolicy(@policy.RawId, '@policy.Title')" style="color: #48bb78;">Restore</button>
+                                        }
                                     </div>
                                 </td>
                             </tr>
@@ -768,6 +756,7 @@
                 <button class="btn-close" onclick="closeAssignModal()">&times;</button>
             </div>
             <div class="modal-body">
+                <div id="assignStatusNote" class="assign-status-note">Select users to assign. Recipients with an existing assignment are marked and disabled.</div>
                 <div class="form-group">
                     <label>Assign to Employees</label>
                     <div class="multi-select" id="employeeList">
@@ -775,7 +764,10 @@
                         {
                             <div class="checkbox-item">
                                 <input type="checkbox" id="emp_@emp.Id" value="@emp.Id" />
-                                <label for="emp_@emp.Id">@emp.Name</label>
+                                <label for="emp_@emp.Id">
+                                    <span class="recipient-name">@emp.Name</span>
+                                    <span class="already-badge" style="display:none;">Already assigned</span>
+                                </label>
                             </div>
                         }
                     </div>
@@ -787,7 +779,10 @@
                         {
                             <div class="checkbox-item">
                                 <input type="checkbox" id="sup_@supplier.Id" value="@supplier.Id" />
-                                <label for="sup_@supplier.Id">@supplier.Name</label>
+                                <label for="sup_@supplier.Id">
+                                    <span class="recipient-name">@supplier.Name</span>
+                                    <span class="already-badge" style="display:none;">Already assigned</span>
+                                </label>
                             </div>
                         }
                     </div>
@@ -800,6 +795,30 @@
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="closeAssignModal()">Cancel</button>
                 <button class="btn-primary" onclick="assignPolicy()">Assign Policy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Policy Modal -->
+    <div class="modal" id="viewModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2 id="viewModalTitle">Policy Details</h2>
+                <button class="btn-close" onclick="closeViewModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="viewModalBody">
+                <div style="text-align: center; padding: 40px;">Loading...</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeViewModal()">Close</button>
+                <a id="viewDownloadBtn" href="#" target="_blank" class="btn-primary" style="display: none; text-decoration: none; padding: 10px 20px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    View / Download File
+                </a>
             </div>
         </div>
     </div>
@@ -834,7 +853,7 @@
             document.getElementById('uploadModal').classList.add('active');
         }
 
-        function savePolicy() {
+        async function savePolicy() {
             const title = document.getElementById('policyTitle').value.trim();
             const description = document.getElementById('policyDescription').value.trim();
             const category = document.getElementById('policyCategory').value;
@@ -842,7 +861,7 @@
             const fileInput = document.getElementById('policyFile');
 
             if (!title || !category) {
-                alert('Please fill in all required fields');
+                await window.showAppMessage('Please fill in all required fields', 'Validation');
                 return;
             }
 
@@ -865,35 +884,125 @@
                 body: formData
             })
             .then(res => res.json())
-            .then(result => {
+            .then(async result => {
                 if (result.success) {
+                    await window.showAppMessage(result.message || 'Policy saved successfully', 'Success');
                     closeUploadModal();
                     location.reload();
                 } else {
-                    alert(result.message || 'Failed to save policy');
+                    await window.showAppMessage(result.message || 'Failed to save policy', 'Error');
                 }
             })
-            .catch(() => alert('Error saving policy'));
+            .catch(async () => await window.showAppMessage('Error saving policy', 'Error'));
         }
 
-        function viewPolicy(id) {
-            alert('Viewing policy: ' + id);
-        }
+        function viewPolicy(dbId) {
+            document.getElementById('viewModalBody').innerHTML = '<div style="text-align:center;padding:40px;">Loading...</div>';
+            document.getElementById('viewDownloadBtn').style.display = 'none';
+            document.getElementById('viewModal').classList.add('active');
 
-        function archivePolicy(id) {
-            if (!confirm('Are you sure you want to delete this policy?')) return;
-            const dbId = parseInt(id.replace('POL-', ''));
-
-            fetch('/Admin/DeletePolicy?policyId=' + dbId, { method: 'POST' })
+            fetch('/Admin/GetPolicyDetail?policyId=' + dbId)
             .then(res => res.json())
             .then(result => {
                 if (result.success) {
-                    location.reload();
+                    const p = result.policy;
+                    document.getElementById('viewModalTitle').textContent = p.policyTitle;
+
+                    let statusColor = p.isArchived ? '#e53e3e' : '#48bb78';
+                    let statusText = p.isArchived ? 'Archived' : 'Active';
+
+                    let html = `
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                            <div>
+                                <div style="font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;margin-bottom:4px;">Policy ID</div>
+                                <div style="font-size:14px;color:#1f2937;">POL-${String(p.policyId).padStart(3, '0')}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;margin-bottom:4px;">Category</div>
+                                <div style="font-size:14px;color:#1f2937;">${p.category || 'N/A'}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;margin-bottom:4px;">Status</div>
+                                <div><span style="color:${statusColor};font-weight:600;font-size:14px;">${statusText}</span></div>
+                            </div>
+                            <div>
+                                <div style="font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;margin-bottom:4px;">Date Uploaded</div>
+                                <div style="font-size:14px;color:#1f2937;">${p.dateUploaded || 'N/A'}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;margin-bottom:4px;">Uploaded By</div>
+                                <div style="font-size:14px;color:#1f2937;">${p.uploadedBy}</div>
+                            </div>
+                            <div>
+                                <div style="font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;margin-bottom:4px;">Assigned To</div>
+                                <div style="font-size:14px;color:#1f2937;">${p.assignedEmployees} employee(s), ${p.assignedSuppliers} supplier(s)</div>
+                            </div>
+                        </div>`;
+
+                    if (p.isArchived && p.archivedDate) {
+                        html += `<div style="background:#fff5f5;border:1px solid #fed7d7;border-radius:8px;padding:12px;margin-bottom:16px;">
+                            <span style="color:#e53e3e;font-weight:600;">Archived on:</span> ${p.archivedDate}
+                        </div>`;
+                    }
+
+                    html += `<div style="margin-bottom:16px;">
+                        <div style="font-size:12px;color:#6b7280;font-weight:600;text-transform:uppercase;margin-bottom:4px;">Description</div>
+                        <div style="font-size:14px;color:#1f2937;background:#f8f9fa;border-radius:8px;padding:12px;border:1px solid #e5e7eb;">${p.description || 'No description provided.'}</div>
+                    </div>`;
+
+                    if (p.filePath) {
+                        html += `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;">
+                            <span style="font-weight:600;color:#1e40af;">&#128206; File attached:</span> ${p.filePath.split('/').pop()}
+                        </div>`;
+                        const downloadBtn = document.getElementById('viewDownloadBtn');
+                        downloadBtn.href = '/Admin/DownloadPolicyFile?policyId=' + dbId;
+                        downloadBtn.style.display = 'inline-flex';
+                    }
+
+                    document.getElementById('viewModalBody').innerHTML = html;
                 } else {
-                    alert(result.message || 'Failed to delete policy');
+                    document.getElementById('viewModalBody').innerHTML = '<div style="text-align:center;padding:40px;color:#e53e3e;">Policy not found.</div>';
                 }
             })
-            .catch(() => alert('Error deleting policy'));
+            .catch(() => {
+                document.getElementById('viewModalBody').innerHTML = '<div style="text-align:center;padding:40px;color:#e53e3e;">Error loading policy details.</div>';
+            });
+        }
+
+        function closeViewModal() {
+            document.getElementById('viewModal').classList.remove('active');
+        }
+
+        async function archivePolicy(dbId, title) {
+            const confirmed = await window.showAppConfirm('Are you sure you want to archive the policy "' + title + '"? It can be restored later.');
+            if (!confirmed) return;
+
+            fetch('/Admin/ArchivePolicy?policyId=' + dbId, { method: 'POST' })
+            .then(res => res.json())
+            .then(async result => {
+                if (result.success) {
+                    location.reload();
+                } else {
+                    await window.showAppMessage(result.message || 'Failed to archive policy', 'Error');
+                }
+            })
+            .catch(async () => await window.showAppMessage('Error archiving policy', 'Error'));
+        }
+
+        async function restorePolicy(dbId, title) {
+            const confirmed = await window.showAppConfirm('Restore the policy "' + title + '" back to active?');
+            if (!confirmed) return;
+
+            fetch('/Admin/RestorePolicy?policyId=' + dbId, { method: 'POST' })
+            .then(res => res.json())
+            .then(async result => {
+                if (result.success) {
+                    location.reload();
+                } else {
+                    await window.showAppMessage(result.message || 'Failed to restore policy', 'Error');
+                }
+            })
+            .catch(async () => await window.showAppMessage('Error restoring policy', 'Error'));
         }
 
         function openAssignModal(id, title) {
@@ -902,6 +1011,8 @@
             document.getElementById('assignModalTitle').textContent = 'Assign Policy: ' + title;
             // Uncheck all checkboxes
             document.querySelectorAll('#employeeList input, #supplierList input').forEach(cb => cb.checked = false);
+            resetAssignmentIndicators();
+            loadAssignmentStatus();
             document.getElementById('assignModal').classList.add('active');
         }
 
@@ -911,12 +1022,12 @@
             currentPolicyDbId = null;
         }
 
-        function assignPolicy() {
+        async function assignPolicy() {
             const selectedEmployees = Array.from(document.querySelectorAll('#employeeList input:checked')).map(cb => parseInt(cb.value));
             const selectedSuppliers = Array.from(document.querySelectorAll('#supplierList input:checked')).map(cb => parseInt(cb.value));
 
             if (selectedEmployees.length === 0 && selectedSuppliers.length === 0) {
-                alert('Please select at least one employee or supplier');
+                await window.showAppMessage('Please select at least one employee or supplier who is not already assigned.', 'Validation');
                 return;
             }
 
@@ -930,15 +1041,66 @@
                 })
             })
             .then(res => res.json())
-            .then(result => {
+            .then(async result => {
                 if (result.success) {
-                    alert('Policy assigned successfully!');
+                    await window.showAppMessage(result.message || 'Policy assigned successfully!', 'Success');
                     closeAssignModal();
+                    location.reload();
                 } else {
-                    alert(result.message || 'Failed to assign policy');
+                    await window.showAppMessage(result.message || 'Failed to assign policy', 'Error');
                 }
             })
-            .catch(() => alert('Error assigning policy'));
+            .catch(async () => await window.showAppMessage('Error assigning policy', 'Error'));
+        }
+
+        function resetAssignmentIndicators() {
+            document.querySelectorAll('#employeeList .checkbox-item, #supplierList .checkbox-item').forEach(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const badge = item.querySelector('.already-badge');
+                if (checkbox) {
+                    checkbox.checked = false;
+                    checkbox.disabled = false;
+                }
+                item.classList.remove('already-assigned');
+                if (badge) badge.style.display = 'none';
+            });
+            document.getElementById('assignStatusNote').textContent = 'Select users to assign. Recipients with an existing assignment are marked and disabled.';
+        }
+
+        function markAlreadyAssigned(listSelector, assignedIds) {
+            const assignedSet = new Set((assignedIds || []).map(id => parseInt(id)));
+            let markedCount = 0;
+            document.querySelectorAll(`${listSelector} .checkbox-item`).forEach(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const badge = item.querySelector('.already-badge');
+                const recipientId = parseInt(checkbox.value);
+                const isAssigned = assignedSet.has(recipientId);
+
+                checkbox.disabled = isAssigned;
+                checkbox.checked = false;
+                item.classList.toggle('already-assigned', isAssigned);
+                if (badge) badge.style.display = isAssigned ? 'inline-flex' : 'none';
+                if (isAssigned) markedCount++;
+            });
+            return markedCount;
+        }
+
+        function loadAssignmentStatus() {
+            if (!currentPolicyDbId) return;
+
+            fetch('/Admin/GetPolicyAssignmentStatus?policyId=' + currentPolicyDbId)
+                .then(res => res.json())
+                .then(result => {
+                    if (!result.success) return;
+
+                    const employeeMarked = markAlreadyAssigned('#employeeList', result.assignedEmployeeIds);
+                    const supplierMarked = markAlreadyAssigned('#supplierList', result.assignedSupplierIds);
+                    document.getElementById('assignStatusNote').textContent =
+                        `${employeeMarked} employee(s) and ${supplierMarked} supplier(s) already received this policy and cannot be selected again.`;
+                })
+                .catch(() => {
+                    document.getElementById('assignStatusNote').textContent = 'Unable to load existing assignment markers.';
+                });
         }
 
         // Close modals when clicking outside

@@ -1,0 +1,142 @@
+@page
+@model TechNova_IT_Solutions.Pages.SuperAdmin.SystemSettingsPoliciesModel
+@{
+    ViewData["Title"] = "System Settings & Policies";
+}
+
+@section Styles {
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; }
+        .main-content { margin-left: 260px; min-height: 100vh; }
+        .content-wrapper { padding: 24px; max-width: 1280px; margin: 0 auto; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .stat {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .stat .value { font-size: 26px; font-weight: 700; color: #0f172a; }
+        .stat .label { font-size: 13px; color: #6b7280; }
+
+        .action-row { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+        .btn {
+            border: 1px solid #1e40af;
+            background: #fff;
+            color: #1e40af;
+            border-radius: 8px;
+            padding: 9px 12px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn:hover { background: #eff6ff; }
+        .btn.active { background: #1e40af; color: #fff; }
+
+        .table-container { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 760px; }
+        th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+        th { font-size: 12px; color: #6b7280; text-transform: uppercase; background: #f9fafb; }
+
+        @@media (max-width: 991px) { .main-content { margin-left: 0; } }
+    </style>
+}
+
+@await Html.PartialAsync("_SuperAdminSidebar", "SystemSettingsPolicies")
+
+<div class="main-content">
+    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "System Settings & Policies", Description: "System-level policy oversight"))
+
+    <div class="content-wrapper">
+        <div class="stats">
+            <div class="stat"><div class="value">@Model.TotalPolicies</div><div class="label">Total Policies</div></div>
+            <div class="stat"><div class="value">@Model.ActivePolicies</div><div class="label">Active Policies</div></div>
+            <div class="stat"><div class="value">@Model.ArchivedPolicies</div><div class="label">Archived Policies</div></div>
+        </div>
+
+        <div class="action-row">
+            <button type="button" class="btn active" id="policyBtn">Policy Management</button>
+            <button type="button" class="btn" id="complianceBtn">Compliance Monitoring</button>
+        </div>
+
+        <div class="table-container" id="policyTableWrap">
+            <table id="policyTable">
+                <thead>
+                    <tr>
+                        <th>Policy Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Date Uploaded</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.RecentPolicies)
+                    {
+                        <tr>
+                            <td>@p.PolicyTitle</td>
+                            <td>@p.Category</td>
+                            <td>@(p.IsArchived ? "Archived" : "Active")</td>
+                            <td>@(p.DateUploaded?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-container" id="complianceTableWrap" style="display:none;">
+            <table id="complianceTable">
+                <thead>
+                    <tr>
+                        <th>Assignee</th>
+                        <th>Policy Title</th>
+                        <th>Status</th>
+                        <th>Date Assigned</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.ComplianceRows)
+                    {
+                        <tr>
+                            <td>@row.Assignee</td>
+                            <td>@row.PolicyTitle</td>
+                            <td>@row.ComplianceStatus</td>
+                            <td>@(row.DateAssigned?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const policyBtn = document.getElementById('policyBtn');
+            const complianceBtn = document.getElementById('complianceBtn');
+            const policyTableWrap = document.getElementById('policyTableWrap');
+            const complianceTableWrap = document.getElementById('complianceTableWrap');
+
+            function setView(view) {
+                const isPolicy = view === 'policy';
+                policyTableWrap.style.display = isPolicy ? 'block' : 'none';
+                complianceTableWrap.style.display = isPolicy ? 'none' : 'block';
+                policyBtn.classList.toggle('active', isPolicy);
+                complianceBtn.classList.toggle('active', !isPolicy);
+            }
+
+            policyBtn.addEventListener('click', () => setView('policy'));
+            complianceBtn.addEventListener('click', () => setView('compliance'));
+        })();
+    </script>
+}

@@ -70,6 +70,12 @@
             overflow-y: auto;
         }
 
+        .content-wrapper {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
         /* Header Section */
         .page-header-section {
             background: #ffffff;
@@ -171,6 +177,13 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        .view-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
         }
 
         thead {
@@ -218,6 +231,25 @@
 
         .status-approved {
             color: #48bb78;
+        }
+
+        .status-submitted {
+            color: #d97706;
+        }
+
+        .status-supplierapproved,
+        .status-shipped,
+        .status-received,
+        .status-closed {
+            color: #16a34a;
+        }
+
+        .status-supplierrejected {
+            color: #dc2626;
+        }
+
+        .status-draft {
+            color: #64748b;
         }
 
         /* Action Buttons */
@@ -434,6 +466,54 @@
             transform: translateY(-1px);
         }
 
+        .toast-container {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 380px;
+        }
+
+        .toast {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid #1e40af;
+            border-radius: 10px;
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.15);
+            padding: 12px 14px;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: all 0.25s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left-color: #16a34a;
+        }
+
+        .toast.error {
+            border-left-color: #dc2626;
+        }
+
+        .toast-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: #374151;
+        }
+
         @@media (max-width: 1024px) {
             .filters-row {
                 grid-template-columns: 1fr;
@@ -455,6 +535,10 @@
         @@media (max-width: 991px) {
             .main-content {
                 margin-left: 0;
+            }
+
+            .content-wrapper {
+                padding: 20px;
             }
 
             .header-top {
@@ -496,11 +580,26 @@
             .form-group.full-width {
                 grid-column: span 1;
             }
+
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+
+            .view-detail-grid {
+                grid-template-columns: 1fr;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 13px;
+            }
         }
     </style>
 }
 
 @await Html.PartialAsync("_AdminSidebar", "Procurement")
+<div id="toastContainer" class="toast-container"></div>
 
 <!-- Main Content -->
 <div class="main-content">
@@ -539,8 +638,13 @@
                         <label class="filter-label">Approval Status</label>
                         <select class="filter-input" id="statusFilter">
                             <option value="">All Status</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Approved">Approved</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Submitted">Submitted</option>
+                            <option value="SupplierApproved">SupplierApproved</option>
+                            <option value="SupplierRejected">SupplierRejected</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Received">Received</option>
+                            <option value="Closed">Closed</option>
                         </select>
                     </div>
                 </div>
@@ -594,7 +698,9 @@
                                 <th>Quantity</th>
                                 <th>Supplier Name</th>
                                 <th>Linked Policy</th>
-                                <th>Purchase Date</th>
+                                <th>Order Date</th>
+                                <th>Delivery Begin</th>
+                                <th>Possible Arrival</th>
                                 <th>Approval Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -602,7 +708,7 @@
                         <tbody id="procurementTable">
                             @foreach (var record in Model.ProcurementRecords)
                             {
-                            <tr data-supplier="@record.SupplierName" data-status="@record.ApprovalStatus">
+                            <tr data-supplier="@record.SupplierName" data-status="@record.ApprovalStatus" data-db-id="@record.ProcurementId.Replace("PROC-", "")">
                                 <td>@record.ProcurementId</td>
                                 <td>@record.ItemName</td>
                                 <td>@record.Category</td>
@@ -610,6 +716,8 @@
                                 <td>@record.SupplierName</td>
                                 <td>@record.LinkedPolicy</td>
                                 <td>@record.PurchaseDate.ToString("MMM d, yyyy")</td>
+                                <td>@(record.DeliveryBegin.HasValue ? record.DeliveryBegin.Value.ToString("MMM d, yyyy") : "TBD")</td>
+                                <td>@(record.PossibleArrival.HasValue ? record.PossibleArrival.Value.ToString("MMM d, yyyy") : "TBD")</td>
                                 <td><span class="status-badge status-@record.ApprovalStatus.ToLower()">@record.ApprovalStatus</span></td>
                                 <td>
                                     <div class="action-btns">
@@ -637,26 +745,6 @@
             <div class="modal-body">
                 <form id="procurementForm">
                     <div class="form-grid">
-                        <div class="form-group full-width">
-                            <label class="form-label">Item Name *</label>
-                            <input type="text" id="itemName" class="form-input" placeholder="e.g., Dell Laptops" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Category *</label>
-                            <select id="category" class="form-input" required>
-                                <option value="">Select Category</option>
-                                <option value="IT Equipment">IT Equipment</option>
-                                <option value="Software">Software</option>
-                                <option value="Hardware">Hardware</option>
-                                <option value="Facilities">Facilities</option>
-                                <option value="Security">Security</option>
-                                <option value="Consumables">Consumables</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Quantity *</label>
-                            <input type="number" id="quantity" class="form-input" placeholder="0" min="1" required>
-                        </div>
                         <div class="form-group">
                             <label class="form-label">Supplier *</label>
                             <select id="supplierId" class="form-input" required>
@@ -668,25 +756,28 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label class="form-label">Available Supplier Item *</label>
+                            <select id="supplierItemId" class="form-input" required disabled>
+                                <option value="">Select Supplier First</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Category</label>
+                            <input type="text" id="category" class="form-input" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Quantity *</label>
+                            <input type="number" id="quantity" class="form-input" placeholder="0" min="1" required>
+                        </div>
+                        <div class="form-group">
                             <label class="form-label">Linked Policy *</label>
-                            <select id="policyId" class="form-input" required>
-                                <option value="">Select Policy</option>
-                                @foreach (var policy in Model.Policies)
-                                {
-                                    <option value="@policy.Id">@policy.Title</option>
-                                }
+                            <select id="policyId" class="form-input" required disabled>
+                                <option value="">Select Supplier First</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Purchase Date *</label>
-                            <input type="date" id="purchaseDate" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Approval Status *</label>
-                            <select id="approvalStatus" class="form-input" required>
-                                <option value="Pending">Pending</option>
-                                <option value="Approved">Approved</option>
-                            </select>
+                            <label class="form-label">Order Date</label>
+                            <input type="text" class="form-input" value="Auto-set on save" readonly>
                         </div>
                     </div>
                 </form>
@@ -706,7 +797,7 @@
                 <button class="modal-close" onclick="closeViewModal()">&times;</button>
             </div>
             <div class="modal-body" style="padding: 24px;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+                <div class="view-detail-grid">
                     <div>
                         <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Procurement ID</div>
                         <div id="viewId" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
@@ -732,8 +823,16 @@
                         <div id="viewPolicy" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
                     </div>
                     <div>
-                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Purchase Date</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Order Date</div>
                         <div id="viewDate" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Delivery Begin</div>
+                        <div id="viewDeliveryBegin" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Possible Arrival</div>
+                        <div id="viewPossibleArrival" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
                     </div>
                     <div>
                         <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Approval Status</div>
@@ -782,11 +881,37 @@
             editingProcurementId = null;
             document.getElementById('modalTitle').textContent = 'Add Procurement Record';
             document.getElementById('procurementForm').reset();
+            categoryInput.value = '';
+            supplierItemSelect.innerHTML = '<option value="">Select Supplier First</option>';
+            supplierItemSelect.disabled = true;
+            policySelect.innerHTML = '<option value="">Select Supplier First</option>';
+            policySelect.disabled = true;
             document.getElementById('procurementModal').classList.add('active');
         }
 
         function closeModal() {
             document.getElementById('procurementModal').classList.remove('active');
+        }
+
+        function showToast(message, type = 'error', title = null) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const resolvedTitle = title || (type === 'success' ? 'Success' : 'Action Required');
+            toast.innerHTML = `
+                <div class="toast-title">${resolvedTitle}</div>
+                <div class="toast-message">${message}</div>
+            `;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 220);
+            }, 3000);
         }
 
         function viewRecord(id) {
@@ -800,7 +925,7 @@
             });
 
             if (!targetRow) {
-                alert('Record not found');
+                showToast('Record not found.');
                 return;
             }
 
@@ -811,11 +936,15 @@
             document.getElementById('viewSupplier').textContent = targetRow.cells[4].textContent.trim();
             document.getElementById('viewPolicy').textContent = targetRow.cells[5].textContent.trim();
             document.getElementById('viewDate').textContent = targetRow.cells[6].textContent.trim();
+            document.getElementById('viewDeliveryBegin').textContent = targetRow.cells[7].textContent.trim();
+            document.getElementById('viewPossibleArrival').textContent = targetRow.cells[8].textContent.trim();
 
-            const status = targetRow.cells[7].textContent.trim();
+            const status = targetRow.cells[9].textContent.trim();
             const statusEl = document.getElementById('viewStatus');
             statusEl.textContent = status;
-            statusEl.style.color = status === 'Approved' ? '#16a34a' : '#d97706';
+            if (status === 'SupplierRejected') statusEl.style.color = '#dc2626';
+            else if (status === 'Submitted' || status === 'Draft') statusEl.style.color = '#d97706';
+            else statusEl.style.color = '#16a34a';
 
             document.getElementById('viewModal').classList.add('active');
         }
@@ -840,14 +969,31 @@
                 return;
             }
 
+            const supplierIdValue = parseInt(document.getElementById('supplierId').value);
+            const supplierItemIdValue = parseInt(document.getElementById('supplierItemId').value);
+            if (isNaN(supplierIdValue)) {
+                showToast('Please select a supplier.');
+                return;
+            }
+            if (isNaN(supplierItemIdValue)) {
+                showToast('Please select an available supplier item.');
+                return;
+            }
+            const policyIdValue = parseInt(document.getElementById('policyId').value);
+            if (isNaN(policyIdValue)) {
+                showToast('Please select a compliant linked policy for this supplier.');
+                return;
+            }
+
             const data = {
                 procurementId: editingProcurementId || 0,
-                supplierId: parseInt(document.getElementById('supplierId').value),
-                itemName: document.getElementById('itemName').value,
+                supplierId: supplierIdValue,
+                supplierItemId: supplierItemIdValue,
+                itemName: document.getElementById('supplierItemId').selectedOptions[0]?.text?.split(' (')[0] || '',
                 category: document.getElementById('category').value,
                 quantity: parseInt(document.getElementById('quantity').value),
-                procurementDate: document.getElementById('purchaseDate').value,
-                policyId: parseInt(document.getElementById('policyId').value) || null
+                procurementDate: new Date().toISOString(),
+                policyId: policyIdValue
             };
 
             const url = editingProcurementId ? '/Admin/UpdateProcurement' : '/Admin/CreateProcurement';
@@ -857,16 +1003,26 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             })
-            .then(res => res.json())
+            .then(async res => {
+                let payload = null;
+                try {
+                    payload = await res.json();
+                } catch {
+                    payload = null;
+                }
+                return { ok: res.ok, payload };
+            })
             .then(result => {
-                if (result.success) {
+                const success = result.payload?.success === true;
+                if (result.ok && success) {
+                    showToast(result.payload?.message || 'Procurement saved successfully.', 'success', 'Saved');
                     closeModal();
                     location.reload();
                 } else {
-                    alert(result.message || 'Failed to save procurement');
+                    showToast(result.payload?.message || 'Failed to save procurement.');
                 }
             })
-            .catch(() => alert('Error saving procurement'));
+            .catch(() => showToast('Error saving procurement.'));
         }
 
         // Close modal when clicking outside
@@ -875,6 +1031,119 @@
         });
         document.getElementById('viewModal').addEventListener('click', function(e) {
             if (e.target === this) closeViewModal();
+        });
+
+        const supplierSelect = document.getElementById('supplierId');
+        const supplierItemSelect = document.getElementById('supplierItemId');
+        const policySelect = document.getElementById('policyId');
+        const categoryInput = document.getElementById('category');
+        let supplierItemStock = {};
+
+        async function reloadSupplierItems() {
+            const supplierId = parseInt(supplierSelect.value);
+            supplierItemSelect.innerHTML = '';
+            supplierItemStock = {};
+
+            if (isNaN(supplierId)) {
+                supplierItemSelect.innerHTML = '<option value="">Select Supplier First</option>';
+                categoryInput.value = '';
+                supplierItemSelect.disabled = true;
+                policySelect.innerHTML = '<option value="">Select Supplier First</option>';
+                policySelect.disabled = true;
+                return;
+            }
+
+            supplierItemSelect.innerHTML = '<option value="">Loading items...</option>';
+            supplierItemSelect.disabled = true;
+            categoryInput.value = '';
+
+            let items = [];
+            try {
+                const response = await fetch(`/Admin/GetSupplierItems?supplierId=${supplierId}`);
+                const payload = await response.json();
+                if (!payload.success) {
+                    supplierItemSelect.innerHTML = '<option value="">Failed to load items</option>';
+                    policySelect.innerHTML = '<option value="">Failed to load policies</option>';
+                    policySelect.disabled = true;
+                    return;
+                }
+                items = (payload.items || [])
+                    .filter(i => i.status === 'Available' && i.quantityAvailable > 0);
+            } catch {
+                supplierItemSelect.innerHTML = '<option value="">Failed to load items</option>';
+                policySelect.innerHTML = '<option value="">Failed to load policies</option>';
+                policySelect.disabled = true;
+                return;
+            }
+
+            if (!items.length) {
+                supplierItemSelect.innerHTML = '<option value="">No available items</option>';
+                categoryInput.value = '';
+                supplierItemSelect.disabled = true;
+            } else {
+                supplierItemSelect.innerHTML = '<option value="">Select Item</option>';
+                items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.supplierItemId;
+                    option.textContent = `${item.itemName} (Stock: ${item.quantityAvailable})`;
+                    option.dataset.category = item.category || '';
+                    supplierItemSelect.appendChild(option);
+                    supplierItemStock[item.supplierItemId] = item.quantityAvailable;
+                });
+                supplierItemSelect.disabled = false;
+            }
+
+            await reloadSupplierCompliantPolicies(supplierId);
+        }
+
+        async function reloadSupplierCompliantPolicies(supplierId) {
+            policySelect.innerHTML = '<option value="">Loading compliant policies...</option>';
+            policySelect.disabled = true;
+
+            try {
+                const response = await fetch(`/Admin/GetSupplierCompliantPolicies?supplierId=${supplierId}`);
+                const payload = await response.json();
+                if (!payload.success) {
+                    policySelect.innerHTML = '<option value="">Failed to load policies</option>';
+                    return;
+                }
+
+                const policies = payload.policies || [];
+                if (!policies.length) {
+                    policySelect.innerHTML = '<option value="">No compliant policies assigned</option>';
+                    return;
+                }
+
+                policySelect.innerHTML = '<option value="">Select Policy</option>';
+                policies.forEach(policy => {
+                    const option = document.createElement('option');
+                    option.value = policy.id;
+                    option.textContent = policy.title;
+                    policySelect.appendChild(option);
+                });
+                policySelect.disabled = false;
+            } catch {
+                policySelect.innerHTML = '<option value="">Failed to load policies</option>';
+            }
+        }
+
+        supplierSelect.addEventListener('change', reloadSupplierItems);
+        supplierItemSelect.addEventListener('change', function () {
+            const selected = supplierItemSelect.selectedOptions[0];
+            categoryInput.value = selected?.dataset?.category || '';
+        });
+
+        document.getElementById('quantity').addEventListener('input', function () {
+            const selectedItemId = parseInt(supplierItemSelect.value);
+            if (isNaN(selectedItemId)) return;
+
+            const maxStock = supplierItemStock[selectedItemId];
+            const entered = parseInt(this.value || '0');
+            if (maxStock > 0 && entered > maxStock) {
+                this.setCustomValidity(`Only ${maxStock} item(s) available for this supplier item.`);
+            } else {
+                this.setCustomValidity('');
+            }
         });
     </script>
 }
