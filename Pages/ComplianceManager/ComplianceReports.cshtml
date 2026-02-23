@@ -5,6 +5,21 @@
 }
 
 <style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f8f9fa;
+        color: #1f2937;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    .main-content {
+        margin-left: 260px;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
     .reports-shell { padding: 24px; }
     .report-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
     .report-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
@@ -17,16 +32,45 @@
     .kpi .label { font-size: 0.8rem; color: #64748b; }
     .kpi .value { font-size: 1.3rem; font-weight: 700; color: #0f172a; }
     .actions { display: flex; gap: 8px; }
+    .actions .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+        white-space: nowrap;
+    }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th, td { border-bottom: 1px solid #e5e7eb; padding: 10px 8px; text-align: left; font-size: 0.9rem; }
     .status { padding: 4px 8px; border-radius: 999px; font-size: 0.8rem; }
-    .status.compliant { background: #dcfce7; color: #166534; }
-    .status.pending { background: #fef3c7; color: #92400e; }
-    .status.non-compliant { background: #fee2e2; color: #991b1b; }
+    .status.compliant { background: transparent; color: #166534; }
+    .status.pending { background: transparent; color: #92400e; }
+    .status.non-compliant { background: transparent; color: #991b1b; }
     @@media (max-width: 900px) {
         .filters { grid-template-columns: 1fr 1fr; }
         .kpis { grid-template-columns: 1fr 1fr; }
+    }
+
+    @@media (max-width: 576px) {
+        .reports-shell { padding: 14px; }
+        .report-card { padding: 12px; }
+        .filters { grid-template-columns: 1fr; gap: 10px; }
+        .actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+        .actions .btn { width: 100%; padding: 10px 8px; font-size: .85rem; }
+        .kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+        .kpi { padding: 10px; }
+        .kpi .value { font-size: 1.8rem; line-height: 1; }
+    }
+
+    @@media (max-width: 380px) {
+        .actions { grid-template-columns: 1fr; }
+        .kpis { grid-template-columns: 1fr; }
+    }
+
+    @@media (max-width: 991px) {
+        .main-content {
+            margin-left: 0;
+        }
     }
 </style>
 

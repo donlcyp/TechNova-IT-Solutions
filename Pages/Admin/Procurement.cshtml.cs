@@ -4,10 +4,12 @@ namespace TechNova_IT_Solutions.Pages
     public class ProcurementModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly IAdminService _adminService;
 
-        public ProcurementModel(ApplicationDbContext context)
+        public ProcurementModel(ApplicationDbContext context, IAdminService adminService)
         {
             _context = context;
+            _adminService = adminService;
         }
 
         public string UserEmail { get; set; } = string.Empty;
@@ -47,6 +49,8 @@ namespace TechNova_IT_Solutions.Pages
             UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? "admin@technova.com";
             UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
 
+            await _adminService.SyncLateProcurementsAsync();
+
             // Calculate summary statistics
             TotalProcurements = await _context.Procurements.CountAsync();
             
@@ -74,13 +78,47 @@ namespace TechNova_IT_Solutions.Pages
                     SupplierName = p.Supplier != null ? p.Supplier.SupplierName : "N/A",
                     LinkedPolicy = p.RelatedPolicy != null ? p.RelatedPolicy.PolicyTitle : "General",
                     PurchaseDate = p.PurchaseDate ?? DateTime.Now,
+                    CurrencyCode = p.CurrencyCode ?? "PHP",
+                    OriginalAmount = p.OriginalAmount,
+                    ExchangeRate = p.ExchangeRate,
+                    ConvertedAmount = p.ConvertedAmount,
                     DeliveryBegin = p.SupplierCommitShipDate,
-                    // Inclusive 7-day window: Delivery Begin is Day 1, so Possible Arrival is +6 days.
-                    PossibleArrival = p.SupplierCommitShipDate.HasValue ? p.SupplierCommitShipDate.Value.AddDays(6) : null,
-                    ApprovalStatus = string.IsNullOrWhiteSpace(p.Status) ? ProcurementStatuses.Draft : p.Status,
+                    RevisedDeliveryDate = p.RevisedDeliveryDate,
+                    DelayReason = p.DelayReason,
+                    WorkflowStatus = string.IsNullOrWhiteSpace(p.Status) ? ProcurementStatuses.Draft : p.Status,
                     SupplierResponseDeadline = p.SupplierResponseDeadline
                 })
                 .ToListAsync();
+
+            foreach (var record in ProcurementRecords)
+            {
+                // 7-day window starts on Delivery Begin date (Day 1), so Possible Arrival is +6 days.
+                record.PossibleArrival = record.RevisedDeliveryDate ?? (record.DeliveryBegin?.AddDays(6));
+                var today = DateTime.UtcNow.Date;
+
+                record.ApprovalStatus = record.WorkflowStatus switch
+                {
+                    ProcurementStatuses.Draft => ProcurementStatuses.Draft,
+                    ProcurementStatuses.Submitted => ProcurementStatuses.Submitted,
+                    ProcurementStatuses.SupplierRejected => ProcurementStatuses.SupplierRejected,
+                    _ => ProcurementStatuses.SupplierApproved
+                };
+
+                record.DeliveryStatus = record.WorkflowStatus switch
+                {
+                    ProcurementStatuses.Draft => "NotStarted",
+                    ProcurementStatuses.Submitted => "PendingSupplier",
+                    ProcurementStatuses.SupplierRejected => "Rejected",
+                    ProcurementStatuses.Received => "Arrived",
+                    ProcurementStatuses.Closed => ProcurementStatuses.Closed,
+                    _ => record.PossibleArrival.HasValue
+                        ? (today > record.PossibleArrival.Value.Date ? ProcurementStatuses.Late : "OnTheWay")
+                        : "PendingSupplier"
+                };
+
+                record.CanEdit = record.WorkflowStatus == ProcurementStatuses.Draft || record.WorkflowStatus == ProcurementStatuses.Submitted;
+                record.CanMarkDeliveryArrived = record.WorkflowStatus == ProcurementStatuses.SupplierApproved || record.WorkflowStatus == ProcurementStatuses.Late;
+            }
 
             // Fetch suppliers for dropdown
             Suppliers = await _context.Suppliers
@@ -111,6 +149,8 @@ namespace TechNova_IT_Solutions.Pages
                     SupplierId = i.SupplierId,
                     Name = i.ItemName,
                     Category = i.Category ?? string.Empty,
+                    UnitPrice = i.UnitPrice,
+                    CurrencyCode = i.CurrencyCode,
                     QuantityAvailable = i.QuantityAvailable,
                     Status = i.Status
                 })
@@ -129,9 +169,19 @@ namespace TechNova_IT_Solutions.Pages
         public string SupplierName { get; set; } = string.Empty;
         public string LinkedPolicy { get; set; } = string.Empty;
         public DateTime PurchaseDate { get; set; }
+        public string CurrencyCode { get; set; } = "PHP";
+        public decimal? OriginalAmount { get; set; }
+        public decimal? ExchangeRate { get; set; }
+        public decimal? ConvertedAmount { get; set; }
         public DateTime? DeliveryBegin { get; set; }
         public DateTime? PossibleArrival { get; set; }
+        public DateTime? RevisedDeliveryDate { get; set; }
+        public string? DelayReason { get; set; }
+        public string WorkflowStatus { get; set; } = string.Empty;
         public string ApprovalStatus { get; set; } = string.Empty;
+        public string DeliveryStatus { get; set; } = string.Empty;
+        public bool CanEdit { get; set; }
+        public bool CanMarkDeliveryArrived { get; set; }
         public DateTime? SupplierResponseDeadline { get; set; }
     }
 
@@ -153,6 +203,8 @@ namespace TechNova_IT_Solutions.Pages
         public int SupplierId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
+        public decimal UnitPrice { get; set; }
+        public string CurrencyCode { get; set; } = "PHP";
         public int QuantityAvailable { get; set; }
         public string Status { get; set; } = string.Empty;
     }

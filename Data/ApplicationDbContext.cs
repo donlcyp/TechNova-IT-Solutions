@@ -21,6 +21,7 @@ namespace TechNova_IT_Solutions.Data
         public DbSet<Procurement> Procurements { get; set; }
         public DbSet<ProcurementStatusHistory> ProcurementStatusHistory { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<ExternalPolicyImport> ExternalPolicyImports { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -45,6 +46,24 @@ namespace TechNova_IT_Solutions.Data
                 .HasMany(u => u.AuditLogs)
                 .WithOne(al => al.User)
                 .HasForeignKey(al => al.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ExternalPolicyImport>()
+                .HasOne(e => e.ImportedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.ImportedByUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ExternalPolicyImport>()
+                .HasOne(e => e.ReviewedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.ReviewedByUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ExternalPolicyImport>()
+                .HasOne(e => e.ApprovedPolicy)
+                .WithMany()
+                .HasForeignKey(e => e.ApprovedPolicyId)
                 .OnDelete(DeleteBehavior.SetNull);
 
             // Policy relationships
@@ -103,6 +122,11 @@ namespace TechNova_IT_Solutions.Data
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
+            modelBuilder.Entity<Supplier>()
+                .HasIndex(s => s.Email)
+                .IsUnique()
+                .HasFilter("[email] IS NOT NULL");
+
             modelBuilder.Entity<PolicyAssignment>()
                 .HasIndex(pa => new { pa.PolicyId, pa.UserId })
                 .IsUnique();
@@ -114,6 +138,12 @@ namespace TechNova_IT_Solutions.Data
             modelBuilder.Entity<SupplierItem>()
                 .HasIndex(si => new { si.SupplierId, si.ItemName })
                 .IsUnique();
+
+            modelBuilder.Entity<ExternalPolicyImport>()
+                .HasIndex(e => new { e.SourceApi, e.DocumentNumber });
+
+            modelBuilder.Entity<ExternalPolicyImport>()
+                .HasIndex(e => e.ReviewStatus);
 
             // ========== SEED DATA ==========
             

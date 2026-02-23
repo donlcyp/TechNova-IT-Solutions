@@ -8,7 +8,8 @@
     ".NETCoreApp,Version=v10.0": {
       "TechNova IT Solutions/1.0.0": {
         "dependencies": {
-          "BCrypt.Net-Next": "4.0.3",
+          "BCrypt.Net-Next": "4.1.0",
+          "MailKit": "4.15.0",
           "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore": "10.0.3",
           "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "10.0.3",
           "Microsoft.AspNetCore.Identity.UI": "10.0.3",
@@ -47,11 +48,19 @@
           }
         }
       },
-      "BCrypt.Net-Next/4.0.3": {
+      "BCrypt.Net-Next/4.1.0": {
         "runtime": {
-          "lib/net6.0/BCrypt.Net-Next.dll": {
-            "assemblyVersion": "4.0.3.0",
-            "fileVersion": "4.0.3.0"
+          "lib/net10.0/BCrypt.Net-Next.dll": {
+            "assemblyVersion": "4.1.0.0",
+            "fileVersion": "4.1.0.0"
+          }
+        }
+      },
+      "BouncyCastle.Cryptography/2.6.2": {
+        "runtime": {
+          "lib/net6.0/BouncyCastle.Cryptography.dll": {
+            "assemblyVersion": "2.0.0.0",
+            "fileVersion": "2.6.2.46322"
           }
         }
       },
@@ -592,6 +601,17 @@
         "resources": {
           "lib/net6.0/zh-Hant/Humanizer.resources.dll": {
             "locale": "zh-Hant"
+          }
+        }
+      },
+      "MailKit/4.15.0": {
+        "dependencies": {
+          "MimeKit": "4.15.0"
+        },
+        "runtime": {
+          "lib/net10.0/MailKit.dll": {
+            "assemblyVersion": "4.15.0.0",
+            "fileVersion": "4.15.0.0"
           }
         }
       },
@@ -1656,6 +1676,17 @@
           }
         }
       },
+      "MimeKit/4.15.0": {
+        "dependencies": {
+          "BouncyCastle.Cryptography": "2.6.2"
+        },
+        "runtime": {
+          "lib/net10.0/MimeKit.dll": {
+            "assemblyVersion": "4.15.0.0",
+            "fileVersion": "4.15.0.0"
+          }
+        }
+      },
       "Mono.TextTemplating/3.0.0": {
         "dependencies": {
           "System.CodeDom": "6.0.0"
@@ -2072,12 +2103,19 @@
       "path": "azure.identity/1.14.2",
       "hashPath": "azure.identity.1.14.2.nupkg.sha512"
     },
-    "BCrypt.Net-Next/4.0.3": {
+    "BCrypt.Net-Next/4.1.0": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-W+U9WvmZQgi5cX6FS5GDtDoPzUCV4LkBLkywq/kRZhuDwcbavOzcDAr3LXJFqHUi952Yj3LEYoWW0jbEUQChsA==",
-      "path": "bcrypt.net-next/4.0.3",
-      "hashPath": "bcrypt.net-next.4.0.3.nupkg.sha512"
+      "sha512": "sha512-5YT3DKllmtkyW68PjURu/V1TOe4MKiByKwsRNVcfYE1S5KuFTeozdmKzyNzolKiQF391OXCaQtINvYT3j1ERzQ==",
+      "path": "bcrypt.net-next/4.1.0",
+      "hashPath": "bcrypt.net-next.4.1.0.nupkg.sha512"
+    },
+    "BouncyCastle.Cryptography/2.6.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w==",
+      "path": "bouncycastle.cryptography/2.6.2",
+      "hashPath": "bouncycastle.cryptography.2.6.2.nupkg.sha512"
     },
     "Humanizer/2.14.1": {
       "type": "package",
@@ -2429,6 +2467,13 @@
       "path": "humanizer.core.zh-hant/2.14.1",
       "hashPath": "humanizer.core.zh-hant.2.14.1.nupkg.sha512"
     },
+    "MailKit/4.15.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-PM3bNDLwmK2hdiTx8xkTLRMRf9Y0VuirdyHWsrlSlz9hrME0lFkt/rF/9xlK/AtVML86BlS07pEPqo43Cmptbg==",
+      "path": "mailkit/4.15.0",
+      "hashPath": "mailkit.4.15.0.nupkg.sha512"
+    },
     "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore/10.0.3": {
       "type": "package",
       "serviceable": true,
@@ -2764,6 +2809,13 @@
       "sha512": "sha512-JQcdTUracjvpN2zzHLhpGuqWqeZJzV08q0us960GRi4EN+3H8/CvE4D6+PzS+mD2eapf6i4DjPQljg9oi+R0+A==",
       "path": "microsoft.visualstudio.web.codegenerators.mvc/10.0.2",
       "hashPath": "microsoft.visualstudio.web.codegenerators.mvc.10.0.2.nupkg.sha512"
+    },
+    "MimeKit/4.15.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-+KVUJwHIp1aVPyVjcadAH1M9QkAwLflLujzySAS4N//AqSYjD+wMo2a3PkYu5XDibSuhlAg5sIh/DVNwVNGiVw==",
+      "path": "mimekit/4.15.0",
+      "hashPath": "mimekit.4.15.0.nupkg.sha512"
     },
     "Mono.TextTemplating/3.0.0": {
       "type": "package",

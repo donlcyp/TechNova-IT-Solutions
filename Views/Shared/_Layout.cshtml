@@ -55,6 +55,34 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
         (function () {
+            // Normalize label "for" targets to element ids.
+            function normalizeLabelTargets() {
+                const labels = document.querySelectorAll('label[for]');
+                labels.forEach((label, index) => {
+                    const key = label.getAttribute('for');
+                    if (!key) return;
+
+                    if (document.getElementById(key)) {
+                        return;
+                    }
+
+                    const byName = document.querySelector(`[name="${CSS.escape(key)}"]`);
+                    if (!byName) return;
+
+                    if (!byName.id) {
+                        byName.id = `auto_field_${index}`;
+                    }
+
+                    label.setAttribute('for', byName.id);
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', normalizeLabelTargets);
+            } else {
+                normalizeLabelTargets();
+            }
+
             const modal = document.getElementById('globalAppModal');
             const titleEl = document.getElementById('globalAppModalTitle');
             const bodyEl = document.getElementById('globalAppModalBody');

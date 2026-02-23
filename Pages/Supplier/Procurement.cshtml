@@ -107,7 +107,7 @@
 
         .form-grid {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr auto;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
             gap: 10px;
             margin-bottom: 12px;
         }
@@ -184,31 +184,29 @@
         }
 
         .status-pill {
-            display: inline-flex;
-            padding: 2px 10px;
-            border-radius: 999px;
+            display: inline-block;
+            padding: 0;
+            border-radius: 0;
             font-size: 12px;
             font-weight: 700;
-            background: #f1f5f9;
+            background: transparent;
         }
 
         .status-available {
             color: #166534;
-            background: #dcfce7;
         }
 
         .status-low {
             color: #92400e;
-            background: #fef3c7;
         }
 
         .status-out {
             color: #991b1b;
-            background: #fee2e2;
         }
 
         .status-submitted { color: #d97706; }
         .status-supplierapproved { color: #16a34a; }
+        .status-late { color: #dc2626; }
         .status-supplierrejected { color: #dc2626; }
         .status-shipped { color: #2563eb; }
         .status-received, .status-closed { color: #047857; }
@@ -277,6 +275,12 @@
             display: flex;
             justify-content: flex-end;
             gap: 10px;
+        }
+
+        .action-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .toast-wrap {
@@ -360,6 +364,8 @@
                         <tr>
                             <th>Item</th>
                             <th>Category</th>
+                            <th>Unit Price</th>
+                            <th>Currency</th>
                             <th>Qty Available</th>
                             <th>Status</th>
                             <th>Action</th>
@@ -401,6 +407,8 @@
         <div class="modal-body">
             <input id="itemName" class="form-input" placeholder="Item name">
             <input id="itemCategory" class="form-input" placeholder="Category">
+            <input id="itemUnitPrice" type="number" min="0.01" step="0.01" class="form-input" placeholder="Unit price">
+            <input id="itemCurrencyCode" class="form-input" maxlength="3" placeholder="Currency (e.g. USD)" value="PHP">
             <input id="itemQuantity" type="number" min="0" class="form-input" placeholder="Quantity">
         </div>
         <div class="modal-footer">
@@ -429,8 +437,40 @@
 
 <div id="toastWrap" class="toast-wrap"></div>
 
-@section Scripts {
+    @section Scripts {
     <script>
+        const modalFocusState = {
+            itemModal: null,
+            stockModal: null
+        };
+
+        function setModalState(modalId, isOpen) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+
+            if (isOpen) {
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                modal.removeAttribute('inert');
+                return;
+            }
+
+            // Move focus out of modal before hiding it to avoid aria-hidden focus violations
+            if (modal.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
+
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            modal.setAttribute('inert', '');
+
+            const returnTarget = modalFocusState[modalId];
+            if (returnTarget && typeof returnTarget.focus === 'function') {
+                returnTarget.focus();
+            }
+            modalFocusState[modalId] = null;
+        }
+
         function showToast(message, type = 'success') {
             const wrap = document.getElementById('toastWrap');
             const el = document.createElement('div');
@@ -443,25 +483,27 @@
         }
 
         function openItemModal() {
-            document.getElementById('itemModal').classList.add('active');
+            modalFocusState.itemModal = document.activeElement;
+            setModalState('itemModal', true);
             document.getElementById('itemName').focus();
         }
 
         function closeItemModal() {
-            document.getElementById('itemModal').classList.remove('active');
+            setModalState('itemModal', false);
         }
 
         let selectedStockItemId = 0;
         function openStockModal(itemId, itemName) {
+            modalFocusState.stockModal = document.activeElement;
             selectedStockItemId = itemId;
             document.getElementById('stockItemName').value = itemName;
             document.getElementById('addStockQty').value = '';
-            document.getElementById('stockModal').classList.add('active');
+            setModalState('stockModal', true);
             document.getElementById('addStockQty').focus();
         }
 
         function closeStockModal() {
-            document.getElementById('stockModal').classList.remove('active');
+            setModalState('stockModal', false);
             selectedStockItemId = 0;
         }
 
@@ -518,7 +560,7 @@
             }
 
             if (!json.items.length) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-row">No inventory items yet. Add your first item above.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-row">No inventory items yet. Add your first item above.</td></tr>';
                 return;
             }
 
@@ -531,9 +573,16 @@
                     <tr>
                         <td>${item.itemName}</td>
                         <td>${item.category || ''}</td>
+                        <td>${Number(item.unitPrice || 0).toFixed(2)}</td>
+                        <td>${item.currencyCode || 'PHP'}</td>
                         <td>${item.quantityAvailable}</td>
                         <td><span class="status-pill ${statusClass}">${item.status}</span></td>
-                        <td><button class="btn btn-light" type="button" onclick="openStockModal(${item.supplierItemId}, '${(item.itemName || '').replace(/'/g, "\\'")}')">Add Stock</button></td>
+                        <td>
+                            <div class="action-group">
+                                <button class="btn btn-light" type="button" onclick="openStockModal(${item.supplierItemId}, '${(item.itemName || '').replace(/'/g, "\\'")}')">Add Stock</button>
+                                <button class="btn btn-light" type="button" onclick="openEditPriceModal(${item.supplierItemId}, '${(item.itemName || '').replace(/'/g, "\\'")}', '${(item.category || '').replace(/'/g, "\\'")}', ${item.quantityAvailable}, ${Number(item.unitPrice || 0)}, '${(item.currencyCode || 'PHP').replace(/'/g, "\\'")}')">Edit Unit Price</button>
+                            </div>
+                        </td>
                     </tr>`;
             });
         }
@@ -541,15 +590,23 @@
         async function saveItem() {
             const itemName = document.getElementById('itemName').value.trim();
             const category = document.getElementById('itemCategory').value.trim();
+            const unitPrice = parseFloat(document.getElementById('itemUnitPrice').value || '0');
+            const currencyCode = (document.getElementById('itemCurrencyCode').value || '').trim().toUpperCase();
             const quantity = parseInt(document.getElementById('itemQuantity').value || '0');
+            const supplierItemId = parseInt(document.getElementById('itemName').dataset.supplierItemId || '0');
             if (!itemName) { showToast('Item name is required', 'error'); return; }
+            if (!Number.isFinite(unitPrice) || unitPrice <= 0) { showToast('Unit price must be greater than zero', 'error'); return; }
+            if (currencyCode.length !== 3) { showToast('Currency must be a 3-letter code', 'error'); return; }
 
             const res = await fetch('/Supplier/UpsertInventoryItem', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    supplierItemId: supplierItemId > 0 ? supplierItemId : 0,
                     itemName,
                     category,
+                    unitPrice,
+                    currencyCode,
                     quantityAvailable: quantity
                 })
             });
@@ -558,10 +615,27 @@
             if (!json.success) { showToast(json.message || 'Save failed', 'error'); return; }
             document.getElementById('itemName').value = '';
             document.getElementById('itemCategory').value = '';
+            document.getElementById('itemUnitPrice').value = '';
+            document.getElementById('itemCurrencyCode').value = 'PHP';
             document.getElementById('itemQuantity').value = '';
             closeItemModal();
             showToast('Inventory item saved', 'success');
             await loadInventory();
+        }
+
+        function openEditPriceModal(supplierItemId, itemName, category, quantityAvailable, unitPrice, currencyCode) {
+            openItemModal();
+            document.querySelector('#itemModal .modal-title').textContent = 'Edit Unit Price';
+            document.getElementById('itemName').value = itemName || '';
+            document.getElementById('itemCategory').value = category || '';
+            document.getElementById('itemUnitPrice').value = Number(unitPrice || 0).toFixed(2);
+            document.getElementById('itemCurrencyCode').value = (currencyCode || 'PHP').toUpperCase();
+            document.getElementById('itemQuantity').value = quantityAvailable ?? 0;
+
+            document.getElementById('itemName').dataset.supplierItemId = supplierItemId;
+            document.getElementById('itemName').readOnly = true;
+            document.getElementById('itemCategory').readOnly = true;
+            document.getElementById('itemQuantity').readOnly = true;
         }
 
         async function loadProcurements() {
@@ -573,7 +647,7 @@
             const requests = json.requests || [];
 
             const pending = requests.filter(r => r.status === 'Submitted').length;
-            const approved = requests.filter(r => r.status === 'SupplierApproved').length;
+            const approved = requests.filter(r => r.status === 'SupplierApproved' || r.status === 'Late').length;
             document.getElementById('pendingCount').textContent = pending;
             document.getElementById('approvedCount').textContent = approved;
 
@@ -584,8 +658,15 @@
 
             requests.forEach(req => {
                 const canRespond = req.status === 'Submitted';
+                const canReportDelay = req.status === 'SupplierApproved' || req.status === 'Late';
+                const todayIso = new Date().toISOString().split('T')[0];
+                const minRevisedIso = req.supplierCommitShipDate
+                    ? new Date(new Date(req.supplierCommitShipDate).getTime() + 86400000).toISOString().split('T')[0]
+                    : todayIso;
                 const deadline = req.supplierResponseDeadline ? new Date(req.supplierResponseDeadline).toLocaleDateString() : '';
                 const rejectReason = req.rejectionReason ? `<div style="font-size:12px;color:#dc2626;">Reason: ${req.rejectionReason}</div>` : '';
+                const delayReason = req.delayReason ? `<div style="font-size:12px;color:#b91c1c;">Delay: ${req.delayReason}</div>` : '';
+                const revisedDelivery = req.revisedDeliveryDate ? `<div style="font-size:12px;color:#334155;">Revised delivery: ${new Date(req.revisedDeliveryDate).toLocaleDateString()}</div>` : '';
                 tbody.innerHTML += `
                     <tr>
                         <td>PROC-${String(req.procurementId).padStart(3, '0')}</td>
@@ -594,15 +675,23 @@
                         <td>
                             <span class="status-pill status-${(req.status || '').toLowerCase()}">${req.status || ''}</span>
                             ${rejectReason}
+                            ${delayReason}
+                            ${revisedDelivery}
                         </td>
                         <td>${deadline}</td>
                         <td>
                             ${canRespond ? `
                             <div class="response-grid">
-                                <input type="date" class="form-input" id="ship-${req.procurementId}">
+                                <input type="date" class="form-input" id="ship-${req.procurementId}" min="${todayIso}" value="${todayIso}">
                                 <button class="btn btn-success" type="button" onclick="respondApprove(${req.procurementId})">Approve</button>
                                 <input class="form-input" id="reason-${req.procurementId}" placeholder="Reject reason (required)">
                                 <button class="btn btn-danger" type="button" onclick="respondReject(${req.procurementId})">Reject</button>
+                            </div>` : canReportDelay ? `
+                            <div class="response-grid">
+                                <input type="date" class="form-input" id="revised-${req.procurementId}" min="${minRevisedIso}" value="${req.revisedDeliveryDate ? new Date(req.revisedDeliveryDate).toISOString().split('T')[0] : ''}">
+                                <button class="btn btn-danger" type="button" onclick="reportDelay(${req.procurementId})">Report Delay</button>
+                                <input class="form-input" id="delay-${req.procurementId}" placeholder="Delay reason (required)" value="${(req.delayReason || '').replace(/"/g, '&quot;')}">
+                                <span style="color:#6b7280;font-size:12px;align-self:center;">Required when late.</span>
                             </div>` : `<span style="color:#6b7280;">No action</span>`}
                         </td>
                     </tr>`;
@@ -610,21 +699,42 @@
         }
 
         async function respondApprove(procurementId) {
-            const shipDate = document.getElementById(`ship-${procurementId}`).value;
+            const shipDateInput = document.getElementById(`ship-${procurementId}`);
+            const shipDate = shipDateInput?.value;
             if (!shipDate) { showToast('Ship date is required', 'error'); return; }
-            const res = await fetch('/Supplier/RespondToProcurement', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    procurementId,
-                    approve: true,
-                    supplierCommitShipDate: shipDate
-                })
-            });
-            const json = await res.json();
-            if (!json.success) { showToast(json.message || 'Failed', 'error'); return; }
-            showToast('Request approved', 'success');
-            await loadProcurements();
+            if (shipDateInput?.min && shipDate < shipDateInput.min) {
+                showToast('Ship date cannot be earlier than today.', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/Supplier/RespondToProcurement', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        procurementId,
+                        approve: true,
+                        supplierCommitShipDate: `${shipDate}T00:00:00`
+                    })
+                });
+
+                let json = null;
+                try {
+                    json = await res.json();
+                } catch {
+                    json = null;
+                }
+
+                if (!res.ok || !json?.success) {
+                    showToast(json?.message || 'Failed to approve request. Please refresh and try again.', 'error');
+                    return;
+                }
+
+                showToast('Request approved', 'success');
+                await loadProcurements();
+            } catch {
+                showToast('Network error while approving request.', 'error');
+            }
         }
 
         async function respondReject(procurementId) {
@@ -645,7 +755,37 @@
             await loadProcurements();
         }
 
+        async function reportDelay(procurementId) {
+            const delayReason = document.getElementById(`delay-${procurementId}`).value.trim();
+            const revisedInput = document.getElementById(`revised-${procurementId}`);
+            const revisedDeliveryDate = revisedInput.value;
+
+            if (!delayReason) { showToast('Delay reason is required', 'error'); return; }
+            if (!revisedDeliveryDate) { showToast('Revised delivery date is required', 'error'); return; }
+            if (revisedInput.min && revisedDeliveryDate < revisedInput.min) {
+                showToast('Revised delivery must be after the original committed ship date and not in the past.', 'error');
+                return;
+            }
+
+            const res = await fetch('/Supplier/ReportDelay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    procurementId,
+                    delayReason,
+                    revisedDeliveryDate
+                })
+            });
+            const json = await res.json();
+            if (!json.success) { showToast(json.message || 'Failed to report delay', 'error'); return; }
+            showToast('Delay reported and escalated', 'success');
+            await loadProcurements();
+        }
+
         document.addEventListener('DOMContentLoaded', async function () {
+            setModalState('itemModal', false);
+            setModalState('stockModal', false);
+
             await loadInventory();
             await loadProcurements();
 
@@ -656,5 +796,26 @@
                 if (e.target === this) closeStockModal();
             });
         });
+
+        function resetItemModalState() {
+            document.querySelector('#itemModal .modal-title').textContent = 'Add Inventory Item';
+            const itemNameInput = document.getElementById('itemName');
+            itemNameInput.dataset.supplierItemId = '';
+            itemNameInput.readOnly = false;
+            document.getElementById('itemCategory').readOnly = false;
+            document.getElementById('itemQuantity').readOnly = false;
+        }
+
+        const _originalOpenItemModal = openItemModal;
+        openItemModal = function() {
+            resetItemModalState();
+            _originalOpenItemModal();
+        };
+
+        const _originalCloseItemModal = closeItemModal;
+        closeItemModal = function() {
+            resetItemModalState();
+            _originalCloseItemModal();
+        };
     </script>
 }

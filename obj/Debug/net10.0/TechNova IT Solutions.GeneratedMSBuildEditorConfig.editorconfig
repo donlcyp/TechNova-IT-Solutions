@@ -54,6 +54,14 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cQ29tcGxpYW5jZU1vbml0b3JpbmcuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/C\#/repos/TechNova IT Solutions/Pages/Admin/ExternalPolicyReferences.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cRXh0ZXJuYWxQb2xpY3lSZWZlcmVuY2VzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/Admin/PolicyArchives.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cUG9saWN5QXJjaGl2ZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/C\#/repos/TechNova IT Solutions/Pages/Admin/PolicyManagement.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5cUG9saWN5TWFuYWdlbWVudC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 

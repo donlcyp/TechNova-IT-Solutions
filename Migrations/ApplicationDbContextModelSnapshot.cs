@@ -87,6 +87,96 @@ namespace TechNova_IT_Solutions.Migrations
                     b.ToTable("Compliance_Status");
                 });
 
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.ExternalPolicyImport", b =>
+                {
+                    b.Property<int>("ImportId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("importID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ImportId"));
+
+                    b.Property<int?>("ApprovedPolicyId")
+                        .HasColumnType("int")
+                        .HasColumnName("approved_policy_id");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("category");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("DocumentNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("document_number");
+
+                    b.Property<string>("ExternalUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("external_url");
+
+                    b.Property<DateTime>("ImportedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("imported_at");
+
+                    b.Property<int?>("ImportedByUserId")
+                        .HasColumnType("int")
+                        .HasColumnName("imported_by_user_id");
+
+                    b.Property<string>("PolicyTitle")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("policy_title");
+
+                    b.Property<DateTime?>("PublicationDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("publication_date");
+
+                    b.Property<string>("ReviewNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("review_notes");
+
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("review_status");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<int?>("ReviewedByUserId")
+                        .HasColumnType("int")
+                        .HasColumnName("reviewed_by_user_id");
+
+                    b.Property<string>("SourceApi")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("source_api");
+
+                    b.HasKey("ImportId");
+
+                    b.HasIndex("ApprovedPolicyId");
+
+                    b.HasIndex("ImportedByUserId");
+
+                    b.HasIndex("ReviewStatus");
+
+                    b.HasIndex("ReviewedByUserId");
+
+                    b.HasIndex("SourceApi", "DocumentNumber");
+
+                    b.ToTable("External_Policy_Imports");
+                });
+
             modelBuilder.Entity("TechNova_IT_Solutions.Models.Policy", b =>
                 {
                     b.Property<int>("PolicyId")
@@ -184,10 +274,32 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("category");
 
+                    b.Property<DateTime?>("ConversionTimestamp")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("conversion_timestamp");
+
+                    b.Property<decimal>("ConvertedAmount")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("converted_amount");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)")
+                        .HasColumnName("currency_code");
+
+                    b.Property<decimal>("ExchangeRate")
+                        .HasColumnType("decimal(18,6)")
+                        .HasColumnName("exchange_rate");
+
                     b.Property<string>("ItemName")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("item_name");
+
+                    b.Property<decimal>("OriginalAmount")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("original_amount");
 
                     b.Property<DateTime?>("PurchaseDate")
                         .HasColumnType("datetime2")
@@ -201,6 +313,11 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("received_date");
 
+                    b.Property<string>("DelayReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("delay_reason");
+
                     b.Property<string>("RejectionReason")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
@@ -209,6 +326,10 @@ namespace TechNova_IT_Solutions.Migrations
                     b.Property<int?>("RelatedPolicyId")
                         .HasColumnType("int")
                         .HasColumnName("related_policyID");
+
+                    b.Property<DateTime?>("RevisedDeliveryDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("revised_delivery_date");
 
                     b.Property<DateTime?>("ShipmentDate")
                         .HasColumnType("datetime2")
@@ -330,6 +451,19 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("status");
 
+                    b.Property<DateTime?>("TerminatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("terminated_at");
+
+                    b.Property<int?>("TerminatedByUserId")
+                        .HasColumnType("int")
+                        .HasColumnName("terminated_by_user_id");
+
+                    b.Property<string>("TerminationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("termination_reason");
+
                     b.Property<string>("SupplierName")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -337,6 +471,10 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnName("supplier_name");
 
                     b.HasKey("SupplierId");
+
+                    b.HasIndex("Email")
+                        .IsUnique()
+                        .HasFilter("[email] IS NOT NULL");
 
                     b.ToTable("Suppliers");
                 });
@@ -354,6 +492,12 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("category");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)")
+                        .HasColumnName("currency_code");
 
                     b.Property<string>("ItemName")
                         .IsRequired()
@@ -378,6 +522,10 @@ namespace TechNova_IT_Solutions.Migrations
                     b.Property<int>("SupplierId")
                         .HasColumnType("int")
                         .HasColumnName("supplierID");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("unit_price");
 
                     b.HasKey("SupplierItemId");
 
@@ -508,6 +656,30 @@ namespace TechNova_IT_Solutions.Migrations
                         .IsRequired();
 
                     b.Navigation("PolicyAssignment");
+                });
+
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.ExternalPolicyImport", b =>
+                {
+                    b.HasOne("TechNova_IT_Solutions.Models.Policy", "ApprovedPolicy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedPolicyId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("TechNova_IT_Solutions.Models.User", "ImportedByUser")
+                        .WithMany()
+                        .HasForeignKey("ImportedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("TechNova_IT_Solutions.Models.User", "ReviewedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("ApprovedPolicy");
+
+                    b.Navigation("ImportedByUser");
+
+                    b.Navigation("ReviewedByUser");
                 });
 
             modelBuilder.Entity("TechNova_IT_Solutions.Models.Policy", b =>

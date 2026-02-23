@@ -18,18 +18,23 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         Task<PolicyAssignmentStatusData> GetPolicyAssignmentStatusAsync(int policyId);
         
         // Supplier operations
-        Task<bool> CreateSupplierAsync(SupplierData supplierData);
-        Task<bool> UpdateSupplierAsync(SupplierData supplierData);
+        Task<SupplierOperationResult> CreateSupplierAsync(SupplierData supplierData);
+        Task<SupplierOperationResult> UpdateSupplierAsync(SupplierData supplierData);
         Task<bool> DeleteSupplierAsync(int supplierId);
+        Task<bool> TerminateSupplierAsync(SupplierTerminationData terminationData, int? changedByUserId);
+        Task<bool> RestoreSupplierAsync(int supplierId, int? changedByUserId);
         Task<SupplierData?> GetSupplierByIdAsync(int supplierId);
         
         // Procurement operations
         Task<bool> CreateProcurementAsync(ProcurementData procurementData);
         Task<bool> UpdateProcurementAsync(ProcurementData procurementData);
         Task<bool> DeleteProcurementAsync(int procurementId);
+        Task<bool> MarkProcurementDeliveredAsync(int procurementId, int? changedByUserId);
+        Task<int> SyncLateProcurementsAsync();
         Task<List<SupplierItemData>> GetSupplierItemsAsync(int supplierId);
         Task<bool> UpsertSupplierItemAsync(int supplierId, SupplierItemData itemData);
         Task<bool> SupplierRespondToProcurementAsync(SupplierProcurementActionData actionData);
+        Task<bool> SupplierReportDelayAsync(SupplierProcurementActionData actionData);
 
         // Audit logging
         Task LogActivityAsync(int? userId, string action, string module);
@@ -113,6 +118,21 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public string Address { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string? Password { get; set; } // Optional: Only used when creating a new supplier
+        public string? TerminationReason { get; set; }
+        public DateTime? TerminatedAt { get; set; }
+        public int? TerminatedByUserId { get; set; }
+    }
+
+    public class SupplierOperationResult
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+
+    public class SupplierTerminationData
+    {
+        public int SupplierId { get; set; }
+        public string Reason { get; set; } = string.Empty;
     }
 
     public class ProcurementData
@@ -125,9 +145,16 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public int Quantity { get; set; }
         public DateTime ProcurementDate { get; set; }
         public int? PolicyId { get; set; }
+        public string CurrencyCode { get; set; } = "PHP";
+        public decimal OriginalAmount { get; set; }
+        public decimal? ExchangeRate { get; set; }
+        public decimal? ConvertedAmount { get; set; }
+        public DateTime? ConversionTimestamp { get; set; }
         public string? Status { get; set; }
         public DateTime? SupplierResponseDeadline { get; set; }
         public DateTime? SupplierCommitShipDate { get; set; }
+        public DateTime? RevisedDeliveryDate { get; set; }
+        public string? DelayReason { get; set; }
         public string? RejectionReason { get; set; }
     }
 
@@ -137,6 +164,8 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public int SupplierId { get; set; }
         public string ItemName { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
+        public decimal UnitPrice { get; set; }
+        public string CurrencyCode { get; set; } = "PHP";
         public int QuantityAvailable { get; set; }
         public string Status { get; set; } = "Available";
     }
@@ -148,6 +177,8 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public bool Approve { get; set; }
         public string? RejectionReason { get; set; }
         public DateTime? SupplierCommitShipDate { get; set; }
+        public DateTime? RevisedDeliveryDate { get; set; }
+        public string? DelayReason { get; set; }
         public int? ChangedByUserId { get; set; }
     }
 

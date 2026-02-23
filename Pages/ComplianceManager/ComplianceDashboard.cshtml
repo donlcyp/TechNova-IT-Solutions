@@ -46,7 +46,9 @@
             cursor: pointer;
             transition: all 0.3s;
             text-decoration: none;
-            display: block;
+            display: flex;
+            flex-direction: column;
+            min-height: 140px;
         }
 
         .summary-card:hover {
@@ -60,12 +62,16 @@
             color: #6b7280;
             margin-bottom: 12px;
             font-weight: 500;
+            min-height: 40px;
+            line-height: 1.35;
         }
 
         .summary-card .value {
             font-size: 32px;
             font-weight: bold;
             color: #1f2937;
+            line-height: 1;
+            margin-top: auto;
         }
 
         .summary-card.gradient-1 .value {

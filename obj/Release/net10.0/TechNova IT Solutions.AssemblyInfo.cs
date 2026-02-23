@@ -12,10 +12,11 @@ using System;
 using System.Reflection;
 
 [assembly: Microsoft.AspNetCore.Identity.UI.UIFrameworkAttribute("Bootstrap5")]
+[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("TechNova-EmailSettings-Dev")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("TechNova IT Solutions")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a7c8a3b8d36cd20c24d6b291ac2ceead9be302e0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a9635dc00b22c3f9be09b5117da64ff85da53403")]
 [assembly: System.Reflection.AssemblyProductAttribute("TechNova IT Solutions")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TechNova IT Solutions")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

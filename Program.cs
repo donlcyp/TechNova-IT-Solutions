@@ -30,6 +30,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IComplianceManagerService, ComplianceManagerService>();
 builder.Services.AddScoped<IPolicyReferenceApiService, PolicyReferenceApiService>();
+builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
 builder.Services.AddTransient<IEmailService, EmailService>();
 
 // Add session support
@@ -68,8 +69,15 @@ using (var scope = app.Services.CreateScope())
 
     if (migrateOnStartup)
     {
-        await dbContext.Database.MigrateAsync();
-        logger.LogInformation("Database migrations applied successfully.");
+        try
+        {
+            await dbContext.Database.MigrateAsync();
+            logger.LogInformation("Database migrations applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Database migration failed during startup. Continuing without auto-migration.");
+        }
     }
     else
     {

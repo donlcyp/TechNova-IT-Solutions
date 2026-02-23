@@ -105,6 +105,45 @@
             gap: 12px;
         }
 
+        .filter-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .filter-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .add-policy-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .add-policy-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
         select {
             padding: 10px 14px;
             background: #f8f9fa;
@@ -502,6 +541,10 @@
             .search-box {
                 min-width: 100%;
             }
+
+            .filter-controls {
+                width: 100%;
+            }
         }
 
         @@media (max-width: 768px) {
@@ -549,6 +592,29 @@
 
             .summary-cards {
                 grid-template-columns: 1fr;
+            }
+
+            .filter-toolbar {
+                align-items: stretch;
+            }
+
+            .filter-controls {
+                width: 100%;
+            }
+
+            .filter-group {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .filter-group select {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .add-policy-btn {
+                width: 100%;
             }
         }
     </style>
@@ -610,8 +676,8 @@
             </div>
 
             <!-- Filter Section -->
-            <div class="filter-section" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1;">
+            <div class="filter-section filter-toolbar">
+            <div class="filter-controls">
             <div class="search-box">
                 <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
@@ -636,8 +702,8 @@
                 </select>
             </div>
             </div>
-            <button onclick="openUploadModal()" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 18px; height: 18px;">
+            <button onclick="openUploadModal()" class="add-policy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
@@ -799,6 +865,58 @@
         </div>
     </div>
 
+    <!-- Import API Policy Modal -->
+    <div class="modal" id="importApiModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Import Policy From API</h2>
+                <button class="btn-close" onclick="closeImportApiModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="importApiForm">
+                    <div class="form-group">
+                        <label for="importDocumentNumber">Federal Register Document Number</label>
+                        <input type="text" id="importDocumentNumber" placeholder="Example: 2019-25554" />
+                    </div>
+                    <div class="form-group">
+                        <label for="importExternalUrl">or Federal Register URL</label>
+                        <input type="url" id="importExternalUrl" placeholder="https://www.federalregister.gov/d/2019-25554" />
+                    </div>
+                    <div class="form-group">
+                        <label for="importCategory">Category</label>
+                        <select id="importCategory">
+                            <option value="">Use API Category</option>
+                            <option>Data Privacy</option>
+                            <option>Cybersecurity</option>
+                            <option>Financial Compliance</option>
+                            <option>HR Policies</option>
+                            <option>Environmental</option>
+                            <option>Health & Safety</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="importPolicyTitle">Override Policy Title (optional)</label>
+                        <input type="text" id="importPolicyTitle" placeholder="Leave empty to use API title" />
+                    </div>
+                    <div class="form-group">
+                        <label for="importDescription">Override Description (optional)</label>
+                        <textarea id="importDescription" placeholder="Leave empty to use API description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="importForceCreate" />
+                            Force create if same title exists
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeImportApiModal()">Cancel</button>
+                <button class="btn-primary" onclick="importPolicyFromApi()">Import Policy</button>
+            </div>
+        </div>
+    </div>
+
     <!-- View Policy Modal -->
     <div class="modal" id="viewModal">
         <div class="modal-content" style="max-width: 700px;">
@@ -842,6 +960,79 @@
             currentPolicyDbId = null;
         }
 
+        function openImportApiModal() {
+            document.getElementById('importApiForm').reset();
+            document.getElementById('importApiModal').classList.add('active');
+        }
+
+        function closeImportApiModal() {
+            document.getElementById('importApiModal').classList.remove('active');
+        }
+
+        async function importPolicyFromApi() {
+            const documentNumber = document.getElementById('importDocumentNumber').value.trim();
+            const externalUrl = document.getElementById('importExternalUrl').value.trim();
+            const category = document.getElementById('importCategory').value;
+            const policyTitle = document.getElementById('importPolicyTitle').value.trim();
+            const description = document.getElementById('importDescription').value.trim();
+            const forceCreate = document.getElementById('importForceCreate').checked;
+
+            if (!documentNumber && !externalUrl && !policyTitle) {
+                await window.showAppMessage('Provide a document number, URL, or a policy title.', 'Validation');
+                return;
+            }
+
+            const payload = {
+                sourceApi: 'Federal Register',
+                documentNumber: documentNumber || null,
+                externalUrl: externalUrl || null,
+                policyTitle: policyTitle || null,
+                description: description || null,
+                category: category || null,
+                forceCreate
+            };
+
+            fetch('/api/policy-references/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(async (res) => {
+                const result = await res.json();
+                return { ok: res.ok, status: res.status, result };
+            })
+            .then(async ({ ok, status, result }) => {
+                if (!ok) {
+                    if (status === 409 && result.existingPolicyId) {
+                        const useExisting = await window.showAppConfirm(
+                            (result.message || 'A policy with this title already exists.') + ' Open assign modal for existing policy?'
+                        );
+                        if (useExisting) {
+                            closeImportApiModal();
+                            openAssignModalByDbId(result.existingPolicyId, policyTitle || 'Existing Policy');
+                        }
+                        return;
+                    }
+
+                    await window.showAppMessage(result.message || 'Failed to import policy from API.', 'Error');
+                    return;
+                }
+
+                closeImportApiModal();
+                const assignNow = await window.showAppConfirm(
+                    `Policy "${result.policyTitle}" imported successfully. Assign it to employees/suppliers now?`
+                );
+
+                if (assignNow) {
+                    openAssignModalByDbId(result.policyId, result.policyTitle);
+                    return;
+                }
+
+                location.reload();
+            })
+            .catch(async () => await window.showAppMessage('Error importing policy from API.', 'Error'));
+        }
+
         function editPolicy(id, title, category, status) {
             currentPolicyId = id;
             // Extract numeric DB ID from "POL-001" format
@@ -879,7 +1070,7 @@
                 formData.append('policyId', currentPolicyDbId);
             }
 
-            fetch('/Admin/UploadPolicy', {
+            fetch('/AdminPolicy/UploadPolicy', {
                 method: 'POST',
                 body: formData
             })
@@ -901,7 +1092,7 @@
             document.getElementById('viewDownloadBtn').style.display = 'none';
             document.getElementById('viewModal').classList.add('active');
 
-            fetch('/Admin/GetPolicyDetail?policyId=' + dbId)
+            fetch('/AdminPolicy/GetPolicyDetail?policyId=' + dbId)
             .then(res => res.json())
             .then(result => {
                 if (result.success) {
@@ -955,7 +1146,7 @@
                             <span style="font-weight:600;color:#1e40af;">&#128206; File attached:</span> ${p.filePath.split('/').pop()}
                         </div>`;
                         const downloadBtn = document.getElementById('viewDownloadBtn');
-                        downloadBtn.href = '/Admin/DownloadPolicyFile?policyId=' + dbId;
+                        downloadBtn.href = '/AdminPolicy/DownloadPolicyFile?policyId=' + dbId;
                         downloadBtn.style.display = 'inline-flex';
                     }
 
@@ -977,7 +1168,7 @@
             const confirmed = await window.showAppConfirm('Are you sure you want to archive the policy "' + title + '"? It can be restored later.');
             if (!confirmed) return;
 
-            fetch('/Admin/ArchivePolicy?policyId=' + dbId, { method: 'POST' })
+            fetch('/AdminPolicy/ArchivePolicy?policyId=' + dbId, { method: 'POST' })
             .then(res => res.json())
             .then(async result => {
                 if (result.success) {
@@ -993,7 +1184,7 @@
             const confirmed = await window.showAppConfirm('Restore the policy "' + title + '" back to active?');
             if (!confirmed) return;
 
-            fetch('/Admin/RestorePolicy?policyId=' + dbId, { method: 'POST' })
+            fetch('/AdminPolicy/RestorePolicy?policyId=' + dbId, { method: 'POST' })
             .then(res => res.json())
             .then(async result => {
                 if (result.success) {
@@ -1008,8 +1199,13 @@
         function openAssignModal(id, title) {
             currentPolicyId = id;
             currentPolicyDbId = parseInt(id.replace('POL-', ''));
+            openAssignModalByDbId(currentPolicyDbId, title);
+        }
+
+        function openAssignModalByDbId(dbId, title) {
+            currentPolicyDbId = dbId;
+            currentPolicyId = dbId ? ('POL-' + String(dbId).padStart(3, '0')) : null;
             document.getElementById('assignModalTitle').textContent = 'Assign Policy: ' + title;
-            // Uncheck all checkboxes
             document.querySelectorAll('#employeeList input, #supplierList input').forEach(cb => cb.checked = false);
             resetAssignmentIndicators();
             loadAssignmentStatus();
@@ -1031,7 +1227,7 @@
                 return;
             }
 
-            fetch('/Admin/AssignPolicy', {
+            fetch('/AdminPolicy/AssignPolicy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1088,7 +1284,7 @@
         function loadAssignmentStatus() {
             if (!currentPolicyDbId) return;
 
-            fetch('/Admin/GetPolicyAssignmentStatus?policyId=' + currentPolicyDbId)
+            fetch('/AdminPolicy/GetPolicyAssignmentStatus?policyId=' + currentPolicyDbId)
                 .then(res => res.json())
                 .then(result => {
                     if (!result.success) return;

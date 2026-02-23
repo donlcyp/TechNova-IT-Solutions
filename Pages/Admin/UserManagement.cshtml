@@ -554,7 +554,6 @@
                                     }
                                     else
                                     {
-                                        <button class="btn-action" onclick="openModal('edit', '@user.UserId')">Edit</button>
                                         @if (user.Status == "Active")
                                         {
                                             <button class="btn-action danger" onclick="toggleUserStatus('@user.UserId', 'deactivate')">Deactivate</button>
@@ -760,7 +759,7 @@
                 
                 // Load user data
                 try {
-                    const response = await fetch(`/Admin/GetUser?userId=${userId}`);
+                    const response = await fetch(`/AdminUser/GetUser?userId=${userId}`);
                     const result = await response.json();
                     
                     if (response.ok && result.success) {
@@ -833,7 +832,7 @@
             };
 
             try {
-                const endpoint = currentMode === 'add' ? '/Admin/CreateUser' : '/Admin/UpdateUser';
+                const endpoint = currentMode === 'add' ? '/AdminUser/CreateUser' : '/AdminUser/UpdateUser';
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
@@ -860,7 +859,7 @@
 
         async function toggleUserStatus(userId, action) {
             const actionText = action === 'deactivate' ? 'deactivate' : 'reactivate';
-            const endpoint = action === 'deactivate' ? '/Admin/DeactivateUser' : '/Admin/ReactivateUser';
+            const endpoint = action === 'deactivate' ? '/AdminUser/DeactivateUser' : '/AdminUser/ReactivateUser';
             
             const confirmed = await showConfirmModal(
                 `Are you sure you want to ${actionText} this user?`,

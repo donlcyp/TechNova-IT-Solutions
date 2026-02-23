@@ -1,4 +1,3 @@
-D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\appsettings.Development.json
 D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\appsettings.json
 D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova IT Solutions.staticwebassets.runtime.json
 D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova IT Solutions.staticwebassets.endpoints.json
@@ -427,10 +426,18 @@ D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\staticwebassets.build.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\staticwebassets.development.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\staticwebassets.build.endpoints.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\swae.build.ex.cache
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\staticwebassets.upToDateCheck.txt
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova.C0149A2D.Up2Date
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\refint\TechNova IT Solutions.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.pdb
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.genruntimeconfig.cache
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\ref\TechNova IT Solutions.dll
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\artifacts\verify-build\appsettings.json
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\artifacts\verify-build\TechNova IT Solutions.deps.json
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\artifacts\verify-build\TechNova IT Solutions.runtimeconfig.json
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\artifacts\verify-build\TechNova IT Solutions.staticwebassets.endpoints.json
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\artifacts\verify-build\TechNova IT Solutions.staticwebassets.runtime.json
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\BouncyCastle.Cryptography.dll
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\MailKit.dll
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\MimeKit.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\staticwebassets.upToDateCheck.txt

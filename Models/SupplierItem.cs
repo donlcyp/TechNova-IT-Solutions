@@ -24,6 +24,14 @@ namespace TechNova_IT_Solutions.Models
         [Column("category")]
         public string? Category { get; set; }
 
+        [Column("unit_price", TypeName = "decimal(18,2)")]
+        public decimal UnitPrice { get; set; }
+
+        [Required]
+        [StringLength(3)]
+        [Column("currency_code")]
+        public string CurrencyCode { get; set; } = "PHP";
+
         [Column("quantity_available")]
         public int QuantityAvailable { get; set; }
 

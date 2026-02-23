@@ -29,8 +29,9 @@ namespace TechNova_IT_Solutions.Controllers
             var email = HttpContext.Session.GetString(SessionKeys.UserEmail);
             if (!string.IsNullOrWhiteSpace(email))
             {
+                var normalizedEmail = email.Trim().ToLowerInvariant();
                 var supplierId = await _context.Suppliers
-                    .Where(s => s.Email == email)
+                    .Where(s => s.Email != null && s.Email.ToLower() == normalizedEmail)
                     .Select(s => (int?)s.SupplierId)
                     .FirstOrDefaultAsync();
 
@@ -90,12 +91,22 @@ namespace TechNova_IT_Solutions.Controllers
                 SupplierId = supplierId.Value,
                 ItemName = itemData.ItemName?.Trim() ?? string.Empty,
                 Category = itemData.Category?.Trim() ?? string.Empty,
+                UnitPrice = itemData.UnitPrice,
+                CurrencyCode = (itemData.CurrencyCode ?? string.Empty).Trim().ToUpperInvariant(),
                 QuantityAvailable = itemData.QuantityAvailable
             };
 
             if (string.IsNullOrWhiteSpace(sanitized.ItemName))
             {
                 return BadRequest(new { success = false, message = "Item name is required" });
+            }
+            if (sanitized.UnitPrice <= 0)
+            {
+                return BadRequest(new { success = false, message = "Unit price must be greater than zero" });
+            }
+            if (sanitized.CurrencyCode.Length != 3)
+            {
+                return BadRequest(new { success = false, message = "Currency code must be a valid 3-letter code" });
             }
 
             var result = await _adminService.UpsertSupplierItemAsync(supplierId.Value, sanitized);
@@ -138,6 +149,8 @@ namespace TechNova_IT_Solutions.Controllers
             var supplierId = await GetCurrentSupplierIdAsync();
             if (!supplierId.HasValue) return Unauthorized(new { success = false, message = "Access denied" });
 
+            await _adminService.SyncLateProcurementsAsync();
+
             var requests = await _context.Procurements
                 .Where(p => p.SupplierId == supplierId.Value)
                 .OrderByDescending(p => p.PurchaseDate)
@@ -151,11 +164,44 @@ namespace TechNova_IT_Solutions.Controllers
                     p.PurchaseDate,
                     p.SupplierResponseDeadline,
                     p.SupplierCommitShipDate,
+                    p.RevisedDeliveryDate,
+                    p.DelayReason,
                     p.RejectionReason
                 })
                 .ToListAsync();
 
             return Ok(new { success = true, requests });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ReportDelay([FromBody] SupplierProcurementActionData actionData)
+        {
+            var supplierId = await GetCurrentSupplierIdAsync();
+            if (!supplierId.HasValue) return Unauthorized(new { success = false, message = "Access denied" });
+            if (actionData == null) return BadRequest(new { success = false, message = "Invalid data" });
+
+            if (string.IsNullOrWhiteSpace(actionData.DelayReason))
+            {
+                return BadRequest(new { success = false, message = "Delay reason is required." });
+            }
+            if (!actionData.RevisedDeliveryDate.HasValue)
+            {
+                return BadRequest(new { success = false, message = "Revised delivery date is required." });
+            }
+
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            int? changedByUserId = int.TryParse(userIdString, out var parsed) ? parsed : null;
+
+            actionData.SupplierId = supplierId.Value;
+            actionData.ChangedByUserId = changedByUserId;
+
+            var result = await _adminService.SupplierReportDelayAsync(actionData);
+            if (!result)
+            {
+                return BadRequest(new { success = false, message = "Unable to submit delay report for this request." });
+            }
+
+            return Ok(new { success = true, message = "Delay report submitted and escalated." });
         }
 
         [HttpPost]
@@ -174,7 +220,7 @@ namespace TechNova_IT_Solutions.Controllers
             var result = await _adminService.SupplierRespondToProcurementAsync(actionData);
             if (!result)
             {
-                return BadRequest(new { success = false, message = "Failed to submit response" });
+                return BadRequest(new { success = false, message = "Failed to submit response. Ensure this request is still Submitted and ship date is valid." });
             }
 
             return Ok(new { success = true, message = "Response submitted successfully" });

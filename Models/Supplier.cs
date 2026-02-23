@@ -39,6 +39,16 @@ namespace TechNova_IT_Solutions.Models
         [Column("status")]
         public string Status { get; set; } = "Active"; // Active, Inactive
 
+        [StringLength(500)]
+        [Column("termination_reason")]
+        public string? TerminationReason { get; set; }
+
+        [Column("terminated_at")]
+        public DateTime? TerminatedAt { get; set; }
+
+        [Column("terminated_by_user_id")]
+        public int? TerminatedByUserId { get; set; }
+
         // Navigation properties
         public virtual ICollection<SupplierPolicy> SupplierPolicies { get; set; } = new List<SupplierPolicy>();
         public virtual ICollection<Procurement> Procurements { get; set; } = new List<Procurement>();

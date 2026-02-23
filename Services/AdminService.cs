@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Data.SqlClient;
 using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Models;
 using TechNova_IT_Solutions.Services.Interfaces;
@@ -9,11 +11,22 @@ namespace TechNova_IT_Solutions.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IEmailService _emailService;
+        private readonly IExchangeRateService _exchangeRateService;
+        private readonly ExternalApisConfiguration _externalApiConfiguration;
+        private readonly ILogger<AdminService> _logger;
 
-        public AdminService(ApplicationDbContext context, IEmailService emailService)
+        public AdminService(
+            ApplicationDbContext context,
+            IEmailService emailService,
+            IExchangeRateService exchangeRateService,
+            Microsoft.Extensions.Options.IOptions<ExternalApisConfiguration> externalApiConfiguration,
+            ILogger<AdminService> logger)
         {
             _context = context;
             _emailService = emailService;
+            _exchangeRateService = exchangeRateService;
+            _externalApiConfiguration = externalApiConfiguration.Value;
+            _logger = logger;
         }
 
         public async Task<AdminDashboardData> GetDashboardDataAsync()
@@ -154,8 +167,9 @@ namespace TechNova_IT_Solutions.Services
 
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to create policy {PolicyTitle}", policyData.PolicyTitle);
                 return false;
             }
         }
@@ -177,8 +191,9 @@ namespace TechNova_IT_Solutions.Services
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to update policy {PolicyId}", policyData.PolicyId);
                 return false;
             }
         }
@@ -242,8 +257,9 @@ namespace TechNova_IT_Solutions.Services
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to archive policy {PolicyId}", policyId);
                 return false;
             }
         }
@@ -261,8 +277,9 @@ namespace TechNova_IT_Solutions.Services
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to restore policy {PolicyId}", policyId);
                 return false;
             }
         }
@@ -278,28 +295,53 @@ namespace TechNova_IT_Solutions.Services
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to delete policy {PolicyId}", policyId);
                 return false;
             }
         }
 
         // Supplier operations
-        public async Task<bool> CreateSupplierAsync(SupplierData supplierData)
+        public async Task<SupplierOperationResult> CreateSupplierAsync(SupplierData supplierData)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var cleanedData = NormalizeSupplierData(supplierData);
+                var validation = ValidateSupplierData(cleanedData);
+                if (!validation.Success)
+                {
+                    return validation;
+                }
+
+                var normalizedEmail = cleanedData.Email.Trim().ToLowerInvariant();
+                var supplierEmail = cleanedData.Email.Trim();
+
+                var supplierEmailExists = await _context.Suppliers
+                    .AnyAsync(s => s.Email != null && s.Email.Trim().ToLower() == normalizedEmail);
+                if (supplierEmailExists)
+                {
+                    return new SupplierOperationResult { Success = false, Message = "A supplier account with this email already exists." };
+                }
+
+                var userEmailExists = await _context.Users
+                    .AnyAsync(u => u.Email != null && u.Email.Trim().ToLower() == normalizedEmail);
+                if (userEmailExists)
+                {
+                    return new SupplierOperationResult { Success = false, Message = "A user account with this email already exists." };
+                }
+
                 // 1. Create Supplier Record
                 var supplier = new Models.Supplier
                 {
-                    SupplierName = supplierData.SupplierName,
-                    ContactPersonFirstName = supplierData.ContactPersonFirstName,
-                    ContactPersonLastName = supplierData.ContactPersonLastName,
-                    Email = supplierData.Email,
-                    ContactPersonNumber = supplierData.ContactPersonNumber,
-                    Address = supplierData.Address,
-                    Status = supplierData.Status
+                    SupplierName = cleanedData.SupplierName,
+                    ContactPersonFirstName = cleanedData.ContactPersonFirstName,
+                    ContactPersonLastName = cleanedData.ContactPersonLastName,
+                    Email = supplierEmail,
+                    ContactPersonNumber = cleanedData.ContactPersonNumber,
+                    Address = cleanedData.Address,
+                    Status = cleanedData.Status
                 };
 
                 _context.Suppliers.Add(supplier);
@@ -307,15 +349,16 @@ namespace TechNova_IT_Solutions.Services
 
                 // 2. Create User Record for Login
                 // Check if user already exists
-                var existingUser = await _context.Users.AnyAsync(u => u.Email == supplierData.Email);
-                if (!existingUser && !string.IsNullOrEmpty(supplierData.Password))
+                var existingUser = await _context.Users.AnyAsync(u =>
+                    u.Email != null && u.Email.Trim().ToLower() == normalizedEmail);
+                if (!existingUser && !string.IsNullOrWhiteSpace(cleanedData.Password))
                 {
                     var user = new User
                     {
-                        FirstName = supplierData.ContactPersonFirstName,
-                        LastName = supplierData.ContactPersonLastName,
-                        Email = supplierData.Email,
-                        Password = PasswordHasher.HashPassword(supplierData.Password), // Hash the password
+                        FirstName = cleanedData.ContactPersonFirstName,
+                        LastName = cleanedData.ContactPersonLastName,
+                        Email = supplierEmail,
+                        Password = PasswordHasher.HashPassword(cleanedData.Password), // Hash the password
                         Role = "Supplier",
                         Status = "Active"
                     };
@@ -325,56 +368,105 @@ namespace TechNova_IT_Solutions.Services
                 }
 
                 await transaction.CommitAsync();
-                return true;
+                return new SupplierOperationResult { Success = true, Message = "Supplier created successfully." };
             }
-            catch
+            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
             {
+                _logger.LogWarning(ex, "Duplicate email prevented supplier creation for {Email}", supplierData.Email);
                 await transaction.RollbackAsync();
-                return false;
+                return new SupplierOperationResult { Success = false, Message = "Email already exists in another account." };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create supplier for email {Email}", supplierData.Email);
+                await transaction.RollbackAsync();
+                return new SupplierOperationResult { Success = false, Message = "Failed to create supplier. Check data format and field lengths." };
             }
         }
 
-        public async Task<bool> UpdateSupplierAsync(SupplierData supplierData)
+        public async Task<SupplierOperationResult> UpdateSupplierAsync(SupplierData supplierData)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var supplier = await _context.Suppliers.FindAsync(supplierData.SupplierId);
-                if (supplier == null) return false;
+                var cleanedData = NormalizeSupplierData(supplierData);
+                cleanedData.SupplierId = supplierData.SupplierId;
+
+                var validation = ValidateSupplierData(cleanedData);
+                if (!validation.Success)
+                {
+                    return validation;
+                }
+
+                var normalizedEmail = cleanedData.Email.Trim().ToLowerInvariant();
+                var supplierEmail = cleanedData.Email.Trim();
+
+                var supplierEmailExists = await _context.Suppliers
+                    .AnyAsync(s => s.SupplierId != cleanedData.SupplierId && s.Email != null && s.Email.Trim().ToLower() == normalizedEmail);
+                if (supplierEmailExists)
+                {
+                    return new SupplierOperationResult { Success = false, Message = "Another supplier account already uses this email." };
+                }
+
+                var supplier = await _context.Suppliers.FindAsync(cleanedData.SupplierId);
+                if (supplier == null)
+                {
+                    return new SupplierOperationResult { Success = false, Message = "Supplier not found." };
+                }
+                if (string.Equals(supplier.Status, "Terminated", StringComparison.OrdinalIgnoreCase))
+                {
+                    return new SupplierOperationResult { Success = false, Message = "Terminated suppliers cannot be edited. Use Restore first." };
+                }
 
                 var oldEmail = supplier.Email;
+                var oldEmailNormalized = (oldEmail ?? string.Empty).Trim().ToLowerInvariant();
+                var userEmailExists = await _context.Users
+                    .AnyAsync(u => u.Email != null &&
+                                   u.Email.Trim().ToLower() == normalizedEmail &&
+                                   u.Email.Trim().ToLower() != oldEmailNormalized);
+                if (userEmailExists)
+                {
+                    return new SupplierOperationResult { Success = false, Message = "A user account with this email already exists." };
+                }
 
-                supplier.SupplierName = supplierData.SupplierName;
-                supplier.ContactPersonFirstName = supplierData.ContactPersonFirstName;
-                supplier.ContactPersonLastName = supplierData.ContactPersonLastName;
-                supplier.Email = supplierData.Email;
-                supplier.ContactPersonNumber = supplierData.ContactPersonNumber;
-                supplier.Address = supplierData.Address;
-                supplier.Status = supplierData.Status;
+                supplier.SupplierName = cleanedData.SupplierName;
+                supplier.ContactPersonFirstName = cleanedData.ContactPersonFirstName;
+                supplier.ContactPersonLastName = cleanedData.ContactPersonLastName;
+                supplier.Email = supplierEmail;
+                supplier.ContactPersonNumber = cleanedData.ContactPersonNumber;
+                supplier.Address = cleanedData.Address;
+                supplier.Status = cleanedData.Status;
+                if (!string.Equals(supplier.Status, "Terminated", StringComparison.OrdinalIgnoreCase))
+                {
+                    supplier.TerminationReason = null;
+                    supplier.TerminatedAt = null;
+                    supplier.TerminatedByUserId = null;
+                }
 
                 await _context.SaveChangesAsync();
 
                 // Keep Supplier login in sync with Supplier record.
                 // Passwords are stored in Users table (not Suppliers).
-                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == supplierData.Email);
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email != null && u.Email.Trim().ToLower() == normalizedEmail);
                 if (user == null && !string.IsNullOrWhiteSpace(oldEmail))
                 {
-                    user = await _context.Users.FirstOrDefaultAsync(u => u.Email == oldEmail);
+                    var oldEmailKey = oldEmail.Trim().ToLowerInvariant();
+                    user = await _context.Users.FirstOrDefaultAsync(u => u.Email != null && u.Email.Trim().ToLower() == oldEmailKey);
                 }
 
                 // If there's a password provided, ensure a Supplier user exists.
                 if (user == null)
                 {
-                    if (!string.IsNullOrWhiteSpace(supplierData.Password))
+                    if (!string.IsNullOrWhiteSpace(cleanedData.Password))
                     {
                         user = new User
                         {
-                            FirstName = supplierData.ContactPersonFirstName,
-                            LastName = supplierData.ContactPersonLastName,
-                            Email = supplierData.Email,
-                            Password = PasswordHasher.HashPassword(supplierData.Password),
+                            FirstName = cleanedData.ContactPersonFirstName,
+                            LastName = cleanedData.ContactPersonLastName,
+                            Email = supplierEmail,
+                            Password = PasswordHasher.HashPassword(cleanedData.Password),
                             Role = "Supplier",
-                            Status = supplierData.Status
+                            Status = cleanedData.Status
                         };
                         _context.Users.Add(user);
                         await _context.SaveChangesAsync();
@@ -382,28 +474,130 @@ namespace TechNova_IT_Solutions.Services
                 }
                 else
                 {
-                    user.FirstName = supplierData.ContactPersonFirstName;
-                    user.LastName = supplierData.ContactPersonLastName;
-                    user.Email = supplierData.Email;
+                    user.FirstName = cleanedData.ContactPersonFirstName;
+                    user.LastName = cleanedData.ContactPersonLastName;
+                    user.Email = supplierEmail;
                     user.Role = "Supplier";
-                    user.Status = supplierData.Status;
+                    user.Status = cleanedData.Status;
 
-                    if (!string.IsNullOrWhiteSpace(supplierData.Password))
+                    if (!string.IsNullOrWhiteSpace(cleanedData.Password))
                     {
-                        user.Password = PasswordHasher.HashPassword(supplierData.Password);
+                        user.Password = PasswordHasher.HashPassword(cleanedData.Password);
                     }
 
                     await _context.SaveChangesAsync();
                 }
 
                 await transaction.CommitAsync();
-                return true;
+                return new SupplierOperationResult { Success = true, Message = "Supplier updated successfully." };
+            }
+            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+            {
+                _logger.LogWarning(ex, "Duplicate email prevented supplier update for {SupplierId}", supplierData.SupplierId);
+                await transaction.RollbackAsync();
+                return new SupplierOperationResult { Success = false, Message = "Email already exists in another account." };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to update supplier {SupplierId}", supplierData.SupplierId);
+                await transaction.RollbackAsync();
+                return new SupplierOperationResult { Success = false, Message = "Failed to update supplier. Check data format and field lengths." };
+            }
+        }
+
+        private static SupplierData NormalizeSupplierData(SupplierData supplierData)
+        {
+            return new SupplierData
+            {
+                SupplierId = supplierData.SupplierId,
+                SupplierName = (supplierData.SupplierName ?? string.Empty).Trim(),
+                ContactPersonFirstName = (supplierData.ContactPersonFirstName ?? string.Empty).Trim(),
+                ContactPersonLastName = (supplierData.ContactPersonLastName ?? string.Empty).Trim(),
+                Email = (supplierData.Email ?? string.Empty).Trim(),
+                ContactPersonNumber = (supplierData.ContactPersonNumber ?? string.Empty).Trim(),
+                Address = (supplierData.Address ?? string.Empty).Trim(),
+                Status = string.IsNullOrWhiteSpace(supplierData.Status) ? "Active" : supplierData.Status.Trim(),
+                Password = string.IsNullOrWhiteSpace(supplierData.Password) ? null : supplierData.Password.Trim()
+            };
+        }
+
+        private static SupplierOperationResult ValidateSupplierData(SupplierData supplierData)
+        {
+            if (string.IsNullOrWhiteSpace(supplierData.SupplierName))
+            {
+                return new SupplierOperationResult { Success = false, Message = "Supplier name is required." };
+            }
+
+            if (supplierData.SupplierName.Length > 255)
+            {
+                return new SupplierOperationResult { Success = false, Message = "Supplier name must be 255 characters or fewer." };
+            }
+
+            if (string.IsNullOrWhiteSpace(supplierData.ContactPersonFirstName) || string.IsNullOrWhiteSpace(supplierData.ContactPersonLastName))
+            {
+                return new SupplierOperationResult { Success = false, Message = "Contact first name and last name are required." };
+            }
+
+            if (supplierData.ContactPersonFirstName.Length > 100 || supplierData.ContactPersonLastName.Length > 100)
+            {
+                return new SupplierOperationResult { Success = false, Message = "Contact names must be 100 characters or fewer." };
+            }
+
+            if (string.IsNullOrWhiteSpace(supplierData.Email))
+            {
+                return new SupplierOperationResult { Success = false, Message = "Email is required." };
+            }
+
+            if (supplierData.Email.Length > 255)
+            {
+                return new SupplierOperationResult { Success = false, Message = "Email must be 255 characters or fewer." };
+            }
+
+            try
+            {
+                _ = new System.Net.Mail.MailAddress(supplierData.Email);
             }
             catch
             {
-                await transaction.RollbackAsync();
-                return false;
+                return new SupplierOperationResult { Success = false, Message = "Please enter a valid email address." };
             }
+
+            if (string.IsNullOrWhiteSpace(supplierData.ContactPersonNumber))
+            {
+                return new SupplierOperationResult { Success = false, Message = "Contact number is required." };
+            }
+
+            if (supplierData.ContactPersonNumber.Length > 20)
+            {
+                return new SupplierOperationResult { Success = false, Message = "Contact number must be 20 characters or fewer." };
+            }
+
+            if (string.IsNullOrWhiteSpace(supplierData.Address))
+            {
+                return new SupplierOperationResult { Success = false, Message = "Address is required." };
+            }
+
+            if (supplierData.Address.Length > 500)
+            {
+                return new SupplierOperationResult { Success = false, Message = "Address must be 500 characters or fewer." };
+            }
+
+            if (supplierData.Status.Length > 20)
+            {
+                return new SupplierOperationResult { Success = false, Message = "Status must be 20 characters or fewer." };
+            }
+
+            return new SupplierOperationResult { Success = true };
+        }
+
+        private static bool IsUniqueConstraintViolation(DbUpdateException ex)
+        {
+            if (ex.InnerException is SqlException sqlEx)
+            {
+                return sqlEx.Number == 2601 || sqlEx.Number == 2627;
+            }
+
+            return false;
         }
 
         public async Task<bool> DeleteSupplierAsync(int supplierId)
@@ -417,8 +611,114 @@ namespace TechNova_IT_Solutions.Services
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to delete supplier {SupplierId}", supplierId);
+                return false;
+            }
+        }
+
+        public async Task<bool> TerminateSupplierAsync(SupplierTerminationData terminationData, int? changedByUserId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                if (terminationData.SupplierId <= 0) return false;
+                var reason = (terminationData.Reason ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(reason)) return false;
+
+                var supplier = await _context.Suppliers.FindAsync(terminationData.SupplierId);
+                if (supplier == null) return false;
+                if (string.Equals(supplier.Status, "Terminated", StringComparison.OrdinalIgnoreCase)) return false;
+
+                supplier.Status = "Terminated";
+                supplier.TerminationReason = reason;
+                supplier.TerminatedAt = DateTime.UtcNow;
+                supplier.TerminatedByUserId = changedByUserId;
+
+                if (!string.IsNullOrWhiteSpace(supplier.Email))
+                {
+                    var normalizedEmail = supplier.Email.Trim().ToLowerInvariant();
+                    var linkedUsers = await _context.Users
+                        .Where(u => u.Email != null &&
+                                    u.Email.ToLower() == normalizedEmail &&
+                                    u.Role == "Supplier")
+                        .ToListAsync();
+                    foreach (var linkedUser in linkedUsers)
+                    {
+                        linkedUser.Status = "Inactive";
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                if (!string.IsNullOrWhiteSpace(supplier.Email))
+                {
+                    try
+                    {
+                        var subject = $"Supplier Contract Terminated - {supplier.SupplierName}";
+                        var body = $@"
+                            <h3>Contract Termination Notice</h3>
+                            <p>Dear {supplier.ContactPersonFirstName ?? supplier.SupplierName},</p>
+                            <p>Your supplier contract with TechNova has been terminated effective {DateTime.UtcNow:MMM dd, yyyy}.</p>
+                            <p><strong>Reason:</strong> {reason}</p>
+                            <p>If you believe this is an error, please contact TechNova administration.</p>";
+                        _ = _emailService.SendEmailAsync(supplier.Email, subject, body);
+                    }
+                    catch (Exception mailEx)
+                    {
+                        _logger.LogWarning(mailEx, "Termination email failed for supplier {SupplierId}", supplier.SupplierId);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Failed to terminate supplier {SupplierId}", terminationData.SupplierId);
+                return false;
+            }
+        }
+
+        public async Task<bool> RestoreSupplierAsync(int supplierId, int? changedByUserId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                if (supplierId <= 0) return false;
+                var supplier = await _context.Suppliers.FindAsync(supplierId);
+                if (supplier == null) return false;
+                if (!string.Equals(supplier.Status, "Terminated", StringComparison.OrdinalIgnoreCase)) return false;
+
+                supplier.Status = "Active";
+                supplier.TerminationReason = null;
+                supplier.TerminatedAt = null;
+                supplier.TerminatedByUserId = null;
+
+                if (!string.IsNullOrWhiteSpace(supplier.Email))
+                {
+                    var normalizedEmail = supplier.Email.Trim().ToLowerInvariant();
+                    var linkedUsers = await _context.Users
+                        .Where(u => u.Email != null &&
+                                    u.Email.ToLower() == normalizedEmail &&
+                                    u.Role == "Supplier")
+                        .ToListAsync();
+                    foreach (var linkedUser in linkedUsers)
+                    {
+                        linkedUser.Status = "Active";
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Failed to restore supplier {SupplierId} by user {ChangedBy}", supplierId, changedByUserId);
                 return false;
             }
         }
@@ -437,7 +737,10 @@ namespace TechNova_IT_Solutions.Services
                 Email = supplier.Email ?? string.Empty,
                 ContactPersonNumber = supplier.ContactPersonNumber ?? string.Empty,
                 Address = supplier.Address ?? string.Empty,
-                Status = supplier.Status ?? "Active"
+                Status = supplier.Status ?? "Active",
+                TerminationReason = supplier.TerminationReason,
+                TerminatedAt = supplier.TerminatedAt,
+                TerminatedByUserId = supplier.TerminatedByUserId
                 // Password is not returned for security
             };
         }
@@ -456,6 +759,17 @@ namespace TechNova_IT_Solutions.Services
                 if (!string.Equals(supplierItem.Status, "Available", StringComparison.OrdinalIgnoreCase)) return false;
                 if (procurementData.Quantity <= 0 || supplierItem.QuantityAvailable < procurementData.Quantity) return false;
 
+                var normalizedCurrency = (supplierItem.CurrencyCode ?? string.Empty).Trim().ToUpperInvariant();
+                if (normalizedCurrency.Length != 3) return false;
+                if (supplierItem.UnitPrice <= 0) return false;
+
+                var baseCurrency = _externalApiConfiguration.ExchangeRateApi.BaseCurrency.Trim().ToUpperInvariant();
+                var exchangeResult = await _exchangeRateService.GetRateAsync(normalizedCurrency, baseCurrency);
+                if (!exchangeResult.Success) return false;
+
+                var originalAmount = decimal.Round(supplierItem.UnitPrice * procurementData.Quantity, 2);
+                var convertedAmount = decimal.Round(originalAmount * exchangeResult.Rate, 2);
+
                 supplierItem.QuantityAvailable -= procurementData.Quantity;
                 if (supplierItem.QuantityAvailable <= 0)
                 {
@@ -472,8 +786,15 @@ namespace TechNova_IT_Solutions.Services
                     Quantity = procurementData.Quantity,
                     PurchaseDate = DateTime.UtcNow,
                     RelatedPolicyId = procurementData.PolicyId,
+                    CurrencyCode = normalizedCurrency,
+                    OriginalAmount = originalAmount,
+                    ExchangeRate = exchangeResult.Rate,
+                    ConvertedAmount = convertedAmount,
+                    ConversionTimestamp = exchangeResult.RetrievedAtUtc,
                     Status = ProcurementStatuses.Submitted,
-                    SupplierResponseDeadline = DateTime.UtcNow.AddDays(7)
+                    SupplierResponseDeadline = DateTime.UtcNow.AddDays(7),
+                    RevisedDeliveryDate = null,
+                    DelayReason = null
                 };
 
                 _context.Procurements.Add(procurement);
@@ -492,8 +813,9 @@ namespace TechNova_IT_Solutions.Services
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to create procurement for supplier {SupplierId}", procurementData.SupplierId);
                 return false;
             }
         }
@@ -512,21 +834,65 @@ namespace TechNova_IT_Solutions.Services
 
                 var isCompliant = await IsSupplierCompliantForPolicyAsync(procurementData.SupplierId, procurementData.PolicyId);
                 if (!isCompliant) return false;
+                if (!procurementData.SupplierItemId.HasValue) return false;
+                if (procurementData.Quantity <= 0) return false;
+
+                var supplierItem = await _context.SupplierItems
+                    .FirstOrDefaultAsync(si => si.SupplierItemId == procurementData.SupplierItemId && si.SupplierId == procurementData.SupplierId);
+                if (supplierItem == null) return false;
+                if (!string.Equals(supplierItem.Status, "Available", StringComparison.OrdinalIgnoreCase)) return false;
+
+                var previousReservedQty = Math.Max(0, procurement.Quantity ?? 0);
+                var previousReservedItem = await FindSupplierItemForProcurementReservationAsync(procurement);
+                var sameReservedItem = previousReservedItem?.SupplierItemId == supplierItem.SupplierItemId;
+                var effectiveAvailability = supplierItem.QuantityAvailable + (sameReservedItem ? previousReservedQty : 0);
+                if (effectiveAvailability < procurementData.Quantity) return false;
 
                 procurement.SupplierId = procurementData.SupplierId;
-                procurement.ItemName = procurementData.ItemName;
-                procurement.Category = procurementData.Category;
+                procurement.ItemName = supplierItem.ItemName;
+                procurement.Category = supplierItem.Category;
                 procurement.Quantity = procurementData.Quantity;
                 procurement.RelatedPolicyId = procurementData.PolicyId;
                 procurement.PurchaseDate = procurement.PurchaseDate ?? DateTime.UtcNow;
+
+                var normalizedCurrency = (supplierItem.CurrencyCode ?? string.Empty).Trim().ToUpperInvariant();
+                if (normalizedCurrency.Length != 3) return false;
+                if (supplierItem.UnitPrice <= 0) return false;
+
+                var baseCurrency = _externalApiConfiguration.ExchangeRateApi.BaseCurrency.Trim().ToUpperInvariant();
+                var exchangeResult = await _exchangeRateService.GetRateAsync(normalizedCurrency, baseCurrency);
+                if (!exchangeResult.Success) return false;
+
+                var originalAmount = decimal.Round(supplierItem.UnitPrice * procurementData.Quantity, 2);
+
+                if (previousReservedItem != null && previousReservedQty > 0)
+                {
+                    previousReservedItem.QuantityAvailable += previousReservedQty;
+                    ApplySupplierItemStockStatus(previousReservedItem);
+                    previousReservedItem.LastUpdated = DateTime.UtcNow;
+                }
+
+                supplierItem.QuantityAvailable -= procurementData.Quantity;
+                if (supplierItem.QuantityAvailable < 0) supplierItem.QuantityAvailable = 0;
+                ApplySupplierItemStockStatus(supplierItem);
+                supplierItem.LastUpdated = DateTime.UtcNow;
+
+                procurement.CurrencyCode = normalizedCurrency;
+                procurement.OriginalAmount = originalAmount;
+                procurement.ExchangeRate = exchangeResult.Rate;
+                procurement.ConvertedAmount = decimal.Round(originalAmount * exchangeResult.Rate, 2);
+                procurement.ConversionTimestamp = exchangeResult.RetrievedAtUtc;
                 procurement.SupplierResponseDeadline = procurement.SupplierResponseDeadline ?? DateTime.UtcNow.AddDays(7);
                 procurement.Status = procurement.Status ?? ProcurementStatuses.Submitted;
+                procurement.RevisedDeliveryDate = procurementData.RevisedDeliveryDate;
+                procurement.DelayReason = procurementData.DelayReason;
 
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to update procurement {ProcurementId}", procurementData.ProcurementId);
                 return false;
             }
         }
@@ -542,6 +908,8 @@ namespace TechNova_IT_Solutions.Services
                     SupplierId = si.SupplierId,
                     ItemName = si.ItemName,
                     Category = si.Category ?? string.Empty,
+                    UnitPrice = si.UnitPrice,
+                    CurrencyCode = si.CurrencyCode,
                     QuantityAvailable = si.QuantityAvailable,
                     Status = si.Status
                 })
@@ -554,6 +922,9 @@ namespace TechNova_IT_Solutions.Services
             {
                 var normalizedName = (itemData.ItemName ?? string.Empty).Trim();
                 if (string.IsNullOrWhiteSpace(normalizedName)) return false;
+                var normalizedCurrency = (itemData.CurrencyCode ?? string.Empty).Trim().ToUpperInvariant();
+                if (normalizedCurrency.Length != 3) return false;
+                if (itemData.UnitPrice <= 0) return false;
 
                 var item = await _context.SupplierItems
                     .FirstOrDefaultAsync(si => si.SupplierItemId == itemData.SupplierItemId && si.SupplierId == supplierId);
@@ -571,6 +942,8 @@ namespace TechNova_IT_Solutions.Services
                         SupplierId = supplierId,
                         ItemName = normalizedName,
                         Category = itemData.Category,
+                        UnitPrice = decimal.Round(itemData.UnitPrice, 2),
+                        CurrencyCode = normalizedCurrency,
                         QuantityAvailable = Math.Max(0, itemData.QuantityAvailable),
                         Status = Math.Max(0, itemData.QuantityAvailable) > 0 ? "Available" : "OutOfStock",
                         LastUpdated = DateTime.UtcNow
@@ -581,6 +954,8 @@ namespace TechNova_IT_Solutions.Services
                 {
                     item.ItemName = normalizedName;
                     item.Category = itemData.Category;
+                    item.UnitPrice = decimal.Round(itemData.UnitPrice, 2);
+                    item.CurrencyCode = normalizedCurrency;
                     item.QuantityAvailable = Math.Max(0, itemData.QuantityAvailable);
                     item.Status = Math.Max(0, itemData.QuantityAvailable) > 0 ? "Available" : "OutOfStock";
                     item.LastUpdated = DateTime.UtcNow;
@@ -589,8 +964,9 @@ namespace TechNova_IT_Solutions.Services
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to upsert supplier item for supplier {SupplierId}", supplierId);
                 return false;
             }
         }
@@ -613,12 +989,23 @@ namespace TechNova_IT_Solutions.Services
                     procurement.Status = ProcurementStatuses.SupplierRejected;
                     procurement.RejectionReason = actionData.RejectionReason.Trim();
                     procurement.SupplierCommitShipDate = null;
+
+                    var reservedItem = await FindSupplierItemForProcurementReservationAsync(procurement);
+                    var reservedQty = Math.Max(0, procurement.Quantity ?? 0);
+                    if (reservedItem != null && reservedQty > 0)
+                    {
+                        reservedItem.QuantityAvailable += reservedQty;
+                        ApplySupplierItemStockStatus(reservedItem);
+                        reservedItem.LastUpdated = DateTime.UtcNow;
+                    }
                 }
                 else
                 {
                     if (actionData.SupplierCommitShipDate == null) return false;
                     procurement.Status = ProcurementStatuses.SupplierApproved;
                     procurement.SupplierCommitShipDate = actionData.SupplierCommitShipDate.Value.Date;
+                    procurement.RevisedDeliveryDate = null;
+                    procurement.DelayReason = null;
                     procurement.RejectionReason = null;
                 }
 
@@ -635,10 +1022,84 @@ namespace TechNova_IT_Solutions.Services
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed supplier response for procurement {ProcurementId}", actionData.ProcurementId);
                 return false;
             }
+        }
+
+        public async Task<bool> SupplierReportDelayAsync(SupplierProcurementActionData actionData)
+        {
+            try
+            {
+                var procurement = await _context.Procurements
+                    .FirstOrDefaultAsync(p => p.ProcurementId == actionData.ProcurementId && p.SupplierId == actionData.SupplierId);
+                if (procurement == null) return false;
+
+                if (!string.Equals(procurement.Status, ProcurementStatuses.SupplierApproved, StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(procurement.Status, ProcurementStatuses.Late, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(actionData.DelayReason)) return false;
+                if (!actionData.RevisedDeliveryDate.HasValue) return false;
+
+                var revisedDate = actionData.RevisedDeliveryDate.Value.Date;
+                if (revisedDate < DateTime.UtcNow.Date) return false;
+                if (procurement.SupplierCommitShipDate.HasValue &&
+                    revisedDate <= procurement.SupplierCommitShipDate.Value.Date)
+                {
+                    return false;
+                }
+
+                var previousStatus = procurement.Status;
+                procurement.Status = ProcurementStatuses.Late;
+                procurement.DelayReason = actionData.DelayReason.Trim();
+                procurement.RevisedDeliveryDate = revisedDate;
+
+                if (!string.Equals(previousStatus, ProcurementStatuses.Late, StringComparison.OrdinalIgnoreCase))
+                {
+                    _context.ProcurementStatusHistory.Add(new ProcurementStatusHistory
+                    {
+                        ProcurementId = procurement.ProcurementId,
+                        FromStatus = previousStatus,
+                        ToStatus = ProcurementStatuses.Late,
+                        ChangedAt = DateTime.UtcNow,
+                        ChangedByUserId = actionData.ChangedByUserId,
+                        Reason = procurement.DelayReason
+                    });
+
+                    await NotifyLateEscalationAsync(procurement, procurement.DelayReason);
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed delay report for procurement {ProcurementId}", actionData.ProcurementId);
+                return false;
+            }
+        }
+
+        private static void ApplySupplierItemStockStatus(SupplierItem item)
+        {
+            item.Status = item.QuantityAvailable > 0 ? "Available" : "OutOfStock";
+        }
+
+        private async Task<SupplierItem?> FindSupplierItemForProcurementReservationAsync(Models.Procurement procurement)
+        {
+            if (!procurement.SupplierId.HasValue || string.IsNullOrWhiteSpace(procurement.ItemName))
+            {
+                return null;
+            }
+
+            return await _context.SupplierItems
+                .Where(si => si.SupplierId == procurement.SupplierId.Value && si.ItemName == procurement.ItemName)
+                .OrderByDescending(si => si.SupplierItemId)
+                .FirstOrDefaultAsync();
         }
 
         private async Task<bool> IsSupplierCompliantForPolicyAsync(int supplierId, int? policyId)
@@ -668,13 +1129,185 @@ namespace TechNova_IT_Solutions.Services
                 var procurement = await _context.Procurements.FindAsync(procurementId);
                 if (procurement == null) return false;
 
+                if (!string.Equals(procurement.Status, ProcurementStatuses.Received, StringComparison.OrdinalIgnoreCase))
+                {
+                    var reservedItem = await FindSupplierItemForProcurementReservationAsync(procurement);
+                    var reservedQty = Math.Max(0, procurement.Quantity ?? 0);
+                    if (reservedItem != null && reservedQty > 0)
+                    {
+                        reservedItem.QuantityAvailable += reservedQty;
+                        ApplySupplierItemStockStatus(reservedItem);
+                        reservedItem.LastUpdated = DateTime.UtcNow;
+                    }
+                }
+
                 _context.Procurements.Remove(procurement);
                 await _context.SaveChangesAsync();
                 return true;
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete procurement {ProcurementId}", procurementId);
+                return false;
+            }
+        }
+
+        public async Task<bool> MarkProcurementDeliveredAsync(int procurementId, int? changedByUserId)
+        {
+            try
+            {
+                var procurement = await _context.Procurements.FindAsync(procurementId);
+                if (procurement == null) return false;
+                if (!string.Equals(procurement.Status, ProcurementStatuses.SupplierApproved, StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(procurement.Status, ProcurementStatuses.Late, StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                var previousStatus = procurement.Status;
+                procurement.Status = ProcurementStatuses.Received;
+                procurement.ReceivedDate = DateTime.UtcNow;
+
+                _context.ProcurementStatusHistory.Add(new ProcurementStatusHistory
+                {
+                    ProcurementId = procurement.ProcurementId,
+                    FromStatus = previousStatus,
+                    ToStatus = ProcurementStatuses.Received,
+                    ChangedAt = DateTime.UtcNow,
+                    ChangedByUserId = changedByUserId,
+                    Reason = "Delivery marked as arrived by Admin"
+                });
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to mark procurement {ProcurementId} as delivered", procurementId);
+                return false;
+            }
+        }
+
+        public async Task<int> SyncLateProcurementsAsync()
+        {
+            try
+            {
+                var today = DateTime.UtcNow.Date;
+                var candidates = await _context.Procurements
+                    .Where(p => p.Status == ProcurementStatuses.SupplierApproved || p.Status == ProcurementStatuses.Late)
+                    .ToListAsync();
+
+                var markedCount = 0;
+
+                foreach (var procurement in candidates)
+                {
+                    // 7-day window starts on Delivery Begin date (Day 1), so deadline is +6 days.
+                    var expectedArrival = procurement.RevisedDeliveryDate?.Date ??
+                                          (procurement.SupplierCommitShipDate?.Date.AddDays(6));
+                    if (!expectedArrival.HasValue)
+                    {
+                        continue;
+                    }
+
+                    if (expectedArrival.Value < today &&
+                        string.Equals(procurement.Status, ProcurementStatuses.SupplierApproved, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var previousStatus = procurement.Status;
+                        procurement.Status = ProcurementStatuses.Late;
+                        markedCount++;
+
+                        _context.ProcurementStatusHistory.Add(new ProcurementStatusHistory
+                        {
+                            ProcurementId = procurement.ProcurementId,
+                            FromStatus = previousStatus,
+                            ToStatus = ProcurementStatuses.Late,
+                            ChangedAt = DateTime.UtcNow,
+                            ChangedByUserId = null,
+                            Reason = "Auto-flagged late: planned delivery date has passed."
+                        });
+
+                        await NotifyLateEscalationAsync(procurement, "Auto-flagged late by system.");
+                    }
+                    else if (expectedArrival.Value >= today &&
+                             string.Equals(procurement.Status, ProcurementStatuses.Late, StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Keep UI and workflow in sync with the current SLA window.
+                        procurement.Status = ProcurementStatuses.SupplierApproved;
+                        markedCount++;
+
+                        _context.ProcurementStatusHistory.Add(new ProcurementStatusHistory
+                        {
+                            ProcurementId = procurement.ProcurementId,
+                            FromStatus = ProcurementStatuses.Late,
+                            ToStatus = ProcurementStatuses.SupplierApproved,
+                            ChangedAt = DateTime.UtcNow,
+                            ChangedByUserId = null,
+                            Reason = "Auto-corrected: request is still within the allowed delivery window."
+                        });
+                    }
+                }
+
+                if (markedCount == 0) return 0;
+
+                await _context.SaveChangesAsync();
+                return markedCount;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to sync late procurements");
+                return 0;
+            }
+        }
+
+        private async Task NotifyLateEscalationAsync(Models.Procurement procurement, string reason)
+        {
+            try
+            {
+                var recipients = new List<string>();
+
+                var supplierEmail = await _context.Suppliers
+                    .Where(s => s.SupplierId == procurement.SupplierId)
+                    .Select(s => s.Email)
+                    .FirstOrDefaultAsync();
+                if (!string.IsNullOrWhiteSpace(supplierEmail))
+                {
+                    recipients.Add(supplierEmail);
+                }
+
+                var staffEmails = await _context.Users
+                    .Where(u => (u.Role == "Admin" || u.Role == "ComplianceManager" || u.Role == "SuperAdmin") &&
+                                u.Status == "Active" &&
+                                u.Email != null)
+                    .Select(u => u.Email!)
+                    .Distinct()
+                    .ToListAsync();
+                recipients.AddRange(staffEmails);
+
+                recipients = recipients
+                    .Where(e => !string.IsNullOrWhiteSpace(e))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (!recipients.Any()) return;
+
+                var subject = $"Late Delivery Escalation: PROC-{procurement.ProcurementId:D3}";
+                var body = $@"
+                    <h3>Late Delivery Alert</h3>
+                    <p><strong>Procurement ID:</strong> PROC-{procurement.ProcurementId:D3}</p>
+                    <p><strong>Item:</strong> {procurement.ItemName}</p>
+                    <p><strong>Status:</strong> {procurement.Status}</p>
+                    <p><strong>Delivery Begin:</strong> {(procurement.SupplierCommitShipDate?.ToString("MMM dd, yyyy") ?? "N/A")}</p>
+                    <p><strong>Revised Delivery:</strong> {(procurement.RevisedDeliveryDate?.ToString("MMM dd, yyyy") ?? "N/A")}</p>
+                    <p><strong>Reason:</strong> {reason}</p>";
+
+                foreach (var email in recipients)
+                {
+                    _ = _emailService.SendEmailAsync(email, subject, body);
+                }
+            }
             catch
             {
-                return false;
+                // Notification failure must not block core transaction.
             }
         }
 
@@ -724,6 +1357,10 @@ namespace TechNova_IT_Solutions.Services
             {
                 foreach (var supId in supplierIds)
                 {
+                    var isActiveSupplier = await _context.Suppliers
+                        .AnyAsync(s => s.SupplierId == supId && s.Status == "Active");
+                    if (!isActiveSupplier) continue;
+
                     var exists = await _context.SupplierPolicies
                         .AnyAsync(sp => sp.PolicyId == policyId && sp.SupplierId == supId);
                     if (exists) continue;

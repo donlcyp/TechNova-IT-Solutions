@@ -33,7 +33,7 @@
         /* Summary Cards */
         .summary-cards {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 32px;
         }
@@ -309,7 +309,7 @@
             }
 
             .summary-cards {
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(2, 1fr);
                 gap: 12px;
             }
         }
@@ -400,6 +400,10 @@
                     <h3>Categories</h3>
                     <div class="value">@Model.TotalCategories</div>
                 </div>
+                <div class="summary-card gradient-1">
+                    <h3>External Policy Imports</h3>
+                    <div class="value">@Model.ExternalImportsCount</div>
+                </div>
             </div>
 
             <!-- Archive Table Section -->
@@ -412,6 +416,9 @@
                     </svg>
                     Archived Policies
                 </h2>
+                <div style="margin-bottom: 12px;">
+                    <a href="/ComplianceManager/ExternalPolicyReferences" class="filter-btn" style="display: inline-block; text-decoration: none;">Open External Policy API</a>
+                </div>
 
                 <!-- Filters -->
                 <form method="get" class="filters">
@@ -505,6 +512,62 @@
                                 <span>There are no archived policies at this time.</span>
                             }
                         </p>
+                    </div>
+                }
+            </div>
+
+            <!-- External Policy Imports Section -->
+            <div class="archive-section" style="margin-top: 20px;">
+                <h2>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    External Policy Imports
+                </h2>
+
+                @if (Model.ExternalPolicyImports.Any())
+                {
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Import ID</th>
+                                    <th>Policy Title</th>
+                                    <th>Category</th>
+                                    <th>Source</th>
+                                    <th>Document #</th>
+                                    <th>Status</th>
+                                    <th>Imported At</th>
+                                    <th>Reviewed At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in Model.ExternalPolicyImports)
+                                {
+                                    <tr>
+                                        <td>#@row.ImportId</td>
+                                        <td>
+                                            <div class="policy-title">@row.PolicyTitle</div>
+                                        </td>
+                                        <td><span class="category-badge">@row.Category</span></td>
+                                        <td>@row.SourceApi</td>
+                                        <td>@(string.IsNullOrWhiteSpace(row.DocumentNumber) ? "N/A" : row.DocumentNumber)</td>
+                                        <td>@row.ReviewStatus</td>
+                                        <td>@row.ImportedAt.ToString("MMM dd, yyyy")</td>
+                                        <td>@(row.ReviewedAt.HasValue ? row.ReviewedAt.Value.ToString("MMM dd, yyyy") : "N/A")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state" style="padding: 30px 20px;">
+                        <h3>No External Policy Imports Yet</h3>
+                        <p>Use the External Policy API page to queue and review imported policies.</p>
                     </div>
                 }
             </div>

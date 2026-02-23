@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Options;
-using TechNova_IT_Solutions.Models;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using TechNova_IT_Solutions.Models;
 
 namespace TechNova_IT_Solutions.Services
 {
@@ -15,8 +15,6 @@ namespace TechNova_IT_Solutions.Services
 
     /// <summary>
     /// Fetches regulatory policy data from the Federal Register public API.
-    /// No API key required — this is a free, open government data source.
-    /// Docs: https://www.federalregister.gov/developers/documentation/api/v1
     /// </summary>
     public class PolicyReferenceApiService : IPolicyReferenceApiService
     {
@@ -24,16 +22,42 @@ namespace TechNova_IT_Solutions.Services
         private readonly FederalRegisterApiSettings _settings;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        // ── The 7 TechNova policy categories and their Federal Register search terms ──
-        private static readonly Dictionary<string, string> PolicySearchTerms = new()
+        // Curated keyword sets for TechNova policy categories.
+        private static readonly Dictionary<string, string[]> PolicySearchTerms = new()
         {
-            ["Information Security Policy"]       = "information security password data protection access control",
-            ["Data Privacy Policy"]               = "data privacy personally identifiable information confidential records",
-            ["Acceptable Use of IT Resources"]    = "acceptable use information technology computer network",
-            ["Employee Code of Conduct"]          = "employee conduct ethics workplace professional standards",
-            ["Procurement Policy"]                = "procurement purchasing government equipment acquisition",
-            ["Supplier Compliance Policy"]        = "supplier compliance vendor security supply chain standards",
-            ["Document Retention Policy"]         = "document retention records management disposal"
+            ["Information Security Policy"] = new[]
+            {
+                "information security", "cybersecurity", "access control", "authentication", "network security", "incident response"
+            },
+            ["Data Privacy Policy"] = new[]
+            {
+                "data privacy", "personally identifiable information", "PII", "confidential records", "data protection"
+            },
+            ["Acceptable Use of IT Resources"] = new[]
+            {
+                "acceptable use", "information technology", "computer network", "system access", "user behavior"
+            },
+            ["Employee Code of Conduct"] = new[]
+            {
+                "employee conduct", "ethics", "workplace standards", "professional conduct", "disciplinary action"
+            },
+            ["Procurement Policy"] = new[]
+            {
+                "procurement", "purchasing", "acquisition", "contracting", "vendor selection"
+            },
+            ["Supplier Compliance Policy"] = new[]
+            {
+                "supplier compliance", "vendor security", "supply chain", "third-party risk", "vendor management"
+            },
+            ["Document Retention Policy"] = new[]
+            {
+                "document retention", "records management", "records disposal", "retention schedule", "archiving"
+            }
+        };
+
+        private static readonly string[] GlobalPolicyKeywords =
+        {
+            "policy", "security", "privacy", "compliance", "supplier", "records", "retention", "technology"
         };
 
         public PolicyReferenceApiService(
@@ -53,11 +77,6 @@ namespace TechNova_IT_Solutions.Services
             };
         }
 
-        /// <summary>
-        /// Accepts a Federal Register web URL (e.g. https://www.federalregister.gov/d/2019-25554)
-        /// or a direct document number, extracts the document number, and fetches validated
-        /// data from the official API endpoint.
-        /// </summary>
         public async Task<ExternalPolicyResponse> ValidateAndFetchByUrlAsync(string federalRegisterUrl)
         {
             var docNumber = ExtractDocumentNumber(federalRegisterUrl);
@@ -73,51 +92,45 @@ namespace TechNova_IT_Solutions.Services
             return await GetPolicyDataAsync(docNumber);
         }
 
-        /// <summary>
-        /// Extracts the document number from a Federal Register URL or returns the input
-        /// if it already looks like a document number.
-        /// Supports formats:
-        ///   https://www.federalregister.gov/d/2019-25554
-        ///   https://www.federalregister.gov/documents/2019/11/27/2019-25554/...
-        ///   https://api.federalregister.gov/v1/documents/2019-25554.json
-        ///   2019-25554  (plain document number)
-        /// </summary>
         private static string? ExtractDocumentNumber(string input)
         {
             if (string.IsNullOrWhiteSpace(input))
+            {
                 return null;
+            }
 
             input = input.Trim();
 
-            // Pattern: /d/{doc_number}
             var match = System.Text.RegularExpressions.Regex.Match(
                 input, @"federalregister\.gov/d/([\w-]+)");
             if (match.Success)
+            {
                 return match.Groups[1].Value;
+            }
 
-            // Pattern: /documents/YYYY/MM/DD/{doc_number}/...
             match = System.Text.RegularExpressions.Regex.Match(
                 input, @"federalregister\.gov/(?:api/v1/)?documents/(?:\d{4}/\d{2}/\d{2}/)?([\w-]+?)(?:\.json)?(?:/|$)");
             if (match.Success)
+            {
                 return match.Groups[1].Value;
+            }
 
-            // Pattern: /v1/documents/{doc_number}.json  (API subdomain)
             match = System.Text.RegularExpressions.Regex.Match(
                 input, @"api\.federalregister\.gov/v1/documents/([\w-]+?)(?:\.json)?$");
             if (match.Success)
+            {
                 return match.Groups[1].Value;
+            }
 
-            // If it looks like a bare document number (e.g. "2019-25554")
             match = System.Text.RegularExpressions.Regex.Match(input, @"^\d{4}-\d{4,6}$");
             if (match.Success)
+            {
                 return input;
+            }
 
             return null;
         }
 
-        /// <summary>
-        /// Fetch a single Federal Register document by its document number.
-        /// </summary>
         public async Task<ExternalPolicyResponse> GetPolicyDataAsync(string documentNumber)
         {
             try
@@ -165,21 +178,16 @@ namespace TechNova_IT_Solutions.Services
             }
         }
 
-        /// <summary>
-        /// Fetch results for ALL 7 TechNova policy categories in parallel,
-        /// returning up to 3 Federal Register documents per category.
-        /// </summary>
         public async Task<List<ExternalPolicyData>> GetAllPoliciesAsync()
         {
             var allResults = new List<ExternalPolicyData>();
 
-            // Fire all 7 searches in parallel for speed
             var tasks = PolicySearchTerms.Select(async kvp =>
             {
                 var results = await SearchFederalRegisterAsync(kvp.Value, perPage: 3);
                 foreach (var item in results)
                 {
-                    item.Category = kvp.Key; // Tag with TechNova category name
+                    item.Category = kvp.Key;
                 }
                 return results;
             });
@@ -193,19 +201,13 @@ namespace TechNova_IT_Solutions.Services
             return allResults;
         }
 
-        /// <summary>
-        /// Search for a specific TechNova policy category.
-        /// If the category matches one of the 7, uses its curated search term.
-        /// </summary>
         public async Task<List<ExternalPolicyData>> SearchPoliciesByCategoryAsync(string category)
         {
-            // If "all" or empty, return all 7 categories
             if (string.IsNullOrWhiteSpace(category) || category.Equals("all", StringComparison.OrdinalIgnoreCase))
             {
                 return await GetAllPoliciesAsync();
             }
 
-            // Find matching TechNova policy category
             var matchedKey = PolicySearchTerms.Keys
                 .FirstOrDefault(k => k.Equals(category, StringComparison.OrdinalIgnoreCase)
                     || category.Contains(k, StringComparison.OrdinalIgnoreCase)
@@ -218,24 +220,43 @@ namespace TechNova_IT_Solutions.Services
                 {
                     item.Category = matchedKey;
                 }
+
                 return results;
             }
 
-            // Fallback: use raw category text as search term
-            return await SearchFederalRegisterAsync(category, perPage: 5);
+            var fallbackTerms = category
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(s => s.Length > 2)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            return await SearchFederalRegisterAsync(fallbackTerms, perPage: 5);
         }
 
-        // ── Private helpers ─────────────────────────────────────────
-
-        private async Task<List<ExternalPolicyData>> SearchFederalRegisterAsync(string searchTerm, int? perPage = null)
+        private async Task<List<ExternalPolicyData>> SearchFederalRegisterAsync(IEnumerable<string> searchTerms, int? perPage = null)
         {
             try
             {
                 var count = perPage ?? _settings.PerPage;
-                var encodedTerm = Uri.EscapeDataString(searchTerm);
+                var normalizedTerms = searchTerms
+                    .Where(t => !string.IsNullOrWhiteSpace(t))
+                    .Select(t => t.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+
+                if (!normalizedTerms.Any())
+                {
+                    normalizedTerms = new[] { _settings.DefaultSearchTerm };
+                }
+
+                var queryExpression = string.Join(" OR ", normalizedTerms);
+                var encodedTerm = Uri.EscapeDataString(queryExpression);
+                var minDate = DateTime.UtcNow.AddYears(-5).ToString("yyyy-MM-dd");
+
                 var url = $"/api/v1/documents.json"
                     + $"?conditions[type][]=RULE"
                     + $"&conditions[term]={encodedTerm}"
+                    + $"&conditions[publication_date][gte]={minDate}"
                     + $"&per_page={count}"
                     + "&fields[]=title&fields[]=abstract&fields[]=html_url"
                     + "&fields[]=publication_date&fields[]=type&fields[]=document_number"
@@ -248,9 +269,17 @@ namespace TechNova_IT_Solutions.Services
                 var searchResult = JsonSerializer.Deserialize<FederalRegisterSearchResult>(content, _jsonOptions);
 
                 if (searchResult?.Results == null)
+                {
                     return new List<ExternalPolicyData>();
+                }
+
+                var relevanceTerms = normalizedTerms
+                    .Concat(GlobalPolicyKeywords)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
 
                 return searchResult.Results
+                    .Where(doc => IsRelevantPolicyDocument(doc, relevanceTerms))
                     .Select(doc => MapToExternalPolicyData(doc, "Rule"))
                     .ToList();
             }
@@ -265,7 +294,9 @@ namespace TechNova_IT_Solutions.Services
         {
             DateTime? publicationDate = null;
             if (DateTime.TryParse(doc.PublicationDate, out var parsed))
+            {
                 publicationDate = parsed;
+            }
 
             return new ExternalPolicyData
             {
@@ -278,6 +309,12 @@ namespace TechNova_IT_Solutions.Services
                 DocumentNumber = doc.DocumentNumber,
                 SourceApi = "Federal Register"
             };
+        }
+
+        private static bool IsRelevantPolicyDocument(FederalRegisterDocument doc, IEnumerable<string> terms)
+        {
+            var haystack = $"{doc.Title} {doc.Abstract}".ToLowerInvariant();
+            return terms.Any(term => haystack.Contains(term.ToLowerInvariant()));
         }
     }
 }

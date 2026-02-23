@@ -48,9 +48,9 @@
             transition: transform 0.2s, box-shadow 0.2s;
             display: grid;
             grid-template-columns: auto 1fr;
-            grid-template-rows: auto auto;
+            grid-template-rows: auto 1fr;
             gap: 0 12px;
-            align-items: center;
+            align-items: start;
         }
 
         .card:hover {
@@ -101,13 +101,19 @@
             font-size: 26px;
             font-weight: 700;
             color: #1f2937;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
+            line-height: 1;
+            min-height: 30px;
+            display: flex;
+            align-items: center;
         }
 
         .card-label {
             font-size: 14px;
             color: #6b7280;
             font-weight: 500;
+            line-height: 1.35;
+            min-height: 38px;
         }
 
         /* Two Column Layout */

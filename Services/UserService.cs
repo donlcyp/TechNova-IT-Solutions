@@ -201,6 +201,10 @@ namespace TechNova_IT_Solutions.Services
                 {
                     resetPassword = "employee123";
                 }
+                else if (role.Contains("Supplier", StringComparison.OrdinalIgnoreCase))
+                {
+                    resetPassword = "supplier123";
+                }
                 else
                 {
                     resetPassword = "TempPassword123!";

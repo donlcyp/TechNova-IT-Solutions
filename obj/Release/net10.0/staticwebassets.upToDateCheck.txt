@@ -64,6 +64,13 @@ wwwroot\lib\jquery\dist\jquery.slim.js
 wwwroot\lib\jquery\dist\jquery.slim.min.js
 wwwroot\lib\jquery\dist\jquery.slim.min.map
 wwwroot\lib\jquery\LICENSE.txt
+wwwroot\uploads\policies\20260217154154_IT15_ERD_DATADICTIONARY-V3-BASIO (2).pdf
+wwwroot\uploads\policies\20260217154418_3rd_Deliverables_CRUD_ADMIN_CLIENT.docx
+wwwroot\uploads\policies\20260221124950_20260217154418_3rd_Deliverables_CRUD_ADMIN_CLIENT.pdf
+wwwroot\uploads\policies\20260221124952_20260217154418_3rd_Deliverables_CRUD_ADMIN_CLIENT.pdf
+wwwroot\uploads\policies\20260221124953_20260217154418_3rd_Deliverables_CRUD_ADMIN_CLIENT.pdf
+wwwroot\uploads\policies\20260221125306_IT15_ERD_DATADICTIONARY-V3-BASIO (1).pdf
+wwwroot\uploads\policies\20260221125311_IT15_ERD_DATADICTIONARY-V3-BASIO (1).pdf
 D:\C#\repos\TechNova IT Solutions\wwwroot\css\site.css
 D:\C#\repos\TechNova IT Solutions\wwwroot\favicon.ico
 D:\C#\repos\TechNova IT Solutions\wwwroot\images\README.md

@@ -1,13 +1,19 @@
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.exe
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\appsettings.Development.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\appsettings.json
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\artifacts\verify-build\appsettings.json
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\artifacts\verify-build\TechNova IT Solutions.deps.json
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\artifacts\verify-build\TechNova IT Solutions.runtimeconfig.json
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\artifacts\verify-build\TechNova IT Solutions.staticwebassets.endpoints.json
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\artifacts\verify-build\TechNova IT Solutions.staticwebassets.runtime.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.runtimeconfig.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.pdb
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Azure.Core.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Azure.Identity.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\BCrypt.Net-Next.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\BouncyCastle.Cryptography.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Humanizer.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\MailKit.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.AspNetCore.Identity.UI.dll
@@ -55,6 +61,7 @@ D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.Visua
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.VisualStudio.Web.CodeGeneration.Templating.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.VisualStudio.Web.CodeGeneration.Utils.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.VisualStudio.Web.CodeGenerators.Mvc.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\MimeKit.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Mono.TextTemplating.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Newtonsoft.Json.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\NuGet.Common.dll

@@ -32,6 +32,22 @@ namespace TechNova_IT_Solutions.Models
         [Column("purchase_date")]
         public DateTime? PurchaseDate { get; set; }
 
+        [StringLength(3)]
+        [Column("currency_code")]
+        public string CurrencyCode { get; set; } = "PHP";
+
+        [Column("original_amount", TypeName = "decimal(18,2)")]
+        public decimal OriginalAmount { get; set; }
+
+        [Column("exchange_rate", TypeName = "decimal(18,6)")]
+        public decimal ExchangeRate { get; set; }
+
+        [Column("converted_amount", TypeName = "decimal(18,2)")]
+        public decimal ConvertedAmount { get; set; }
+
+        [Column("conversion_timestamp")]
+        public DateTime? ConversionTimestamp { get; set; }
+
         [StringLength(40)]
         [Column("status")]
         public string Status { get; set; } = "Draft";
@@ -44,6 +60,13 @@ namespace TechNova_IT_Solutions.Models
 
         [Column("supplier_commit_ship_date")]
         public DateTime? SupplierCommitShipDate { get; set; }
+
+        [Column("revised_delivery_date")]
+        public DateTime? RevisedDeliveryDate { get; set; }
+
+        [StringLength(500)]
+        [Column("delay_reason")]
+        public string? DelayReason { get; set; }
 
         [Column("shipment_date")]
         public DateTime? ShipmentDate { get; set; }

@@ -4,16 +4,20 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
     public class PolicyArchivesModel : PageModel
     {
         private readonly IComplianceManagerService _complianceService;
+        private readonly ApplicationDbContext _context;
 
-        public PolicyArchivesModel(IComplianceManagerService complianceService)
+        public PolicyArchivesModel(IComplianceManagerService complianceService, ApplicationDbContext context)
         {
             _complianceService = complianceService;
+            _context = context;
         }
 
         public int TotalArchived { get; set; }
         public int ArchivedThisMonth { get; set; }
         public int TotalCategories { get; set; }
         public List<ArchivedPolicyRecord> ArchivedPolicies { get; set; } = new();
+        public int ExternalImportsCount { get; set; }
+        public List<ExternalPolicyArchiveRow> ExternalPolicyImports { get; set; } = new();
 
         [BindProperty(SupportsGet = true)]
         public string? SearchTerm { get; set; }
@@ -48,8 +52,37 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
             ArchivedThisMonth = archiveData.ArchivedThisMonth;
             TotalCategories = archiveData.TotalCategories;
             ArchivedPolicies = archiveData.ArchivedPolicies;
+            ExternalPolicyImports = await _context.ExternalPolicyImports
+                .AsNoTracking()
+                .OrderByDescending(i => i.ImportedAt)
+                .Take(50)
+                .Select(i => new ExternalPolicyArchiveRow
+                {
+                    ImportId = i.ImportId,
+                    PolicyTitle = i.PolicyTitle,
+                    Category = i.Category ?? "General",
+                    SourceApi = i.SourceApi,
+                    DocumentNumber = i.DocumentNumber,
+                    ReviewStatus = i.ReviewStatus,
+                    ImportedAt = i.ImportedAt,
+                    ReviewedAt = i.ReviewedAt
+                })
+                .ToListAsync();
+            ExternalImportsCount = ExternalPolicyImports.Count;
 
             return Page();
+        }
+
+        public class ExternalPolicyArchiveRow
+        {
+            public int ImportId { get; set; }
+            public string PolicyTitle { get; set; } = string.Empty;
+            public string Category { get; set; } = string.Empty;
+            public string SourceApi { get; set; } = string.Empty;
+            public string? DocumentNumber { get; set; }
+            public string ReviewStatus { get; set; } = string.Empty;
+            public DateTime ImportedAt { get; set; }
+            public DateTime? ReviewedAt { get; set; }
         }
     }
 }

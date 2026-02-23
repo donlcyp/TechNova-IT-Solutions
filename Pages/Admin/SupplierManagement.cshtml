@@ -200,6 +200,10 @@
             color: #991b1b;
         }
 
+        .status-terminated {
+            color: #7f1d1d;
+        }
+
         .status-compliant {
             color: #065f46;
         }
@@ -600,6 +604,7 @@
                         <option value="">All Status</option>
                         <option value="Active">Active</option>
                         <option value="Inactive">Inactive</option>
+                        <option value="Terminated">Terminated</option>
                     </select>
                 </div>
             </div>
@@ -633,7 +638,7 @@
                             <td>@supplier.ContactNumber</td>
                             <td>@supplier.Address</td>
                             <td>
-                                <span class="status-badge @(supplier.Status == "Active" ? "status-active" : "status-inactive")">
+                                <span class="status-badge @(supplier.Status == "Active" ? "status-active" : supplier.Status == "Terminated" ? "status-terminated" : "status-inactive")">
                                     @supplier.Status
                                 </span>
                             </td>
@@ -645,8 +650,16 @@
                             <td>
                                 <div class="actions">
                                     <button class="btn-action" onclick="viewSupplier('@supplier.SupplierId')">View</button>
-                                    <button class="btn-action" onclick="editSupplier('@supplier.SupplierId')">Edit</button>
-                                    <button class="btn-action" onclick="assignPolicy('@supplier.SupplierId')">Assign Policy</button>
+                                    @if (supplier.Status == "Terminated")
+                                    {
+                                        <button class="btn-action" onclick="restoreSupplier('@supplier.SupplierId')">Restore</button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn-action" onclick="editSupplier('@supplier.SupplierId')">Edit</button>
+                                        <button class="btn-action" onclick="assignPolicy('@supplier.SupplierId')">Assign Policy</button>
+                                        <button class="btn-action" onclick="terminateSupplier('@supplier.SupplierId', '@supplier.SupplierName')">Terminate</button>
+                                    }
                                 </div>
                             </td>
                         </tr>
@@ -772,6 +785,28 @@
         </div>
     </div>
 
+    <!-- Terminate Supplier Modal -->
+    <div id="terminateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Terminate Supplier</h3>
+                <button class="close-modal" onclick="closeModal('terminateModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="terminateForm">
+                    <div class="form-group">
+                        <label for="terminationReason">Termination Reason *</label>
+                        <textarea id="terminationReason" rows="4" required placeholder="Enter termination reason"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('terminateModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmTerminateSupplier()">Terminate</button>
+            </div>
+        </div>
+    </div>
+
 @section Scripts {
     <script>
         // --- Toast Notifications ---
@@ -819,13 +854,17 @@
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
+            if (modalId === 'terminateModal') {
+                terminateSupplierId = null;
+                document.getElementById('terminationReason').value = '';
+            }
         }
 
         function viewSupplier(id) {
             // Extract numeric ID
             const supplierId = parseInt(id.toString().replace('SUP-', '')) || parseInt(id);
             
-            fetch(`/Admin/GetSupplier?supplierId=${supplierId}`)
+            fetch(`/AdminSupplier/GetSupplier?supplierId=${supplierId}`)
                 .then(res => res.json())
                 .then(result => {
                     if (result.success) {
@@ -837,7 +876,9 @@
                                 <div><strong>Email:</strong></div><div>${s.email}</div>
                                 <div><strong>Phone:</strong></div><div>${s.contactPersonNumber}</div>
                                 <div><strong>Address:</strong></div><div>${s.address}</div>
-                                <div><strong>Status:</strong></div><div><span class="status-badge ${s.status === 'Active' ? 'status-active' : 'status-inactive'}">${s.status}</span></div>
+                                <div><strong>Status:</strong></div><div><span class="status-badge ${s.status === 'Active' ? 'status-active' : s.status === 'Terminated' ? 'status-terminated' : 'status-inactive'}">${s.status}</span></div>
+                                <div><strong>Termination Reason:</strong></div><div>${s.terminationReason || 'N/A'}</div>
+                                <div><strong>Terminated At:</strong></div><div>${s.terminatedAt ? new Date(s.terminatedAt).toLocaleString() : 'N/A'}</div>
                             </div>
                         `;
                         document.getElementById('viewModalContent').innerHTML = content;
@@ -852,7 +893,7 @@
         function editSupplier(id) {
             const supplierId = parseInt(id.toString().replace('SUP-', '')) || parseInt(id);
 
-            fetch(`/Admin/GetSupplier?supplierId=${supplierId}`)
+            fetch(`/AdminSupplier/GetSupplier?supplierId=${supplierId}`)
                 .then(res => res.json())
                 .then(result => {
                     if (result.success) {
@@ -877,6 +918,7 @@
         }
 
         let currentSupplierId = null;
+        let terminateSupplierId = null;
 
         function assignPolicy(id) {
             currentSupplierId = parseInt(id.toString().replace('SUP-', '')) || parseInt(id);
@@ -886,6 +928,60 @@
             document.getElementById('policySearchInput').value = '';
             filterPolicyChecklist();
             updatePolicySelectedCount();
+        }
+
+        function terminateSupplier(id, supplierName) {
+            terminateSupplierId = parseInt(id.toString().replace('SUP-', '')) || parseInt(id);
+            document.getElementById('terminationReason').value = '';
+            document.getElementById('terminateModal').classList.add('active');
+            setTimeout(() => document.getElementById('terminationReason').focus(), 0);
+        }
+
+        function confirmTerminateSupplier() {
+            const reason = (document.getElementById('terminationReason').value || '').trim();
+            if (!terminateSupplierId) {
+                showToast('Invalid supplier selected', 'error');
+                return;
+            }
+            if (!reason) {
+                showToast('Termination reason is required', 'error');
+                return;
+            }
+
+            fetch('/AdminSupplier/TerminateSupplier', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ supplierId: terminateSupplierId, reason })
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    closeModal('terminateModal');
+                    terminateSupplierId = null;
+                    showToast(result.message || 'Supplier terminated successfully', 'success');
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    showToast(result.message || 'Failed to terminate supplier', 'error');
+                }
+            })
+            .catch(() => showToast('Error terminating supplier', 'error'));
+        }
+
+        function restoreSupplier(id) {
+            const supplierId = parseInt(id.toString().replace('SUP-', '')) || parseInt(id);
+            fetch(`/AdminSupplier/RestoreSupplier?supplierId=${supplierId}`, {
+                method: 'POST'
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    showToast(result.message || 'Supplier restored', 'success');
+                    setTimeout(() => location.reload(), 1200);
+                } else {
+                    showToast(result.message || 'Failed to restore supplier', 'error');
+                }
+            })
+            .catch(() => showToast('Error restoring supplier', 'error'));
         }
 
         function saveSupplier() {
@@ -913,7 +1009,7 @@
                 data.supplierId = parseInt(id);
             }
 
-            const url = isUpdate ? '/Admin/UpdateSupplier' : '/Admin/CreateSupplier';
+            const url = isUpdate ? '/AdminSupplier/UpdateSupplier' : '/AdminSupplier/CreateSupplier';
 
             fetch(url, {
                 method: 'POST',
@@ -955,7 +1051,7 @@
                 supplierIds: [currentSupplierId]
             };
 
-            fetch('/Admin/AssignPolicy', {
+            fetch('/AdminPolicy/AssignPolicy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -1039,10 +1135,12 @@
             const supplierModal = document.getElementById('supplierModal');
             const policyModal = document.getElementById('policyModal');
             const viewModal = document.getElementById('viewModal');
+            const terminateModal = document.getElementById('terminateModal');
             
             if (event.target === supplierModal) closeModal('supplierModal');
             if (event.target === policyModal) closeModal('policyModal');
             if (event.target === viewModal) closeModal('viewModal');
+            if (event.target === terminateModal) closeModal('terminateModal');
         }
     </script>
 }

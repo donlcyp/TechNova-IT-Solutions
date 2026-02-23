@@ -5,16 +5,21 @@ using Microsoft.EntityFrameworkCore;
 using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Infrastructure;
 using TechNova_IT_Solutions.Models;
+using TechNova_IT_Solutions.Services;
 
 namespace TechNova_IT_Solutions.Pages.SuperAdmin
 {
     public class SystemSettingsPoliciesModel : PageModel
     {
         private readonly ApplicationDbContext _context;
+        private readonly IPolicyReferenceApiService _policyReferenceApiService;
 
-        public SystemSettingsPoliciesModel(ApplicationDbContext context)
+        public SystemSettingsPoliciesModel(
+            ApplicationDbContext context,
+            IPolicyReferenceApiService policyReferenceApiService)
         {
             _context = context;
+            _policyReferenceApiService = policyReferenceApiService;
         }
 
         public int TotalPolicies { get; set; }
@@ -22,6 +27,7 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
         public int ArchivedPolicies { get; set; }
         public List<Policy> RecentPolicies { get; set; } = new();
         public List<ComplianceTableRow> ComplianceRows { get; set; } = new();
+        public List<ExternalPolicyData> ExternalPolicies { get; set; } = new();
 
         public async Task<IActionResult> OnGet()
         {
@@ -60,6 +66,12 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
                     DateAssigned = pa.AssignedDate
                 })
                 .ToListAsync();
+
+            var externalPolicies = await _policyReferenceApiService.GetAllPoliciesAsync();
+            ExternalPolicies = externalPolicies
+                .OrderByDescending(p => p.DateUploaded ?? DateTime.MinValue)
+                .Take(10)
+                .ToList();
 
             return Page();
         }

@@ -67,6 +67,7 @@
         <div class="action-row">
             <button type="button" class="btn active" id="policyBtn">Policy Management</button>
             <button type="button" class="btn" id="complianceBtn">Compliance Monitoring</button>
+            <button type="button" class="btn" id="externalBtn">External Policy API</button>
         </div>
 
         <div class="table-container" id="policyTableWrap">
@@ -116,6 +117,39 @@
                 </tbody>
             </table>
         </div>
+
+        <div class="table-container" id="externalTableWrap" style="display:none;">
+            <table id="externalTable">
+                <thead>
+                    <tr>
+                        <th>Policy Title</th>
+                        <th>Category</th>
+                        <th>Source</th>
+                        <th>Date Published</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.ExternalPolicies)
+                    {
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(p.ExternalUrl))
+                                {
+                                    <a href="@p.ExternalUrl" target="_blank" rel="noopener noreferrer">@p.PolicyTitle</a>
+                                }
+                                else
+                                {
+                                    @p.PolicyTitle
+                                }
+                            </td>
+                            <td>@p.Category</td>
+                            <td>@p.SourceApi</td>
+                            <td>@(p.DateUploaded?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -124,19 +158,23 @@
         (() => {
             const policyBtn = document.getElementById('policyBtn');
             const complianceBtn = document.getElementById('complianceBtn');
+            const externalBtn = document.getElementById('externalBtn');
             const policyTableWrap = document.getElementById('policyTableWrap');
             const complianceTableWrap = document.getElementById('complianceTableWrap');
+            const externalTableWrap = document.getElementById('externalTableWrap');
 
             function setView(view) {
-                const isPolicy = view === 'policy';
-                policyTableWrap.style.display = isPolicy ? 'block' : 'none';
-                complianceTableWrap.style.display = isPolicy ? 'none' : 'block';
-                policyBtn.classList.toggle('active', isPolicy);
-                complianceBtn.classList.toggle('active', !isPolicy);
+                policyTableWrap.style.display = view === 'policy' ? 'block' : 'none';
+                complianceTableWrap.style.display = view === 'compliance' ? 'block' : 'none';
+                externalTableWrap.style.display = view === 'external' ? 'block' : 'none';
+                policyBtn.classList.toggle('active', view === 'policy');
+                complianceBtn.classList.toggle('active', view === 'compliance');
+                externalBtn.classList.toggle('active', view === 'external');
             }
 
             policyBtn.addEventListener('click', () => setView('policy'));
             complianceBtn.addEventListener('click', () => setView('compliance'));
+            externalBtn.addEventListener('click', () => setView('external'));
         })();
     </script>
 }

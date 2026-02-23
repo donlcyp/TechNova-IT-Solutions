@@ -81,6 +81,14 @@
             </svg>
             <span class="nav-text">Audit Logs</span>
         </a>
+        <a href="/Admin/PolicyArchives" class="nav-item @(Model == "PolicyArchives" ? "active" : "")" title="Policy Archives">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                <rect x="1" y="3" width="22" height="5"></rect>
+                <line x1="10" y1="12" x2="14" y2="12"></line>
+            </svg>
+            <span class="nav-text">Policy Archives</span>
+        </a>
         <a href="/Admin/Reports" class="nav-item @(Model == "Reports" ? "active" : "")" title="Reports">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -90,6 +98,14 @@
                 <polyline points="10 9 9 9 8 9"></polyline>
             </svg>
             <span class="nav-text">Reports</span>
+        </a>
+        <a href="/Admin/ExternalPolicyReferences" class="nav-item @(Model == "ExternalPolicyReferences" ? "active" : "")" title="External Policy API">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span class="nav-text">External Policy API</span>
         </a>
     </nav>
 
@@ -177,6 +193,8 @@
     .nav-menu {
         flex: 1;
         padding: 8px 0;
+        overflow-y: auto;
+        min-height: 0;
     }
 
     .nav-item {
