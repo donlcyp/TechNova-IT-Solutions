@@ -4,12 +4,7 @@
     ViewData["Title"] = "Supplier Compliance";
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"]</title>
+@section Styles {
     <style>
         * {
             margin: 0;
@@ -118,33 +113,10 @@
             margin-top: 16px;
         }
 
-        .summary-card.gradient-1 .value {
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .summary-card.gradient-2 .value {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .summary-card.gradient-3 .value {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .summary-card.gradient-4 .value {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+        .summary-card.gradient-1 .value { color: #2563eb; }
+        .summary-card.gradient-2 .value { color: #059669; }
+        .summary-card.gradient-3 .value { color: #dc2626; }
+        .summary-card.gradient-4 .value { color: #d97706; }
 
         /* Main Table Section */
         .table-section {
@@ -165,20 +137,25 @@
         }
 
         .data-table th {
-            padding: 16px;
-            text-align: left;
-            font-size: 13px;
+            padding: 13px 16px;
+            text-align: center;
+            font-size: 12px;
             font-weight: 600;
             color: #6b7280;
-            border-bottom: 1px solid #e5e7eb;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e5e7eb;
         }
 
         .data-table td {
-            padding: 16px;
+            padding: 13px 16px;
+            text-align: center;
+            vertical-align: middle;
             font-size: 14px;
             color: #1f2937;
             border-bottom: 1px solid #e5e7eb;
         }
+
+        .data-table td:first-child { text-align: left; }
 
         .data-table tbody tr {
             transition: background 0.2s;
@@ -198,37 +175,14 @@
             min-width: 950px;
         }
 
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-size: 12px;
-            font-weight: 500;
-            display: inline-block;
-        }
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1.5px solid; background: transparent; }
+        .status-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+        .status-compliant { color: #059669; border-color: #059669; }
+        .status-not-compliant { color: #dc2626; border-color: #dc2626; }
 
-        .status-compliant {
-            color: #10b981;
-        }
-
-        .status-not-compliant {
-            color: #ef4444;
-        }
-
-        .btn-view {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            margin-right: 6px;
-            transition: all 0.3s;
-            font-weight: 500;
-            color: #6b7280;
-        }
-
-        .btn-view:hover {
-            color: #1e40af;
-        }
+        .btn-icon { width: 34px; height: 34px; border-radius: 6px; border: 1px solid #93c5fd; background: transparent; color: #2563eb; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; padding: 0; }
+        .btn-icon svg { width: 14px; height: 14px; }
+        .btn-icon:hover { background: #eff6ff; }
 
         /* Modal Styles */
         .modal {
@@ -250,19 +204,19 @@
         }
 
         .modal-content {
-            background: #1a1d2e;
+            background: #ffffff;
             border-radius: 16px;
             width: 90%;
             max-width: 700px;
             max-height: 85vh;
             overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            border: 1px solid #2d3548;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid #e5e7eb;
         }
 
         .modal-header {
             padding: 24px 32px;
-            border-bottom: 1px solid #2d3548;
+            border-bottom: 1px solid #e5e7eb;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -270,7 +224,7 @@
 
         .modal-header h2 {
             font-size: 24px;
-            color: #e5e7eb;
+            color: #1f2937;
         }
 
         .close-btn {
@@ -299,7 +253,7 @@
             color: #1e40af;
             margin-bottom: 16px;
             padding-bottom: 12px;
-            border-bottom: 1px solid #2d3548;
+            border-bottom: 2px solid #e5e7eb;
         }
 
         .detail-grid {
@@ -316,14 +270,15 @@
 
         .detail-label {
             font-size: 12px;
-            color: #9ca3af;
-            font-weight: 500;
+            color: #6b7280;
+            font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         .detail-value {
             font-size: 14px;
-            color: #e5e7eb;
+            color: #374151;
         }
 
         .policy-list {
@@ -331,16 +286,18 @@
         }
 
         .policy-item {
-            background: #252940;
+            background: #f9fafb;
             padding: 16px;
             border-radius: 8px;
             margin-bottom: 12px;
+            border-left: 3px solid #1e40af;
+            border: 1px solid #e5e7eb;
             border-left: 3px solid #1e40af;
         }
 
         .policy-item h4 {
             font-size: 15px;
-            color: #e5e7eb;
+            color: #1f2937;
             margin-bottom: 8px;
         }
 
@@ -411,8 +368,8 @@
             }
         }
     </style>
-</head>
-<body>
+}
+
     @await Html.PartialAsync("_ComplianceManagerSidebar", "SupplierCompliance")
 
     <!-- Main Content -->
@@ -429,14 +386,17 @@
                     <input type="text" id="searchSupplier" class="search-input" placeholder="Search by supplier name...">
                 </div>
                 <div class="filter-group">
-                    <label for="policyFilter">Policy</label>
+                    <label for="policyFilter">Linked Policy</label>
                     <select id="policyFilter" class="filter-select">
                         <option value="">All Policies</option>
-                        <option value="Supplier Code of Conduct">Supplier Code of Conduct</option>
-                        <option value="Environmental Compliance Policy">Environmental Compliance Policy</option>
-                        <option value="Quality Assurance Policy">Quality Assurance Policy</option>
-                        <option value="Data Protection Policy">Data Protection Policy</option>
-                        <option value="Health & Safety Policy">Health & Safety Policy</option>
+                        @foreach (var policyName in Model.SupplierRecords
+                            .Select(r => r.AssignedPolicy)
+                            .Where(p => !string.IsNullOrWhiteSpace(p))
+                            .Distinct()
+                            .OrderBy(p => p))
+                        {
+                            <option value="@policyName">@policyName</option>
+                        }
                     </select>
                 </div>
                 <div class="filter-group">
@@ -498,8 +458,8 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <button class="btn-view" onclick="showDetails(@supplier.SupplierId)">
-                                        <i class="fas fa-eye"></i> View Details
+                                    <button class="btn-icon" onclick="showDetails(@supplier.SupplierId)" title="View Details">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                     </button>
                                 </td>
                             </tr>
@@ -633,5 +593,3 @@
         document.getElementById('policyFilter').addEventListener('change', filterTable);
         document.getElementById('statusFilter').addEventListener('change', filterTable);
     </script>
-</body>
-</html>

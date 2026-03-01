@@ -30,7 +30,12 @@ namespace TechNova_IT_Solutions.Controllers
             var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
-            var data = await _adminService.GetDashboardDataAsync();
+            int? branchId = null;
+            var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+            if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var parsedId))
+                branchId = parsedId;
+
+            var data = await _adminService.GetDashboardDataAsync(branchId);
             return View(data);
         }
 
@@ -82,7 +87,7 @@ namespace TechNova_IT_Solutions.Controllers
 
             var archiveData = await _complianceManagerService.GetPolicyArchivesAsync(searchTerm, categoryFilter);
 
-            var model = new TechNova_IT_Solutions.Pages.ComplianceManager.PolicyArchivesModel(_complianceManagerService, _context)
+            var model = new TechNova_IT_Solutions.Pages.ChiefComplianceManager.PolicyArchivesModel(_complianceManagerService, _context)
             {
                 SearchTerm = searchTerm,
                 CategoryFilter = categoryFilter,
@@ -96,7 +101,7 @@ namespace TechNova_IT_Solutions.Controllers
                 .AsNoTracking()
                 .OrderByDescending(i => i.ImportedAt)
                 .Take(50)
-                .Select(i => new TechNova_IT_Solutions.Pages.ComplianceManager.PolicyArchivesModel.ExternalPolicyArchiveRow
+                .Select(i => new TechNova_IT_Solutions.Pages.ChiefComplianceManager.PolicyArchivesModel.ExternalPolicyArchiveRow
                 {
                     ImportId = i.ImportId,
                     PolicyTitle = i.PolicyTitle,
@@ -131,8 +136,14 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> ExternalPolicyReferences(string category = "all")
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            // External policy references: Super Admin oversight only (Compliance Manager has their own page)
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.SuperAdmin);
             if (denied != null) return denied;
+
+            int? branchId = null;
+            var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+            if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var parsedBranchId))
+                branchId = parsedBranchId;
 
             var externalPolicies = await _complianceManagerService.GetExternalPolicyReferencesAsync(category);
 
@@ -161,14 +172,16 @@ namespace TechNova_IT_Solutions.Controllers
 
             var employees = await _context.Users
                 .AsNoTracking()
-                .Where(u => u.Role == RoleNames.Employee && u.Status == "Active")
+                .Where(u => u.Role == RoleNames.Employee && u.Status == "Active" &&
+                    (!branchId.HasValue || u.BranchId == branchId))
                 .OrderBy(u => u.FirstName)
                 .Select(u => new { u.UserId, Name = (u.FirstName + " " + u.LastName).Trim() })
                 .ToListAsync();
 
             var suppliers = await _context.Suppliers
                 .AsNoTracking()
-                .Where(s => s.Status == "Active")
+                .Where(s => s.Status == "Active" &&
+                    (!branchId.HasValue || s.BranchId == branchId || s.BranchId == null))
                 .OrderBy(s => s.SupplierName)
                 .Select(s => new { s.SupplierId, Name = s.SupplierName ?? string.Empty })
                 .ToListAsync();

@@ -12,6 +12,9 @@ namespace TechNova_IT_Solutions.Pages
 
         public string UserEmail { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
+        public bool IsSuperAdmin { get; set; }
+        public string BranchDisplayName { get; set; } = string.Empty;
+        public int? CallerBranchId { get; set; }
 
         // Summary Data
         public int TotalSuppliers { get; set; }
@@ -38,28 +41,46 @@ namespace TechNova_IT_Solutions.Pages
             if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
                 if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
-                if (userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 return RedirectToPage("/Account/Login");
             }
 
             UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? "admin@technova.com";
             UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
+            IsSuperAdmin = userRole == RoleNames.SuperAdmin;
 
-            // Calculate summary statistics
-            TotalSuppliers = await _context.Suppliers.CountAsync();
-            ActiveSuppliers = await _context.Suppliers.Where(s => s.Status == "Active").CountAsync();
+            var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+            if (int.TryParse(branchIdStr, out var branchId))
+            {
+                CallerBranchId = branchId;
+                BranchDisplayName = HttpContext.Session.GetString(SessionKeys.BranchName) ?? string.Empty;
+            }
+
+            // Build supplier query scoped by branch
+            IQueryable<TechNova_IT_Solutions.Models.Supplier> supplierQuery = _context.Suppliers.Include(s => s.SupplierPolicies);
+            if (!IsSuperAdmin && CallerBranchId.HasValue)
+            {
+                // Branch Admin sees own branch's suppliers + global (null BranchId) suppliers
+                supplierQuery = supplierQuery.Where(s => s.BranchId == CallerBranchId || s.BranchId == null);
+            }
+
+            // Calculate summary statistics (scoped to visible suppliers)
+            var baseIds = await supplierQuery.Select(s => s.SupplierId).ToListAsync();
+            TotalSuppliers = baseIds.Count;
+            ActiveSuppliers = await supplierQuery.CountAsync(s => s.Status == "Active");
             CompliantSuppliers = await _context.SupplierPolicies
-                .Where(sp => sp.ComplianceStatus == "Compliant")
+                .Where(sp => baseIds.Contains(sp.SupplierId) && sp.ComplianceStatus == "Compliant")
                 .Select(sp => sp.SupplierId)
                 .Distinct()
                 .CountAsync();
 
             // Fetch suppliers with their compliance status
-            Suppliers = await _context.Suppliers
-                .Include(s => s.SupplierPolicies)
+            Suppliers = await supplierQuery
+                .Include(s => s.Branch)
                 .OrderBy(s => s.SupplierName)
                 .Select(s => new SupplierItem
                 {
+                    RawSupplierId = s.SupplierId,
                     SupplierId = "SUP-" + s.SupplierId.ToString("D3"),
                     SupplierName = s.SupplierName ?? string.Empty,
                     ContactFirstName = s.ContactPersonFirstName ?? string.Empty,
@@ -68,8 +89,10 @@ namespace TechNova_IT_Solutions.Pages
                     ContactNumber = s.ContactPersonNumber ?? string.Empty,
                     Address = s.Address ?? string.Empty,
                     Status = s.Status ?? "Active",
-                    ComplianceStatus = s.SupplierPolicies.Any(sp => sp.ComplianceStatus == "Compliant") 
-                        ? "Compliant" 
+                    IsGlobal = s.BranchId == null,
+                    BranchLabel = s.BranchId == null ? "Main" : (s.Branch != null ? s.Branch.BranchName : "Branch #" + s.BranchId),
+                    ComplianceStatus = s.SupplierPolicies.Any(sp => sp.ComplianceStatus == "Compliant")
+                        ? "Compliant"
                         : s.SupplierPolicies.Any(sp => sp.ComplianceStatus == "Non-Compliant")
                             ? "Not Compliant"
                             : "Pending"
@@ -92,6 +115,7 @@ namespace TechNova_IT_Solutions.Pages
 
     public class SupplierItem
     {
+        public int RawSupplierId { get; set; }
         public string SupplierId { get; set; } = string.Empty;
         public string SupplierName { get; set; } = string.Empty;
         public string ContactFirstName { get; set; } = string.Empty;
@@ -101,6 +125,10 @@ namespace TechNova_IT_Solutions.Pages
         public string Address { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string ComplianceStatus { get; set; } = string.Empty;
+        /// <summary>True when BranchId is null (enterprise-wide supplier). Branch Admins cannot modify global suppliers.</summary>
+        public bool IsGlobal { get; set; }
+        /// <summary>"Main" when IsGlobal, otherwise the branch name.</summary>
+        public string BranchLabel { get; set; } = "Main";
     }
 
     public class SupplierPolicyItem

@@ -28,6 +28,7 @@ namespace TechNova_IT_Solutions.Pages
         public string UserEmail { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public string GeneratedByRole { get; set; } = string.Empty;
+        public int? CallerBranchId { get; set; }
         public DateTime GeneratedOn { get; set; } = DateTime.UtcNow;
 
         public int TotalRecords { get; set; }
@@ -86,11 +87,22 @@ namespace TechNova_IT_Solutions.Pages
             if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
                 if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
-                if (userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 return RedirectToPage("/Account/Login");
             }
 
             GeneratedByRole = userRole ?? RoleNames.Admin;
+
+            // Branch scoping: Branch Admins only see their branch reports; SuperAdmin sees all
+            if (userRole == RoleNames.Admin)
+            {
+                var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+                if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))
+                {
+                    CallerBranchId = bid;
+                }
+            }
+
             return null;
         }
 
@@ -134,6 +146,7 @@ namespace TechNova_IT_Solutions.Pages
         {
             var startDate = FromDate!.Value.Date;
             var endDate = ToDate!.Value.Date.AddDays(1);
+            bool scoped = CallerBranchId.HasValue;
 
             ComplianceReportData = await _context.PolicyAssignments
                 .AsNoTracking()
@@ -141,6 +154,7 @@ namespace TechNova_IT_Solutions.Pages
                 .Include(pa => pa.Policy)
                 .Include(pa => pa.ComplianceStatus)
                 .Where(pa => pa.User != null && pa.User.Role == RoleNames.Employee)
+                .Where(pa => !scoped || (pa.User != null && pa.User.BranchId == CallerBranchId))
                 .Where(pa => pa.AssignedDate.HasValue
                     && pa.AssignedDate.Value >= startDate
                     && pa.AssignedDate.Value < endDate)
@@ -170,11 +184,13 @@ namespace TechNova_IT_Solutions.Pages
         {
             var startDate = FromDate!.Value.Date;
             var endDate = ToDate!.Value.Date.AddDays(1);
+            bool scoped = CallerBranchId.HasValue;
 
             SupplierReportData = await _context.SupplierPolicies
                 .AsNoTracking()
                 .Include(sp => sp.Supplier)
                 .Include(sp => sp.Policy)
+                .Where(sp => !scoped || sp.Supplier == null || sp.Supplier.BranchId == CallerBranchId || sp.Supplier.BranchId == null)
                 .Where(sp => sp.AssignedDate.HasValue
                     && sp.AssignedDate.Value >= startDate
                     && sp.AssignedDate.Value < endDate)
@@ -201,11 +217,13 @@ namespace TechNova_IT_Solutions.Pages
         {
             var startDate = FromDate!.Value.Date;
             var endDate = ToDate!.Value.Date.AddDays(1);
+            bool scoped = CallerBranchId.HasValue;
 
             ProcurementReportData = await _context.Procurements
                 .AsNoTracking()
                 .Include(p => p.Supplier)
                 .Include(p => p.RelatedPolicy)
+                .Where(p => !scoped || p.Supplier == null || p.Supplier.BranchId == CallerBranchId || p.Supplier.BranchId == null)
                 .Where(p => p.PurchaseDate.HasValue
                     && p.PurchaseDate.Value >= startDate
                     && p.PurchaseDate.Value < endDate)

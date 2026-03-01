@@ -11,7 +11,7 @@ namespace TechNova_IT_Solutions.Data
         /// <summary>
         /// Default password for all seeded users (except Admin, which is in migration).
         /// </summary>
-        public const string SeededUserPassword = "Password@123";
+        public const string SeededUserPassword = "Admin@123";
 
         public static async Task SeedAsync(ApplicationDbContext context)
         {

@@ -56,6 +56,82 @@ namespace TechNova_IT_Solutions.Migrations
                     b.ToTable("Audit_Logs");
                 });
 
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.Branch", b =>
+                {
+                    b.Property<int>("BranchId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("branchId");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BranchId"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("address");
+
+                    b.Property<string>("BranchName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("branchName");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("city");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("createdAt");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("email");
+
+                    b.Property<string>("ManagerEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("managerEmail");
+
+                    b.Property<string>("ManagerFirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("managerFirstName");
+
+                    b.Property<string>("ManagerLastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("managerLastName");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("Region")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("region");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updatedAt");
+
+                    b.HasKey("BranchId");
+
+                    b.ToTable("Branches");
+                });
+
             modelBuilder.Entity("TechNova_IT_Solutions.Models.ComplianceStatus", b =>
                 {
                     b.Property<int>("ComplianceId")
@@ -85,6 +161,72 @@ namespace TechNova_IT_Solutions.Migrations
                         .IsUnique();
 
                     b.ToTable("Compliance_Status");
+                });
+
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.ComplianceViolation", b =>
+                {
+                    b.Property<int>("ViolationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("violationID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ViolationId"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("notes");
+
+                    b.Property<int?>("PolicyAssignmentId")
+                        .HasColumnType("int")
+                        .HasColumnName("assignment_id");
+
+                    b.Property<int?>("RaisedByUserId")
+                        .HasColumnType("int")
+                        .HasColumnName("raised_by_user_id");
+
+                    b.Property<DateTime>("RaisedDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("raised_date");
+
+                    b.Property<string>("Resolution")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("resolution");
+
+                    b.Property<DateTime?>("ResolvedDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("resolved_date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("status");
+
+                    b.Property<int?>("SupplierPolicyId")
+                        .HasColumnType("int")
+                        .HasColumnName("supplier_policy_id");
+
+                    b.Property<string>("ViolationType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("violation_type");
+
+                    b.HasKey("ViolationId");
+
+                    b.HasIndex("PolicyAssignmentId");
+
+                    b.HasIndex("RaisedByUserId");
+
+                    b.HasIndex("SupplierPolicyId");
+
+                    b.ToTable("compliance_violations");
                 });
 
             modelBuilder.Entity("TechNova_IT_Solutions.Models.ExternalPolicyImport", b =>
@@ -190,6 +332,10 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("archived_date");
 
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("int")
+                        .HasColumnName("branch_id");
+
                     b.Property<string>("Category")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
@@ -223,6 +369,8 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnName("uploaded_by");
 
                     b.HasKey("PolicyId");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("UploadedBy");
 
@@ -269,6 +417,10 @@ namespace TechNova_IT_Solutions.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProcurementId"));
 
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("int")
+                        .HasColumnName("branch_id");
+
                     b.Property<string>("Category")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
@@ -287,6 +439,11 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasMaxLength(3)
                         .HasColumnType("nvarchar(3)")
                         .HasColumnName("currency_code");
+
+                    b.Property<string>("DelayReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("delay_reason");
 
                     b.Property<decimal>("ExchangeRate")
                         .HasColumnType("decimal(18,6)")
@@ -312,11 +469,6 @@ namespace TechNova_IT_Solutions.Migrations
                     b.Property<DateTime?>("ReceivedDate")
                         .HasColumnType("datetime2")
                         .HasColumnName("received_date");
-
-                    b.Property<string>("DelayReason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)")
-                        .HasColumnName("delay_reason");
 
                     b.Property<string>("RejectionReason")
                         .HasMaxLength(500)
@@ -358,6 +510,8 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnName("supplier_response_deadline");
 
                     b.HasKey("ProcurementId");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("RelatedPolicyId");
 
@@ -425,6 +579,10 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("address");
 
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("int")
+                        .HasColumnName("branch_id");
+
                     b.Property<string>("ContactPersonFirstName")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
@@ -451,6 +609,12 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasColumnName("status");
 
+                    b.Property<string>("SupplierName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("supplier_name");
+
                     b.Property<DateTime?>("TerminatedAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("terminated_at");
@@ -464,13 +628,9 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnType("nvarchar(500)")
                         .HasColumnName("termination_reason");
 
-                    b.Property<string>("SupplierName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
-                        .HasColumnName("supplier_name");
-
                     b.HasKey("SupplierId");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("Email")
                         .IsUnique()
@@ -581,6 +741,10 @@ namespace TechNova_IT_Solutions.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
 
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("int")
+                        .HasColumnName("branchId");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -598,6 +762,10 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("lastname");
+
+                    b.Property<bool>("MustChangePassword")
+                        .HasColumnType("bit")
+                        .HasColumnName("mustChangePassword");
 
                     b.Property<string>("Password")
                         .IsRequired()
@@ -619,22 +787,12 @@ namespace TechNova_IT_Solutions.Migrations
 
                     b.HasKey("UserId");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("Email")
                         .IsUnique();
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = 1,
-                            Email = "admin@technova.com",
-                            FirstName = "System",
-                            LastName = "Administrator",
-                            Password = "$2a$11$kzRScf92mLmEjZRJTh3BRub/Li1F07G3TA5vBdZXYQ7tM1C6Lm65i",
-                            Role = "Admin",
-                            Status = "Active"
-                        });
                 });
 
             modelBuilder.Entity("TechNova_IT_Solutions.Models.AuditLog", b =>
@@ -656,6 +814,30 @@ namespace TechNova_IT_Solutions.Migrations
                         .IsRequired();
 
                     b.Navigation("PolicyAssignment");
+                });
+
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.ComplianceViolation", b =>
+                {
+                    b.HasOne("TechNova_IT_Solutions.Models.PolicyAssignment", "PolicyAssignment")
+                        .WithMany()
+                        .HasForeignKey("PolicyAssignmentId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("TechNova_IT_Solutions.Models.User", "RaisedByUser")
+                        .WithMany()
+                        .HasForeignKey("RaisedByUserId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("TechNova_IT_Solutions.Models.SupplierPolicy", "SupplierPolicy")
+                        .WithMany()
+                        .HasForeignKey("SupplierPolicyId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("PolicyAssignment");
+
+                    b.Navigation("RaisedByUser");
+
+                    b.Navigation("SupplierPolicy");
                 });
 
             modelBuilder.Entity("TechNova_IT_Solutions.Models.ExternalPolicyImport", b =>
@@ -684,10 +866,17 @@ namespace TechNova_IT_Solutions.Migrations
 
             modelBuilder.Entity("TechNova_IT_Solutions.Models.Policy", b =>
                 {
+                    b.HasOne("TechNova_IT_Solutions.Models.Branch", "Branch")
+                        .WithMany("Policies")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("TechNova_IT_Solutions.Models.User", "UploadedByUser")
                         .WithMany("UploadedPolicies")
                         .HasForeignKey("UploadedBy")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
 
                     b.Navigation("UploadedByUser");
                 });
@@ -713,6 +902,11 @@ namespace TechNova_IT_Solutions.Migrations
 
             modelBuilder.Entity("TechNova_IT_Solutions.Models.Procurement", b =>
                 {
+                    b.HasOne("TechNova_IT_Solutions.Models.Branch", "Branch")
+                        .WithMany("Procurements")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("TechNova_IT_Solutions.Models.Policy", "RelatedPolicy")
                         .WithMany("Procurements")
                         .HasForeignKey("RelatedPolicyId")
@@ -722,6 +916,8 @@ namespace TechNova_IT_Solutions.Migrations
                         .WithMany("Procurements")
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
 
                     b.Navigation("RelatedPolicy");
 
@@ -737,6 +933,16 @@ namespace TechNova_IT_Solutions.Migrations
                         .IsRequired();
 
                     b.Navigation("Procurement");
+                });
+
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.Supplier", b =>
+                {
+                    b.HasOne("TechNova_IT_Solutions.Models.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
                 });
 
             modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierItem", b =>
@@ -767,6 +973,25 @@ namespace TechNova_IT_Solutions.Migrations
                     b.Navigation("Policy");
 
                     b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.User", b =>
+                {
+                    b.HasOne("TechNova_IT_Solutions.Models.Branch", "Branch")
+                        .WithMany("Users")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.Branch", b =>
+                {
+                    b.Navigation("Policies");
+
+                    b.Navigation("Procurements");
+
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("TechNova_IT_Solutions.Models.Policy", b =>

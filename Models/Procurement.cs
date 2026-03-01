@@ -78,7 +78,15 @@ namespace TechNova_IT_Solutions.Models
         [Column("rejection_reason")]
         public string? RejectionReason { get; set; }
 
+        /// <summary>
+        /// null = company-wide procurement.
+        /// non-null = belongs to a specific branch.
+        /// </summary>
+        [Column("branch_id")]
+        public int? BranchId { get; set; }
+
         // Navigation properties
+        public virtual Branch? Branch { get; set; }
         public virtual Supplier? Supplier { get; set; }
         public virtual Policy? RelatedPolicy { get; set; }
         public virtual ICollection<ProcurementStatusHistory> StatusHistory { get; set; } = new List<ProcurementStatusHistory>();

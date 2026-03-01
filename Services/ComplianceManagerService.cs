@@ -18,16 +18,24 @@ namespace TechNova_IT_Solutions.Services
             _policyApiService = policyApiService;
         }
 
-        public async Task<ComplianceDashboardData> GetComplianceDashboardDataAsync()
+        public async Task<ComplianceDashboardData> GetComplianceDashboardDataAsync(int? branchId = null)
         {
             var data = new ComplianceDashboardData();
+            bool scoped = branchId.HasValue;
 
             // Get total policies assigned
-            data.TotalPoliciesAssigned = await _context.PolicyAssignments.CountAsync();
+            data.TotalPoliciesAssigned = scoped
+                ? await _context.PolicyAssignments
+                    .Include(pa => pa.User)
+                    .Where(pa => pa.User.BranchId == branchId)
+                    .CountAsync()
+                : await _context.PolicyAssignments.CountAsync();
 
             // Get employees compliant count
             var assignmentsWithStatus = await _context.PolicyAssignments
                 .Include(pa => pa.ComplianceStatus)
+                .Include(pa => pa.User)
+                .Where(pa => !scoped || pa.User.BranchId == branchId)
                 .ToListAsync();
             
             data.EmployeesCompliant = assignmentsWithStatus
@@ -44,15 +52,20 @@ namespace TechNova_IT_Solutions.Services
                 .Count();
 
             // Get suppliers compliant count
-            data.SuppliersCompliant = await _context.Suppliers
-                .Where(s => s.Status == "Active")
-                .CountAsync();
+            data.SuppliersCompliant = scoped
+                ? await _context.Suppliers
+                    .Where(s => s.Status == "Active" && (s.BranchId == branchId || s.BranchId == null))
+                    .CountAsync()
+                : await _context.Suppliers
+                    .Where(s => s.Status == "Active")
+                    .CountAsync();
 
             // Get employee compliance data
             data.EmployeeCompliance = await _context.PolicyAssignments
                 .Include(pa => pa.User)
                 .Include(pa => pa.Policy)
                 .Include(pa => pa.ComplianceStatus)
+                .Where(pa => !scoped || pa.User.BranchId == branchId)
                 .OrderByDescending(pa => pa.AssignedDate)
                 .Take(15)
                 .Select(pa => new EmployeeComplianceData
@@ -67,28 +80,48 @@ namespace TechNova_IT_Solutions.Services
                 })
                 .ToListAsync();
 
-            // Get supplier compliance data
-            data.SupplierCompliance = await _context.Suppliers
+            // Get supplier compliance data — real data from SupplierPolicies
+            var supplierQuery = _context.Suppliers
                 .Include(s => s.SupplierPolicies)
                 .ThenInclude(sp => sp.Policy)
-                .Where(s => s.Status == "Active")
-                .Take(10)
-                .Select(s => new SupplierComplianceData
+                .Where(s => s.Status == "Active" && (!scoped || s.BranchId == branchId || s.BranchId == null))
+                .Take(10);
+
+            data.SupplierCompliance = (await supplierQuery.ToListAsync())
+                .Select(s =>
                 {
-                    SupplierName = s.SupplierName,
-                    Industry = s.ContactPersonFirstName ?? "Various Industries",
-                    AssignedPolicy = s.SupplierPolicies.Any() 
-                        ? s.SupplierPolicies.First().Policy!.PolicyTitle 
-                        : "General Supplier Policy",
-                    ComplianceStatus = s.Status == "Active" ? "Compliant" : "Not Compliant",
-                    VerifiedDate = DateTime.Now.AddDays(-Random.Shared.Next(1, 30)).ToString("yyyy-MM-dd")
+                    var policies = s.SupplierPolicies.ToList();
+                    var totalAssigned = policies.Count;
+                    var compliantCount = policies.Count(sp =>
+                        sp.ComplianceStatus != null &&
+                        sp.ComplianceStatus.Equals("Compliant", StringComparison.OrdinalIgnoreCase));
+                    var latestAssignment = policies
+                        .Where(sp => sp.AssignedDate.HasValue)
+                        .OrderByDescending(sp => sp.AssignedDate)
+                        .FirstOrDefault();
+
+                    return new SupplierComplianceData
+                    {
+                        SupplierName = s.SupplierName,
+                        Industry = s.Address ?? "N/A",
+                        AssignedPolicy = policies.Any()
+                            ? policies.First().Policy!.PolicyTitle
+                            : "No Policies Assigned",
+                        ComplianceStatus = totalAssigned == 0 ? "No Policies"
+                            : compliantCount == totalAssigned ? "Compliant"
+                            : "Not Compliant",
+                        VerifiedDate = latestAssignment?.AssignedDate?.ToString("yyyy-MM-dd") ?? "N/A",
+                        TotalPoliciesAssigned = totalAssigned,
+                        PoliciesCompliant = compliantCount
+                    };
                 })
-                .ToListAsync();
+                .ToList();
 
             // Get recently assigned policies
             data.RecentlyAssigned = await _context.PolicyAssignments
                 .Include(pa => pa.User)
                 .Include(pa => pa.Policy)
+                .Where(pa => !scoped || pa.User.BranchId == branchId)
                 .OrderByDescending(pa => pa.AssignedDate)
                 .Take(8)
                 .Select(pa => new RecentlyAssignedData
@@ -134,13 +167,16 @@ namespace TechNova_IT_Solutions.Services
             return data;
         }
 
-        public async Task<EmployeeComplianceReportData> GetEmployeeComplianceReportAsync()
+        public async Task<EmployeeComplianceReportData> GetEmployeeComplianceReportAsync(int? branchId = null)
         {
             var data = new EmployeeComplianceReportData();
+            bool scoped = branchId.HasValue;
 
             // Get all assignments with related data
             var allAssignments = await _context.PolicyAssignments
                 .Include(pa => pa.ComplianceStatus)
+                .Include(pa => pa.User)
+                .Where(pa => !scoped || pa.User.BranchId == branchId)
                 .ToListAsync();
 
             // Get total employees assigned
@@ -166,7 +202,8 @@ namespace TechNova_IT_Solutions.Services
             // Get recently acknowledged count (last 7 days)
             var sevenDaysAgo = DateTime.Now.AddDays(-7);
             data.RecentlyAcknowledged = await _context.ComplianceStatuses
-                .Where(cs => cs.AcknowledgedDate.HasValue && cs.AcknowledgedDate.Value >= sevenDaysAgo)
+                .Where(cs => cs.AcknowledgedDate.HasValue && cs.AcknowledgedDate.Value >= sevenDaysAgo
+                    && (!scoped || cs.PolicyAssignment.User.BranchId == branchId))
                 .CountAsync();
 
             // Get employee records
@@ -174,6 +211,7 @@ namespace TechNova_IT_Solutions.Services
                 .Include(pa => pa.User)
                 .Include(pa => pa.Policy)
                 .Include(pa => pa.ComplianceStatus)
+                .Where(pa => !scoped || pa.User.BranchId == branchId)
                 .ToListAsync();
 
             data.EmployeeRecords = employeeAssignments
@@ -233,60 +271,81 @@ namespace TechNova_IT_Solutions.Services
             return data;
         }
 
-        public async Task<AuditTrailData> GetAuditTrailDataAsync()
+        public async Task<AuditTrailData> GetAuditTrailDataAsync(int? branchId = null)
         {
             var data = new AuditTrailData();
+            bool scoped = branchId.HasValue;
 
             // Get total policy actions
-            data.TotalPolicyActions = await _context.AuditLogs
-                .Where(al => al.Module == "Policy")
-                .CountAsync();
+            data.TotalPolicyActions = scoped
+                ? await _context.AuditLogs
+                    .Where(al => al.Module == "Policy" && al.UserId != null &&
+                        _context.Users.Any(u => u.UserId == al.UserId && u.BranchId == branchId))
+                    .CountAsync()
+                : await _context.AuditLogs.Where(al => al.Module == "Policy").CountAsync();
 
             // Get total compliance actions
-            data.TotalComplianceActions = await _context.AuditLogs
-                .Where(al => al.Module == "Compliance")
-                .CountAsync();
+            data.TotalComplianceActions = scoped
+                ? await _context.AuditLogs
+                    .Where(al => al.Module == "Compliance" && al.UserId != null &&
+                        _context.Users.Any(u => u.UserId == al.UserId && u.BranchId == branchId))
+                    .CountAsync()
+                : await _context.AuditLogs.Where(al => al.Module == "Compliance").CountAsync();
 
             // Get activities today
             var today = DateTime.Today;
-            data.ActivitiesToday = await _context.AuditLogs
-                .Where(al => al.LogDate.Date == today)
-                .CountAsync();
+            data.ActivitiesToday = scoped
+                ? await _context.AuditLogs
+                    .Where(al => al.LogDate.Date == today && al.UserId != null &&
+                        _context.Users.Any(u => u.UserId == al.UserId && u.BranchId == branchId))
+                    .CountAsync()
+                : await _context.AuditLogs.Where(al => al.LogDate.Date == today).CountAsync();
 
             // Get audit logs
-            data.AuditLogs = await _context.AuditLogs
+            var auditQuery = _context.AuditLogs
                 .Include(al => al.User)
-                .OrderByDescending(al => al.LogDate)
+                .OrderByDescending(al => al.LogDate);
+
+            data.AuditLogs = await (scoped
+                ? auditQuery.Where(al => al.UserId != null && al.User!.BranchId == branchId)
+                : auditQuery)
                 .Take(50)
                 .Select(al => new Interfaces.AuditLogRecord
                 {
                     LogId = al.LogId,
                     UserName = al.User != null ? $"{al.User.FirstName} {al.User.LastName}" : "System",
+                    UserEmail = al.User != null ? al.User.Email : "system@technova.com",
                     Role = al.User != null ? (al.User.Role ?? "Unknown") : "System",
                     ActionPerformed = al.Action ?? "Unknown Action",
+                    FullDescription = al.Action ?? "No additional details available",
                     Module = al.Module ?? "General",
-                    DateTime = al.LogDate.ToString("yyyy-MM-dd HH:mm:ss")
+                    DateTime = al.LogDate.ToString("yyyy-MM-dd HH:mm"),
+                    ExactTimestamp = al.LogDate.ToString("yyyy-MM-dd HH:mm:ss.fff"),
+                    IpAddress = "N/A"
                 })
                 .ToListAsync();
 
             return data;
         }
 
-        public async Task<ComplianceReportsData> GetComplianceReportsDataAsync()
+        public async Task<ComplianceReportsData> GetComplianceReportsDataAsync(int? branchId = null)
         {
             var data = new ComplianceReportsData();
+            bool scoped = branchId.HasValue;
 
             // Get total policies
             data.TotalPolicies = await _context.Policies.CountAsync();
 
-            // Get total employees
-            data.TotalEmployees = await _context.Users
-                .Where(u => u.Role == "Employee")
-                .CountAsync();
+            // Get total employees (scoped)
+            data.TotalEmployees = scoped
+                ? await _context.Users.Where(u => u.Role == "Employee" && u.BranchId == branchId).CountAsync()
+                : await _context.Users.Where(u => u.Role == "Employee").CountAsync();
 
-            // Load assignments with compliance status
+            // Load assignments with compliance status (scoped)
             var allAssignments = await _context.PolicyAssignments
                 .Include(pa => pa.ComplianceStatus)
+                .Include(pa => pa.User)
+                .Where(pa => !scoped || pa.User.BranchId == branchId)
                 .ToListAsync();
 
             // Get compliant employees
@@ -313,6 +372,8 @@ namespace TechNova_IT_Solutions.Services
             var policies = await _context.Policies.ToListAsync();
             var policyAssignments = await _context.PolicyAssignments
                 .Include(pa => pa.ComplianceStatus)
+                .Include(pa => pa.User)
+                .Where(pa => !scoped || pa.User.BranchId == branchId)
                 .ToListAsync();
 
             data.PolicyCompliance = policies.Select(p => new PolicyComplianceData
@@ -347,14 +408,16 @@ namespace TechNova_IT_Solutions.Services
             return await _policyApiService.SearchPoliciesByCategoryAsync(category);
         }
 
-        public async Task<PolicyArchivesData> GetPolicyArchivesAsync(string? searchTerm, string? categoryFilter)
+        public async Task<PolicyArchivesData> GetPolicyArchivesAsync(string? searchTerm, string? categoryFilter, int? branchId = null)
         {
             var data = new PolicyArchivesData();
+            bool scoped = branchId.HasValue;
 
-            // Base query: only archived policies
+            // Base query: only archived policies, optionally branch-scoped via Policy.BranchId
             var archivedQuery = _context.Policies
                 .Include(p => p.UploadedByUser)
-                .Where(p => p.IsArchived);
+                .Where(p => p.IsArchived)
+                .Where(p => !scoped || p.BranchId == branchId || p.BranchId == null);
 
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -372,8 +435,11 @@ namespace TechNova_IT_Solutions.Services
                 archivedQuery = archivedQuery.Where(p => p.Category == categoryFilter);
             }
 
-            // Summary stats (before filtering for cards)
-            var allArchived = _context.Policies.Where(p => p.IsArchived);
+            // Summary stats (before filtering for cards) — scoped
+            var allArchived = _context.Policies
+                .Include(p => p.UploadedByUser)
+                .Where(p => p.IsArchived)
+                .Where(p => !scoped || p.BranchId == branchId || p.BranchId == null);
             data.TotalArchived = await allArchived.CountAsync();
 
             var startOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);

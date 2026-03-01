@@ -24,6 +24,7 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
                 new[] { RoleNames.SuperAdmin },
                 new Dictionary<string, string>
                 {
+                    [RoleNames.ChiefComplianceManager] = "/ComplianceManager/ComplianceDashboard",
                     [RoleNames.ComplianceManager] = "/ComplianceManager/ComplianceDashboard",
                     [RoleNames.Employee] = "/Employee/Dashboard",
                     [RoleNames.Supplier] = "/Supplier/Dashboard"
@@ -32,8 +33,9 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
 
             var allUsers = await _userService.GetAllUsersAsync();
             AdminUsers = allUsers
-                .Where(u => u.Role == RoleNames.Admin || u.Role == RoleNames.SuperAdmin)
+                .Where(u => u.Role == RoleNames.Admin || u.Role == RoleNames.ChiefComplianceManager || u.Role == RoleNames.SuperAdmin)
                 .OrderByDescending(u => u.Role == RoleNames.SuperAdmin)
+                .ThenByDescending(u => u.Role == RoleNames.ChiefComplianceManager)
                 .ThenBy(u => u.FirstName)
                 .ToList();
 

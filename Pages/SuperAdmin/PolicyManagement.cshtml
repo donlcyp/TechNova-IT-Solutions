@@ -16,7 +16,12 @@
         .btn { border: 1px solid #1e40af; background: #fff; color: #1e40af; border-radius: 8px; padding: 8px 10px; text-decoration: none; font-size: 13px; font-weight: 600; }
         .btn:hover { background: #eff6ff; }
         .actions { margin-bottom: 14px; display: flex; gap: 10px; }
-        @@media (max-width: 991px) { .main-content { margin-left: 0; } }
+        .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+        .filters input[type=text] { flex: 1; min-width: 200px; padding: 9px 14px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: #f9fafb; }
+        .filters input[type=text]:focus { outline: none; border-color: #1e40af; }
+        .filters select { padding: 9px 14px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: #f9fafb; cursor: pointer; }
+        .filters select:focus { outline: none; border-color: #1e40af; }
+        @@media (max-width: 991px) { .main-content { margin-left: 0; } .filters { flex-direction: column; } .filters input[type=text], .filters select { min-width: 100%; } }
     </style>
 }
 
@@ -28,6 +33,27 @@
         <div class="actions">
             <a class="btn" href="/SuperAdmin/SystemSettingsPolicies">Back to Settings & Policies</a>
         </div>
+        <!-- Filters -->
+        <div class="filters">
+            <input type="text" id="searchInput" placeholder="Search by policy title..." oninput="filterPolicies()" />
+            <select id="categoryFilter" onchange="filterPolicies()">
+                <option value="">All Categories</option>
+                <option>Supplier Management</option>
+                <option>Procurement Policy</option>
+                <option>IT Governance</option>
+                <option>Contract Management</option>
+                <option>Quality Assurance</option>
+                <option>Compliance &amp; Regulatory</option>
+                <option>Code of Conduct</option>
+                <option>Risk Management</option>
+            </select>
+            <select id="statusFilter" onchange="filterPolicies()">
+                <option value="">All Status</option>
+                <option>Active</option>
+                <option>Archived</option>
+            </select>
+        </div>
+
         <div class="table-container">
             <table>
                 <thead>
@@ -53,3 +79,27 @@
         </div>
     </div>
 </div>
+@section Scripts {
+    <script>
+        function filterPolicies() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            document.querySelectorAll('tbody tr').forEach(row => {
+                const tds = row.querySelectorAll('td');
+                if (tds.length < 3) return;
+
+                const title = tds[0].textContent.toLowerCase();
+                const rowCategory = tds[1].textContent.trim();
+                const rowStatus = tds[2].textContent.trim();
+
+                const matchesSearch = !search || title.includes(search);
+                const matchesCategory = !category || rowCategory === category;
+                const matchesStatus = !status || rowStatus === status;
+
+                row.style.display = (matchesSearch && matchesCategory && matchesStatus) ? '' : 'none';
+            });
+        }
+    </script>
+}

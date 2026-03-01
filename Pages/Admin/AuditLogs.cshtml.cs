@@ -29,16 +29,30 @@ namespace TechNova_IT_Solutions.Pages
             if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
                 if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
-                if (userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 return RedirectToPage("/Account/Login");
             }
 
             UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? "admin@technova.com";
             UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
 
+            // Branch scoping: Branch Admins see only their branch logs; SuperAdmin sees all
+            int? callerBranchId = null;
+            if (userRole == RoleNames.Admin)
+            {
+                var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+                if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))
+                {
+                    callerBranchId = bid;
+                }
+            }
+
+            bool scoped = callerBranchId.HasValue;
+
             // Fetch audit logs from database
             AuditLogs = await _context.AuditLogs
                 .Include(al => al.User)
+                .Where(al => !scoped || (al.User != null && al.User.BranchId == callerBranchId))
                 .OrderByDescending(al => al.LogDate)
                 .Select(al => new AuditLogEntry
                 {

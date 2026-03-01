@@ -120,7 +120,7 @@
         }
 
         th {
-            text-align: left;
+            text-align: center;
             padding: 16px 20px;
             font-size: 12px;
             font-weight: 600;
@@ -134,6 +134,12 @@
             border-bottom: 1px solid #e5e7eb;
             font-size: 14px;
             color: #1f2937;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        td:first-child {
+            text-align: left;
         }
 
         tbody tr:hover {
@@ -179,19 +185,34 @@
         }
 
         .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
+            border: none;
+            background: transparent;
+        }
+
+        .status-badge::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
         }
 
         .status-badge.active {
             color: #16a34a;
+            background: #dcfce7;
         }
 
         .status-badge.inactive {
             color: #dc2626;
+            background: #fee2e2;
         }
 
         .role-badge {
@@ -205,45 +226,129 @@
 
         .actions {
             display: flex;
-            gap: 12px;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
         }
 
-        .btn-action {
-            padding: 6px 12px;
+        .btn-action-icon {
+            width: 34px;
+            height: 34px;
             border: 1px solid #e5e7eb;
             border-radius: 6px;
             background: #f8f9fa;
             color: #6b7280;
-            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
             transition: all 0.2s;
+            padding: 0;
+            flex-shrink: 0;
         }
 
-        .btn-action:hover {
+        .btn-action-icon svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .btn-action-icon:hover {
             border-color: #1e40af;
             color: #1e40af;
         }
 
-        .btn-action.danger {
+        .btn-action-icon.danger {
             color: #ef4444;
-            border-color: #ef4444;
+            border-color: #fca5a5;
         }
 
-        .btn-action.danger:hover {
-            border-color: #ef4444;
-            color: #ef4444;
+        .btn-action-icon.danger:hover {
             background: #fee2e2;
+            border-color: #ef4444;
         }
 
-        .btn-action.success {
+        .btn-action-icon.success {
             color: #059669;
-            border-color: #059669;
+            border-color: #86efac;
         }
 
-        .btn-action.success:hover {
-            border-color: #059669;
-            color: #059669;
+        .btn-action-icon.success:hover {
             background: #d1fae5;
+            border-color: #059669;
+        }
+
+        .btn-action-icon.reset {
+            color: #2563eb;
+            border-color: #93c5fd;
+        }
+
+        .btn-action-icon.reset:hover {
+            background: #eff6ff;
+            border-color: #2563eb;
+        }
+
+        /* Pagination */
+        .pagination-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            border-top: 1px solid #e5e7eb;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pagination-info {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .page-btn {
+            min-width: 32px;
+            height: 32px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: #fff;
+            color: #374151;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
+            transition: all 0.15s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            border-color: #1e40af;
+            color: #1e40af;
+        }
+
+        .page-btn.active {
+            background: #1e40af;
+            border-color: #1e40af;
+            color: #fff;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .page-size-select {
+            padding: 5px 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #374151;
+            background: #fff;
         }
 
         .action-protected {
@@ -473,6 +578,15 @@
                 padding: 16px;
             }
         }
+
+        /* ── Loading overlay ────────────────── */
+        .loading-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+        .loading-overlay.active { display:flex; }
+        .loading-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,.3); border-top:4px solid #fff; border-radius:50%; animation:spin .8s linear infinite; }
+        .loading-text { color:#fff; font-size:15px; font-weight:600; text-align:center; max-width:280px; line-height:1.4; }
+        @@keyframes spin { to { transform:rotate(360deg); } }
+
+
     </style>
 }
 
@@ -483,6 +597,22 @@
         @await Html.PartialAsync("_AdminTopBar", (Title: "User Management", Description: "Manage system users and permissions"))
 
         <div class="content-wrapper">
+            <p style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 18px;margin-bottom:18px;color:#166534;font-size:14px;line-height:1.5;">Deactivate immediately blocks login. Reactivate restores access. Reset Password now applies role defaults: <strong>compliance123</strong> for compliance roles, <strong>employee123</strong> for employee roles, and <strong>supplier123</strong> for supplier roles.</p>
+            @if (!Model.IsSuperAdmin)
+            {
+                @if (Model.BranchDisplayName != null)
+                {
+                    <div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:12px 18px;margin-bottom:18px;color:#1e40af;font-size:14px;">
+                        <strong>Branch:</strong> @Model.BranchDisplayName &nbsp;—&nbsp; You can only manage employees and compliance managers assigned to your branch.
+                    </div>
+                }
+                else
+                {
+                    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 18px;margin-bottom:18px;color:#92400e;font-size:14px;">
+                        <strong>No branch assigned.</strong> Please contact Super Admin to assign you to a branch before managing employees.
+                    </div>
+                }
+            }
             <!-- Filter Section -->
             <div class="filter-section">
             <div class="filter-grid">
@@ -496,7 +626,8 @@
                         <option value="">All Roles</option>
                         <option value="SuperAdmin">Super Admin</option>
                         <option value="Admin">Admin</option>
-                        <option value="ComplianceManager">Compliance Manager</option>
+                        <option value="ChiefComplianceManager">Chief Compliance Manager</option>
+                        <option value="ComplianceManager">Branch Compliance Manager</option>
                         <option value="Employee">Employee</option>
                     </select>
                 </div>
@@ -508,7 +639,7 @@
                         <option value="Inactive">Inactive</option>
                     </select>
                 </div>
-                <button class="btn-primary" onclick="openModal('add')">
+                <button class="btn-primary" onclick="openModal('add')" @((!Model.IsSuperAdmin && Model.BranchDisplayName == null) ? "disabled title=\"No branch assigned\"" : "")>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -526,6 +657,7 @@
                         <th>User</th>
                         <th>Email</th>
                         <th>Role</th>
+                        <th>Branch</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -544,7 +676,17 @@
                                 </div>
                             </td>
                             <td>@user.Email</td>
-                            <td><span class="role-badge">@user.Role</span></td>
+                            <td><span class="role-badge">@(user.Role == "ComplianceManager" ? "Branch Compliance Manager" : user.Role == "ChiefComplianceManager" ? "Chief Compliance Manager" : user.Role)</span></td>
+                            <td>
+                                @if (user.BranchId == null)
+                                {
+                                    <span class="role-badge" style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;">Main</span>
+                                }
+                                else
+                                {
+                                    <span class="role-badge" style="background:#ede9fe;color:#6d28d9;border:none;">@(user.BranchName ?? "Branch #" + user.BranchId)</span>
+                                }
+                            </td>
                             <td><span class="status-badge @user.Status.ToLower()">@user.Status</span></td>
                             <td>
                                 <div class="actions">
@@ -556,11 +698,21 @@
                                     {
                                         @if (user.Status == "Active")
                                         {
-                                            <button class="btn-action danger" onclick="toggleUserStatus('@user.UserId', 'deactivate')">Deactivate</button>
+                                            <button class="btn-action-icon reset" title="Reset Password" onclick="resetUserPassword('@user.UserId')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                                            </button>
+                                            <button class="btn-action-icon danger" title="Deactivate" onclick="toggleUserStatus('@user.UserId', 'deactivate')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                            </button>
                                         }
                                         else
                                         {
-                                            <button class="btn-action success" onclick="toggleUserStatus('@user.UserId', 'reactivate')">Reactivate</button>
+                                            <button class="btn-action-icon reset" title="Reset Password" onclick="resetUserPassword('@user.UserId')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                                            </button>
+                                            <button class="btn-action-icon success" title="Reactivate" onclick="toggleUserStatus('@user.UserId', 'reactivate')">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/><polyline points="16 5 19 8 22 5"/></svg>
+                                            </button>
                                         }
                                     }
                                 </div>
@@ -583,46 +735,56 @@
                 <form id="userForm">
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>First Name</label>
+                            <label>First Name *</label>
                             <input type="text" id="firstName" placeholder="Enter first name" required />
                         </div>
                         <div class="form-group">
-                            <label>Last Name</label>
+                            <label>Last Name *</label>
                             <input type="text" id="lastName" placeholder="Enter last name" required />
                         </div>
                         <div class="form-group full-width">
-                            <label>Email</label>
+                            <label>Email *</label>
                             <input type="email" id="email" placeholder="user@company.com" required />
                         </div>
-                        <div class="form-group full-width" id="passwordGroup">
-                            <label>Password</label>
-                            <input type="password" id="password" placeholder="Enter password (minimum 8 characters)" required minlength="8" />
-                        </div>
+
                         <div class="form-group">
-                            <label>Role</label>
+                            <label>Role *</label>
                             <select id="role" required onchange="toggleDepartmentField()">
                                 <option value="">Select Role</option>
-                                <option value="ComplianceManager">Compliance Manager</option>
+                                @if (Model.IsSuperAdmin)
+                                {
+                                    <option value="ChiefComplianceManager">Chief Compliance Manager</option>
+                                }
+                                <option value="ComplianceManager">Branch Compliance Manager</option>
                                 <option value="Employee">Employee</option>
                             </select>
                         </div>
-                        <div class="form-group" id="departmentGroup">
-                            <label>Department</label>
-                            <select id="department">
-                                <option value="">Select Department</option>
-                                <option value="IT">IT</option>
-                                <option value="Compliance">Compliance</option>
-                                <option value="Procurement">Procurement</option>
-                                <option value="Finance">Finance</option>
-                                <option value="HR">HR</option>
-                                <option value="Operations">Operations</option>
-                            </select>
-                        </div>
-                        <div class="form-group full-width">
-                            <label>Status</label>
+                        <div class="form-group">
+                            <label>Status *</label>
                             <select id="status" required>
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width" id="departmentGroup">
+                            <label>Department *</label>
+                            <select id="department">
+                                <option value="">Select Department</option>
+                                <option value="Software Development">Software Development</option>
+                                <option value="IT Infrastructure">IT Infrastructure</option>
+                                <option value="Cybersecurity">Cybersecurity</option>
+                                <option value="Network & Systems">Network &amp; Systems</option>
+                                <option value="Help Desk & IT Support">Help Desk &amp; IT Support</option>
+                                <option value="DevOps & Cloud">DevOps &amp; Cloud</option>
+                                <option value="Data & Analytics">Data &amp; Analytics</option>
+                                <option value="Quality Assurance">Quality Assurance</option>
+                                <option value="Project Management">Project Management</option>
+                                <option value="Compliance">Compliance</option>
+                                <option value="Procurement">Procurement</option>
+                                <option value="Sales & Business Development">Sales &amp; Business Development</option>
+                                <option value="Finance">Finance</option>
+                                <option value="Human Resources">Human Resources</option>
+                                <option value="Operations">Operations</option>
                             </select>
                         </div>
                     </div>
@@ -656,10 +818,19 @@
         </div>
     </div>
 
+<!-- ── Loading Overlay ── -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Processing...</div>
+</div>
+
     @section Scripts {
         <script>
             let currentMode = 'add';
             let currentUserId = null;
+
+            function showLoading(msg = 'Processing...') { document.getElementById('loadingText').textContent = msg; document.getElementById('loadingOverlay').classList.add('active'); }
+            function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
 
             function showMessageModal(message, title = 'Notice') {
                 return new Promise(resolve => {
@@ -742,20 +913,13 @@
             
             const modal = document.getElementById('userModal');
             const modalTitle = document.getElementById('modalTitle');
-            const passwordGroup = document.getElementById('passwordGroup');
-            const passwordInput = document.getElementById('password');
             
             if (mode === 'add') {
                 modalTitle.textContent = 'Add User';
-                passwordGroup.style.display = 'block';
-                passwordInput.required = true;
                 document.getElementById('userForm').reset();
                 toggleDepartmentField();
             } else {
                 modalTitle.textContent = 'Edit User';
-                passwordGroup.style.display = 'none';
-                passwordInput.required = false;
-                passwordInput.value = ''; // Clear password field
                 
                 // Load user data
                 try {
@@ -790,10 +954,9 @@
         }
 
         async function saveUser() {
-            const firstName = document.getElementById('firstName').value;
-            const lastName = document.getElementById('lastName').value;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('email').value.trim();
             const role = document.getElementById('role').value;
             const department = document.getElementById('department').value;
             const status = document.getElementById('status').value;
@@ -803,15 +966,14 @@
                 return;
             }
 
-            // Check password is provided when creating new user
-            if (currentMode === 'add' && !password) {
-                await showMessageModal('Please enter a password for the new user', 'Validation');
-                return;
-            }
+            // Capitalize first letter of first and last name
+            const capFirst = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+            const capLast = lastName.charAt(0).toUpperCase() + lastName.slice(1);
 
-            // Validate password strength when provided
-            if (currentMode === 'add' && password && password.length < 8) {
-                await showMessageModal('Password must be at least 8 characters long', 'Validation');
+            // Validate email format
+            const emailRegex = /^[a-zA-Z0-9._%+\-]+@@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+            if (!emailRegex.test(email)) {
+                await showMessageModal('Please enter a valid email address (e.g. user@company.com)', 'Validation');
                 return;
             }
 
@@ -823,16 +985,18 @@
             // Prepare user data
             const userData = {
                 userId: currentUserId || '0',
-                firstName: firstName,
-                lastName: lastName,
+                firstName: capFirst,
+                lastName: capLast,
                 email: email,
-                password: password,
                 role: role,
                 status: status
             };
 
             try {
                 const endpoint = currentMode === 'add' ? '/AdminUser/CreateUser' : '/AdminUser/UpdateUser';
+                if (currentMode === 'add') showLoading('Creating account & sending welcome email...');
+                else showLoading('Updating user...');
+
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
@@ -842,6 +1006,7 @@
                 });
 
                 const result = await response.json();
+                hideLoading();
 
                 if (response.ok && result.success) {
                     await showMessageModal(result.message, 'Success');
@@ -852,6 +1017,7 @@
                     await showMessageModal(result.message || 'Failed to save user', 'Error');
                 }
             } catch (error) {
+                hideLoading();
                 console.error('Error saving user:', error);
                 await showMessageModal('An error occurred while saving the user', 'Error');
             }
@@ -867,11 +1033,13 @@
             );
             if (confirmed) {
                 try {
+                    showLoading(`${actionText === 'deactivate' ? 'Deactivating' : 'Reactivating'} account & sending notification...`);
                     const response = await fetch(`${endpoint}?userId=${userId}`, {
                         method: 'POST'
                     });
 
                     const result = await response.json();
+                    hideLoading();
 
                     if (response.ok && result.success) {
                         await showMessageModal(result.message, 'Success');
@@ -880,41 +1048,110 @@
                         await showMessageModal(result.message || `Failed to ${actionText} user`, 'Error');
                     }
                 } catch (error) {
+                    hideLoading();
                     console.error(`Error ${actionText}ing user:`, error);
                     await showMessageModal(`An error occurred while ${actionText}ing the user`, 'Error');
                 }
             }
         }
 
-        // Search and filter functionality
-        document.getElementById('searchInput').addEventListener('input', filterTable);
-        document.getElementById('roleFilter').addEventListener('change', filterTable);
-        document.getElementById('statusFilter').addEventListener('change', filterTable);
+        // Pagination state
+        let currentPage = 1;
+        let pageSize = 10;
+        let filteredRows = [];
+
+        document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; filterTable(); });
+        document.getElementById('roleFilter').addEventListener('change', () => { currentPage = 1; filterTable(); });
+        document.getElementById('statusFilter').addEventListener('change', () => { currentPage = 1; filterTable(); });
+
+        function changePageSize() {
+            pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+            currentPage = 1;
+            renderPage();
+        }
 
         function filterTable() {
             const searchValue = document.getElementById('searchInput').value.toLowerCase();
             const roleValue = document.getElementById('roleFilter').value;
             const statusValue = document.getElementById('statusFilter').value;
 
-            const rows = document.querySelectorAll('#userTable tbody tr');
+            const roleLabelMap = {
+                'ComplianceManager': 'Branch Compliance Manager',
+                'ChiefComplianceManager': 'Chief Compliance Manager'
+            };
+            const roleLabel = roleLabelMap[roleValue] || roleValue;
 
-            rows.forEach(row => {
-                const name = row.querySelector('.user-cell-name').textContent.toLowerCase();
-                const email = row.cells[1].textContent.toLowerCase();
-                const role = row.cells[2].textContent;
-                const status = row.querySelector('.status-badge').textContent;
+            const rows = Array.from(document.querySelectorAll('#userTable tbody tr'));
+
+            filteredRows = rows.filter(row => {
+                const name = row.querySelector('.user-cell-name')?.textContent.toLowerCase() || '';
+                const email = row.cells[1]?.textContent.toLowerCase() || '';
+                const role = row.cells[2]?.textContent.trim() || '';
+                const statusEl = row.querySelector('.status-badge');
+                const status = statusEl ? statusEl.textContent.replace(/[•\s]/g,'').trim() : '';
 
                 const matchesSearch = name.includes(searchValue) || email.includes(searchValue);
-                const matchesRole = !roleValue || role === roleValue;
+                const matchesRole = !roleValue || role === roleLabel || role === roleValue;
                 const matchesStatus = !statusValue || status === statusValue;
-
-                if (matchesSearch && matchesRole && matchesStatus) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
+                return matchesSearch && matchesRole && matchesStatus;
             });
+
+            rows.forEach(r => r.style.display = 'none');
+            renderPage();
         }
+
+        function renderPage() {
+            const allRows = Array.from(document.querySelectorAll('#userTable tbody tr'));
+            allRows.forEach(r => r.style.display = 'none');
+
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageRows = filteredRows.slice(start, end);
+            pageRows.forEach(r => r.style.display = '');
+
+            const total = filteredRows.length;
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            document.getElementById('paginationInfo').textContent =
+                total === 0 ? 'No results' : `Showing ${start + 1}–${Math.min(end, total)} of ${total}`;
+
+            const ctrl = document.getElementById('paginationControls');
+            ctrl.innerHTML = '';
+
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'page-btn';
+            prevBtn.textContent = '‹';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => { currentPage--; renderPage(); };
+            ctrl.appendChild(prevBtn);
+
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+            if (endPage - startPage < maxVisible - 1) startPage = Math.max(1, endPage - maxVisible + 1);
+
+            for (let p = startPage; p <= endPage; p++) {
+                const btn = document.createElement('button');
+                btn.className = 'page-btn' + (p === currentPage ? ' active' : '');
+                btn.textContent = p;
+                btn.onclick = ((pg) => () => { currentPage = pg; renderPage(); })(p);
+                ctrl.appendChild(btn);
+            }
+
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'page-btn';
+            nextBtn.textContent = '›';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => { currentPage++; renderPage(); };
+            ctrl.appendChild(nextBtn);
+        }
+
+        // Initialize pagination on load
+        window.addEventListener('DOMContentLoaded', () => {
+            filteredRows = Array.from(document.querySelectorAll('#userTable tbody tr'));
+            renderPage();
+        });
 
         // Close modal on outside click
         document.getElementById('userModal').addEventListener('click', function(e) {
@@ -922,5 +1159,29 @@
                 closeModal();
             }
         });
+
+        async function resetUserPassword(userId) {
+            const confirmed = await showConfirmModal(
+                'Reset this user\'s password to their role default? The user will be required to change it on next login.',
+                'Confirm Password Reset'
+            );
+            if (!confirmed) return;
+
+            showLoading('Resetting password & sending notification...');
+            try {
+                const response = await fetch(`/AdminUser/ResetUserPassword?userId=${userId}`, { method: 'POST' });
+                const result = await response.json();
+                hideLoading();
+
+                if (response.ok && result.success) {
+                    await showMessageModal(result.message, 'Password Reset');
+                    return;
+                }
+                await showMessageModal(result.message || 'Failed to reset password.', 'Error');
+            } catch (error) {
+                hideLoading();
+                await showMessageModal('An error occurred while resetting the password.', 'Error');
+            }
+        }
     </script>
 }

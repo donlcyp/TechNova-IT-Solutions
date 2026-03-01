@@ -313,11 +313,6 @@
             align-items: center;
         }
 
-        .summary-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
-        }
-
         .card-icon {
             width: 36px;
             height: 36px;
@@ -1271,11 +1266,37 @@
                 policySelect.innerHTML = '<option value="">Select Supplier First</option>';
                 policySelect.disabled = true;
                 return;
+
             }
+
+            // Reset policy until supplier items and policies are loaded
+            policySelect.innerHTML = '<option value="">Loading policies...</option>';
+            policySelect.disabled = true;
 
             supplierItemSelect.innerHTML = '<option value="">Loading items...</option>';
             supplierItemSelect.disabled = true;
             categoryInput.value = '';
+
+            // Load all policies for the dropdown
+            try {
+                const policyResponse = await fetch(`/AdminProcurement/GetSupplierCompliantPoliciesByItemCategory?supplierId=${supplierId}&supplierItemId=0`);
+                const policyPayload = await policyResponse.json();
+                const policies = policyPayload.policies || [];
+                if (policies.length) {
+                    policySelect.innerHTML = '<option value="">Select Policy</option>';
+                    policies.forEach(policy => {
+                        const option = document.createElement('option');
+                        option.value = policy.id;
+                        option.textContent = policy.title;
+                        policySelect.appendChild(option);
+                    });
+                    policySelect.disabled = false;
+                } else {
+                    policySelect.innerHTML = '<option value="">No policies available</option>';
+                }
+            } catch {
+                policySelect.innerHTML = '<option value="">Failed to load policies</option>';
+            }
 
             let items = [];
             try {
@@ -1291,8 +1312,6 @@
                     .filter(i => i.status === 'Available' && i.quantityAvailable > 0);
             } catch {
                 supplierItemSelect.innerHTML = '<option value="">Failed to load items</option>';
-                policySelect.innerHTML = '<option value="">Failed to load policies</option>';
-                policySelect.disabled = true;
                 return;
             }
 
@@ -1315,39 +1334,6 @@
                     };
                 });
                 supplierItemSelect.disabled = false;
-            }
-
-            await reloadSupplierCompliantPolicies(supplierId);
-        }
-
-        async function reloadSupplierCompliantPolicies(supplierId) {
-            policySelect.innerHTML = '<option value="">Loading compliant policies...</option>';
-            policySelect.disabled = true;
-
-            try {
-                const response = await fetch(`/AdminProcurement/GetSupplierCompliantPolicies?supplierId=${supplierId}`);
-                const payload = await response.json();
-                if (!payload.success) {
-                    policySelect.innerHTML = '<option value="">Failed to load policies</option>';
-                    return;
-                }
-
-                const policies = payload.policies || [];
-                if (!policies.length) {
-                    policySelect.innerHTML = '<option value="">No compliant policies assigned</option>';
-                    return;
-                }
-
-                policySelect.innerHTML = '<option value="">Select Policy</option>';
-                policies.forEach(policy => {
-                    const option = document.createElement('option');
-                    option.value = policy.id;
-                    option.textContent = policy.title;
-                    policySelect.appendChild(option);
-                });
-                policySelect.disabled = false;
-            } catch {
-                policySelect.innerHTML = '<option value="">Failed to load policies</option>';
             }
         }
 

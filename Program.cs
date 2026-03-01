@@ -31,7 +31,11 @@ builder.Services.AddScoped<IEmployeeService, EmployeeService>();
 builder.Services.AddScoped<IComplianceManagerService, ComplianceManagerService>();
 builder.Services.AddScoped<IPolicyReferenceApiService, PolicyReferenceApiService>();
 builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
+builder.Services.AddScoped<IBranchService, BranchService>();
 builder.Services.AddTransient<IEmailService, EmailService>();
+
+// Add in-memory cache (used for thread-safe login lockout tracking)
+builder.Services.AddMemoryCache();
 
 // Add session support
 builder.Services.AddSession(options =>

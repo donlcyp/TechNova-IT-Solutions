@@ -29,45 +29,65 @@ namespace TechNova_IT_Solutions.Services
             _logger = logger;
         }
 
-        public async Task<AdminDashboardData> GetDashboardDataAsync()
+        public async Task<AdminDashboardData> GetDashboardDataAsync(int? branchId = null)
         {
             var data = new AdminDashboardData();
+            bool scoped = branchId.HasValue;
 
-            // Get statistics
-            data.TotalUsers = await _context.Users.CountAsync();
-            data.ActivePolicies = await _context.Policies.CountAsync();
-            data.TotalSuppliers = await _context.Suppliers.Where(s => s.Status == "Active").CountAsync();
-            
-            // Get pending compliance count
-            data.PendingCompliance = await _context.ComplianceStatuses
-                .Where(cs => cs.Status == "Pending")
-                .CountAsync();
+            // Get statistics — scoped to branch when branchId is provided
+            data.TotalUsers = scoped
+                ? await _context.Users.Where(u => u.BranchId == branchId).CountAsync()
+                : await _context.Users.CountAsync();
 
-            // Get recent procurements count (last 30 days)
+            data.ActivePolicies = scoped
+                ? await _context.Policies.Where(p => !p.IsArchived && (p.BranchId == branchId || p.BranchId == null)).CountAsync()
+                : await _context.Policies.Where(p => !p.IsArchived).CountAsync();
+
+            data.TotalSuppliers = scoped
+                ? await _context.Suppliers.Where(s => s.Status == "Active" && (s.BranchId == branchId || s.BranchId == null)).CountAsync()
+                : await _context.Suppliers.Where(s => s.Status == "Active").CountAsync();
+
+            // Pending compliance — scoped via policy assignments for this branch's employees
+            var pendingQuery = _context.ComplianceStatuses.Where(cs => cs.Status == "Pending");
+            if (scoped)
+                pendingQuery = pendingQuery.Where(cs => cs.PolicyAssignment.User.BranchId == branchId);
+            data.PendingCompliance = await pendingQuery.CountAsync();
+
+            // Recent procurements count (last 30 days)
             var thirtyDaysAgo = DateTime.Now.AddDays(-30);
-            data.RecentProcurements = await _context.Procurements
-                .Where(p => p.PurchaseDate >= thirtyDaysAgo)
-                .CountAsync();
+            var procQuery = _context.Procurements.Where(p => p.PurchaseDate >= thirtyDaysAgo);
+            if (scoped)
+                procQuery = procQuery.Where(p => p.BranchId == branchId || p.BranchId == null);
+            data.RecentProcurements = await procQuery.CountAsync();
 
-            // Get audit logs today
+            // Audit logs today
             var today = DateTime.Today;
-            data.AuditLogsToday = await _context.AuditLogs
-                .Where(al => al.LogDate.Date == today)
-                .CountAsync();
+            var auditQuery = _context.AuditLogs.Where(al => al.LogDate.Date == today);
+            if (scoped)
+                auditQuery = auditQuery.Where(al => al.UserId != null &&
+                    _context.Users.Any(u => u.UserId == al.UserId && u.BranchId == branchId));
+            data.AuditLogsToday = await auditQuery.CountAsync();
 
-            // Calculate compliance percentage
-            var totalAssignments = await _context.PolicyAssignments.CountAsync();
-            var acknowledgedCount = await _context.ComplianceStatuses
-                .Where(cs => cs.Status == "Acknowledged")
-                .CountAsync();
-            
+            // Compliance percentage
+            var totalAssignments = scoped
+                ? await _context.PolicyAssignments
+                    .Where(pa => pa.User.BranchId == branchId)
+                    .CountAsync()
+                : await _context.PolicyAssignments.CountAsync();
+
+            var acknowledgedQuery = _context.ComplianceStatuses.Where(cs => cs.Status == "Acknowledged");
+            if (scoped)
+                acknowledgedQuery = acknowledgedQuery.Where(cs => cs.PolicyAssignment.User.BranchId == branchId);
+            var acknowledgedCount = await acknowledgedQuery.CountAsync();
+
             if (totalAssignments > 0)
-            {
                 data.CompliancePercentage = (int)((double)acknowledgedCount / totalAssignments * 100);
-            }
 
-            // Recent Policies
-            data.RecentPolicies = await _context.Policies
+            // Recent Policies — scoped to branch (show company-wide + branch-specific)
+            var recentPoliciesQuery = _context.Policies.AsQueryable();
+            if (scoped)
+                recentPoliciesQuery = recentPoliciesQuery.Where(p => p.BranchId == branchId || p.BranchId == null);
+            data.RecentPolicies = await recentPoliciesQuery
                 .OrderByDescending(p => p.DateUploaded)
                 .Take(5)
                 .Select(p => new PolicyItem
@@ -78,10 +98,14 @@ namespace TechNova_IT_Solutions.Services
                 .ToListAsync();
 
             // Recent Procurements
-            data.RecentProcurementsData = await _context.Procurements
+            var recentProcQuery = _context.Procurements
                 .Include(p => p.Supplier)
                 .Include(p => p.RelatedPolicy)
-                .OrderByDescending(p => p.PurchaseDate)
+                .OrderByDescending(p => p.PurchaseDate);
+
+            data.RecentProcurementsData = await (scoped
+                ? recentProcQuery.Where(p => p.BranchId == branchId || p.BranchId == null)
+                : recentProcQuery)
                 .Take(5)
                 .Select(p => new ProcurementItem
                 {
@@ -92,10 +116,15 @@ namespace TechNova_IT_Solutions.Services
                 })
                 .ToListAsync();
 
-            // Recent Activities from Audit Logs
-            data.RecentActivities = await _context.AuditLogs
+            // Recent Activities
+            var recentAuditQuery = _context.AuditLogs
                 .Include(al => al.User)
-                .OrderByDescending(al => al.LogDate)
+                .OrderByDescending(al => al.LogDate);
+
+            data.RecentActivities = await (scoped
+                ? recentAuditQuery.Where(al => al.UserId != null &&
+                    _context.Users.Any(u => u.UserId == al.UserId && u.BranchId == branchId))
+                : recentAuditQuery)
                 .Take(6)
                 .Select(al => new ActivityItem
                 {
@@ -141,7 +170,8 @@ namespace TechNova_IT_Solutions.Services
                     Category = policyData.Category,
                     Description = policyData.Description,
                     FilePath = policyData.FilePath,
-                    DateUploaded = policyData.UploadedDate ?? DateTime.Now
+                    DateUploaded = policyData.UploadedDate ?? DateTime.Now,
+                    BranchId = policyData.BranchId  // null = company-wide, non-null = branch-specific
                 };
 
                 _context.Policies.Add(policy);
@@ -341,7 +371,8 @@ namespace TechNova_IT_Solutions.Services
                     Email = supplierEmail,
                     ContactPersonNumber = cleanedData.ContactPersonNumber,
                     Address = cleanedData.Address,
-                    Status = cleanedData.Status
+                    Status = cleanedData.Status,
+                    BranchId = cleanedData.BranchId   // null = global/enterprise supplier
                 };
 
                 _context.Suppliers.Add(supplier);
@@ -360,7 +391,8 @@ namespace TechNova_IT_Solutions.Services
                         Email = supplierEmail,
                         Password = PasswordHasher.HashPassword(cleanedData.Password), // Hash the password
                         Role = "Supplier",
-                        Status = "Active"
+                        Status = "Active",
+                        BranchId = cleanedData.BranchId  // inherit branch from supplier record
                     };
 
                     _context.Users.Add(user);
@@ -466,7 +498,8 @@ namespace TechNova_IT_Solutions.Services
                             Email = supplierEmail,
                             Password = PasswordHasher.HashPassword(cleanedData.Password),
                             Role = "Supplier",
-                            Status = cleanedData.Status
+                            Status = cleanedData.Status,
+                            BranchId = cleanedData.BranchId  // inherit branch from supplier record
                         };
                         _context.Users.Add(user);
                         await _context.SaveChangesAsync();
@@ -479,6 +512,7 @@ namespace TechNova_IT_Solutions.Services
                     user.Email = supplierEmail;
                     user.Role = "Supplier";
                     user.Status = cleanedData.Status;
+                    user.BranchId = cleanedData.BranchId;  // keep BranchId in sync
 
                     if (!string.IsNullOrWhiteSpace(cleanedData.Password))
                     {
@@ -517,7 +551,8 @@ namespace TechNova_IT_Solutions.Services
                 ContactPersonNumber = (supplierData.ContactPersonNumber ?? string.Empty).Trim(),
                 Address = (supplierData.Address ?? string.Empty).Trim(),
                 Status = string.IsNullOrWhiteSpace(supplierData.Status) ? "Active" : supplierData.Status.Trim(),
-                Password = string.IsNullOrWhiteSpace(supplierData.Password) ? null : supplierData.Password.Trim()
+                Password = string.IsNullOrWhiteSpace(supplierData.Password) ? null : supplierData.Password.Trim(),
+                BranchId = supplierData.BranchId
             };
         }
 
@@ -740,7 +775,8 @@ namespace TechNova_IT_Solutions.Services
                 Status = supplier.Status ?? "Active",
                 TerminationReason = supplier.TerminationReason,
                 TerminatedAt = supplier.TerminatedAt,
-                TerminatedByUserId = supplier.TerminatedByUserId
+                TerminatedByUserId = supplier.TerminatedByUserId,
+                BranchId = supplier.BranchId
                 // Password is not returned for security
             };
         }
@@ -794,7 +830,8 @@ namespace TechNova_IT_Solutions.Services
                     Status = ProcurementStatuses.Submitted,
                     SupplierResponseDeadline = DateTime.UtcNow.AddDays(7),
                     RevisedDeliveryDate = null,
-                    DelayReason = null
+                    DelayReason = null,
+                    BranchId = procurementData.BranchId  // null = company-wide, non-null = branch-specific
                 };
 
                 _context.Procurements.Add(procurement);
@@ -1275,7 +1312,7 @@ namespace TechNova_IT_Solutions.Services
                 }
 
                 var staffEmails = await _context.Users
-                    .Where(u => (u.Role == "Admin" || u.Role == "ComplianceManager" || u.Role == "SuperAdmin") &&
+                    .Where(u => (u.Role == "Admin" || u.Role == "ChiefComplianceManager" || u.Role == "ComplianceManager" || u.Role == "SuperAdmin") &&
                                 u.Status == "Active" &&
                                 u.Email != null)
                     .Select(u => u.Email!)

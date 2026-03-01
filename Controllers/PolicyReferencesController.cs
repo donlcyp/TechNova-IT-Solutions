@@ -35,11 +35,12 @@ namespace TechNova_IT_Solutions.Controllers
             [FromQuery] DateTime? fromDate,
             [FromQuery] DateTime? toDate)
         {
+            // Read-only search: Employee + ComplianceManager + SuperAdmin (Branch Admin excluded)
             var unauthorized = RoleAccess.RequireRoleOrUnauthorized(
                 this,
                 RoleNames.Employee,
-                RoleNames.Admin,
                 RoleNames.SuperAdmin,
+                RoleNames.ChiefComplianceManager,
                 RoleNames.ComplianceManager);
 
             if (unauthorized != null)
@@ -112,10 +113,11 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpGet("staging")]
         public async Task<IActionResult> GetStagingQueue([FromQuery] string? status)
         {
+            // Staging queue: Compliance Manager + Super Admin only
             var unauthorized = RoleAccess.RequireRoleOrUnauthorized(
                 this,
+                RoleNames.ChiefComplianceManager,
                 RoleNames.ComplianceManager,
-                RoleNames.Admin,
                 RoleNames.SuperAdmin);
 
             if (unauthorized != null)
@@ -166,10 +168,11 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost("staging/import")]
         public async Task<IActionResult> StagePolicyReference([FromBody] StagePolicyReferenceRequest? request)
         {
+            // Import to staging: Compliance Manager + Super Admin only
             var unauthorized = RoleAccess.RequireRoleOrUnauthorized(
                 this,
+                RoleNames.ChiefComplianceManager,
                 RoleNames.ComplianceManager,
-                RoleNames.Admin,
                 RoleNames.SuperAdmin);
 
             if (unauthorized != null)
@@ -252,10 +255,11 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost("staging/{importId:int}/approve")]
         public async Task<IActionResult> ApproveStagedPolicy(int importId, [FromBody] ApproveStagedPolicyRequest? request)
         {
+            // Approve: Compliance Manager + Super Admin only
             var unauthorized = RoleAccess.RequireRoleOrUnauthorized(
                 this,
+                RoleNames.ChiefComplianceManager,
                 RoleNames.ComplianceManager,
-                RoleNames.Admin,
                 RoleNames.SuperAdmin);
 
             if (unauthorized != null)
@@ -333,10 +337,11 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost("staging/{importId:int}/assign")]
         public async Task<IActionResult> AssignApprovedStagedPolicy(int importId, [FromBody] AssignApprovedPolicyRequest? request)
         {
+            // Assign approved policy: Compliance Manager + Super Admin only
             var unauthorized = RoleAccess.RequireRoleOrUnauthorized(
                 this,
+                RoleNames.ChiefComplianceManager,
                 RoleNames.ComplianceManager,
-                RoleNames.Admin,
                 RoleNames.SuperAdmin);
 
             if (unauthorized != null)
@@ -436,10 +441,11 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost("staging/{importId:int}/reject")]
         public async Task<IActionResult> RejectStagedPolicy(int importId, [FromBody] RejectStagedPolicyRequest? request)
         {
+            // Reject: Compliance Manager + Super Admin only
             var unauthorized = RoleAccess.RequireRoleOrUnauthorized(
                 this,
+                RoleNames.ChiefComplianceManager,
                 RoleNames.ComplianceManager,
-                RoleNames.Admin,
                 RoleNames.SuperAdmin);
 
             if (unauthorized != null)
@@ -487,11 +493,12 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost("import")]
         public async Task<IActionResult> ImportPolicyReference([FromBody] ImportPolicyReferenceRequest? request)
         {
+            // Direct import: Compliance Manager + Super Admin only
             var unauthorized = RoleAccess.RequireRoleOrUnauthorized(
                 this,
-                RoleNames.Admin,
-                RoleNames.SuperAdmin,
-                RoleNames.ComplianceManager);
+                RoleNames.ChiefComplianceManager,
+                RoleNames.ComplianceManager,
+                RoleNames.SuperAdmin);
 
             if (unauthorized != null)
             {

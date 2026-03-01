@@ -46,6 +46,14 @@ namespace TechNova_IT_Solutions.Controllers
                 return BadRequest(new { success = false, message = "System Administrator cannot create Admin or Super Admin accounts." });
             }
 
+            // If the calling user is an Admin (not SuperAdmin), automatically attach their branch
+            if (!IsCurrentUserSuperAdmin())
+            {
+                var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+                if (int.TryParse(branchIdStr, out int callerBranchId))
+                    userData.BranchId = callerBranchId;
+            }
+
             var result = await _userService.CreateUserAsync(userData);
 
             if (result.Success)
@@ -120,6 +128,69 @@ namespace TechNova_IT_Solutions.Controllers
             }
 
             return BadRequest(new { success = false, message = "Failed to delete user" });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResetUserPassword(int userId)
+        {
+            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var user = await _userService.GetUserByIdAsync(userId);
+            if (user == null) return NotFound(new { success = false, message = "User not found" });
+
+            if (!IsCurrentUserSuperAdmin() && IsPrivilegedAdminRole(user.Role))
+            {
+                return BadRequest(new { success = false, message = "Cannot reset password for Admin or Super Admin accounts." });
+            }
+
+            if (string.Equals(user.Role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { success = false, message = "Super Admin accounts are protected." });
+            }
+
+            var resetResult = await _userService.ResetPasswordByRoleAsync(userId);
+            if (!resetResult.Success)
+            {
+                return BadRequest(new { success = false, message = resetResult.ErrorMessage });
+            }
+
+            var emailAttempted = false;
+            var emailSent = false;
+            string? emailError = null;
+
+            if (!string.IsNullOrWhiteSpace(resetResult.Email))
+            {
+                emailAttempted = true;
+                var subject = "TechNova Password Reset";
+                var body = $@"
+                    <h2>Password Reset Completed</h2>
+                    <p>Hello {resetResult.FirstName},</p>
+                    <p>Your account password has been reset by an administrator.</p>
+                    <p><strong>Role:</strong> {resetResult.Role}</p>
+                    <p><strong>Temporary Password:</strong> {resetResult.Password}</p>
+                    <p>Please log in and change your password immediately.</p>";
+
+                var emailResult = await _emailService.SendEmailAsync(resetResult.Email, subject, body);
+                emailSent = emailResult.Success;
+                emailError = emailResult.ErrorMessage;
+            }
+
+            var message = $"Password reset successfully to role default ({resetResult.Password}).";
+            if (emailAttempted)
+            {
+                message = emailSent
+                    ? $"{message} Email notification sent."
+                    : $"{message} Email failed: {emailError ?? "Unknown error"}";
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message,
+                emailAttempted,
+                emailSent,
+                emailError
+            });
         }
 
         [HttpPost]
@@ -232,6 +303,62 @@ namespace TechNova_IT_Solutions.Controllers
             }
 
             return BadRequest(new { success = false, message = "Failed to reactivate user" });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SetUserPassword(int userId, [FromBody] SetPasswordRequest request)
+        {
+            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            if (string.IsNullOrWhiteSpace(request?.NewPassword) || request.NewPassword.Length < 8)
+            {
+                return BadRequest(new { success = false, message = "Password must be at least 8 characters." });
+            }
+
+            var user = await _userService.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { success = false, message = "User not found" });
+            }
+            if (IsPrivilegedAdminRole(user.Role) && !IsCurrentUserSuperAdmin())
+            {
+                return BadRequest(new { success = false, message = "Cannot reset password for Admin/Super Admin accounts." });
+            }
+
+            var result = await _userService.SetPasswordAsync(int.Parse(user.UserId), request.NewPassword);
+            if (!result)
+            {
+                return BadRequest(new { success = false, message = "Failed to set password." });
+            }
+
+            var emailAttempted = false;
+            var emailSent = false;
+            string? emailError = null;
+
+            if (!string.IsNullOrWhiteSpace(user.Email))
+            {
+                emailAttempted = true;
+                var subject = "TechNova Password Changed";
+                var body = $@"
+                    <h2>Password Changed</h2>
+                    <p>Hello {user.FirstName},</p>
+                    <p>Your account password has been changed by an administrator.</p>
+                    <p>If you did not request this change, contact your system administrator immediately.</p>";
+
+                var emailResult = await _emailService.SendEmailAsync(user.Email, subject, body);
+                emailSent = emailResult.Success;
+                emailError = emailResult.ErrorMessage;
+            }
+
+            var message = "Password updated successfully.";
+            if (emailAttempted)
+            {
+                message = emailSent
+                    ? $"{message} Email notification sent."
+                    : $"{message} Email failed: {emailError ?? "Unknown error"}";
+            }
+
+            return Ok(new { success = true, message });
         }
     }
 }

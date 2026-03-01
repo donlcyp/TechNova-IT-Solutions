@@ -42,32 +42,50 @@ namespace TechNova_IT_Solutions.Pages
             if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
                 if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
-                if (userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 return RedirectToPage("/Account/Login");
             }
 
             UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? "admin@technova.com";
             UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
 
+            // Branch scoping: Branch Admins only see their branch procurements; SuperAdmin sees all
+            int? callerBranchId = null;
+            if (userRole == RoleNames.Admin)
+            {
+                var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+                if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))
+                {
+                    callerBranchId = bid;
+                }
+            }
+
+            bool scoped = callerBranchId.HasValue;
+
             await _adminService.SyncLateProcurementsAsync();
 
-            // Calculate summary statistics
-            TotalProcurements = await _context.Procurements.CountAsync();
-            
+            // Calculate summary statistics (branch-scoped via Procurement.BranchId)
+            TotalProcurements = await _context.Procurements
+                .Where(p => !scoped || p.BranchId == callerBranchId || p.BranchId == null)
+                .CountAsync();
+
             PendingApprovals = await _context.Procurements
                 .Where(p => p.Status == ProcurementStatuses.Submitted)
+                .Where(p => !scoped || p.BranchId == callerBranchId || p.BranchId == null)
                 .CountAsync();
-            
+
             // Count procurements this month
             var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
             ProcurementsThisMonth = await _context.Procurements
                 .Where(p => p.PurchaseDate >= firstDayOfMonth)
+                .Where(p => !scoped || p.BranchId == callerBranchId || p.BranchId == null)
                 .CountAsync();
 
             // Fetch procurement records from database
             ProcurementRecords = await _context.Procurements
                 .Include(p => p.Supplier)
                 .Include(p => p.RelatedPolicy)
+                .Where(p => !scoped || p.BranchId == callerBranchId || p.BranchId == null)
                 .OrderByDescending(p => p.PurchaseDate)
                 .Select(p => new ProcurementRecord
                 {
@@ -120,9 +138,9 @@ namespace TechNova_IT_Solutions.Pages
                 record.CanMarkDeliveryArrived = record.WorkflowStatus == ProcurementStatuses.SupplierApproved || record.WorkflowStatus == ProcurementStatuses.Late;
             }
 
-            // Fetch suppliers for dropdown
+            // Fetch suppliers for dropdown (branch-scoped: own-branch + global for Branch Admin)
             Suppliers = await _context.Suppliers
-                .Where(s => s.Status == "Active")
+                .Where(s => s.Status == "Active" && (!scoped || s.BranchId == callerBranchId || s.BranchId == null))
                 .OrderBy(s => s.SupplierName)
                 .Select(s => new SupplierReference
                 {
@@ -131,8 +149,9 @@ namespace TechNova_IT_Solutions.Pages
                 })
                 .ToListAsync();
 
-            // Fetch policies for dropdown
+            // Fetch policies for dropdown (branch-scoped: company-wide + branch-specific)
             Policies = await _context.Policies
+                .Where(p => !p.IsArchived && (!scoped || p.BranchId == callerBranchId || p.BranchId == null))
                 .OrderBy(p => p.PolicyTitle)
                 .Select(p => new PolicyReference
                 {
@@ -142,6 +161,8 @@ namespace TechNova_IT_Solutions.Pages
                 .ToListAsync();
 
             SupplierItems = await _context.SupplierItems
+                .Include(i => i.Supplier)
+                .Where(i => !scoped || i.Supplier == null || i.Supplier.BranchId == callerBranchId || i.Supplier.BranchId == null)
                 .OrderBy(i => i.ItemName)
                 .Select(i => new SupplierItemReference
                 {

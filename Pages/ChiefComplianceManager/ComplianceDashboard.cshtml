@@ -1,0 +1,940 @@
+@page
+@model TechNova_IT_Solutions.Pages.ChiefComplianceManager.ComplianceDashboardModel
+@{
+    ViewData["Title"] = "Compliance Dashboard";
+}
+
+@section Styles {
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            color: #1f2937;
+            min-height: 100vh;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .content-wrapper {
+            padding: 24px;
+        }
+
+        /* Summary Cards */
+        .cards-wrapper {
+            margin-bottom: 32px;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+
+        .summary-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 0 12px;
+            align-items: start;
+            text-decoration: none;
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            grid-row: 1 / 3;
+        }
+
+        .card-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .card-icon.blue  { color: #1e40af; }
+        .card-icon.green { color: #48bb78; }
+        .card-icon.purple { color: #9f7aea; }
+        .card-icon.orange { color: #f6ad55; }
+        .card-icon.red   { color: #fc8181; }
+        .card-icon.teal  { color: #38b2ac; }
+
+        .card-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 2px;
+            line-height: 1;
+            min-height: 30px;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-label {
+            font-size: 14px;
+            color: #6b7280;
+            font-weight: 500;
+            line-height: 1.35;
+            min-height: 38px;
+        }
+
+        /* Two Column Layout */
+        .two-column-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .column-card {
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .column-card h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .view-all-link {
+            font-size: 14px;
+            color: #1e40af;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .view-all-link:hover {
+            color: #1e3a8a;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-input, .filter-select {
+            padding: 10px 14px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            color: #1f2937;
+            font-size: 14px;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-select {
+            min-width: 150px;
+        }
+
+        .search-input::placeholder {
+            color: #6b7280;
+        }
+
+        .search-input:focus, .filter-select:focus {
+            outline: none;
+            border-color: #1e40af;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 10px;
+        }
+
+        .table-container .data-table {
+            min-width: 600px;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead {
+            background: #f3f4f6;
+        }
+
+        .data-table th {
+            padding: 14px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table td {
+            padding: 14px;
+            font-size: 14px;
+            color: #1f2937;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(30, 64, 175, 0.05);
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            display: inline-block;
+        }
+
+        .status-compliant {
+            color: #10b981;
+        }
+
+        .status-not-compliant {
+            color: #ef4444;
+        }
+
+        /* Bottom Section */
+        .bottom-section {
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .bottom-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+
+        .recent-list {
+            list-style: none;
+        }
+
+        .recent-item {
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .recent-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .recent-info h4 {
+            font-size: 14px;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .recent-info p {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .recent-date {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        .type-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 12px;
+        }
+
+        .type-employee {
+            color: #1e40af;
+        }
+
+        .type-supplier {
+            color: #f59e0b;
+        }
+
+        /* Archives Section */
+        .archives-section {
+            background: #ffffff;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            margin-top: 24px;
+        }
+
+        .archives-section h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #1f2937;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .archives-section h2 .section-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .archives-section h2 .section-icon svg {
+            width: 20px;
+            height: 20px;
+            color: #6366f1;
+        }
+
+        .archive-table .category-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 500;
+            background: #ede9fe;
+            color: #6366f1;
+        }
+
+        .archive-table .archived-date {
+            color: #92400e;
+            font-weight: 500;
+        }
+
+        .empty-archives {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-archives svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            color: #d1d5db;
+        }
+
+        .empty-archives p {
+            font-size: 14px;
+        }
+
+        @@media (max-width: 1024px) {
+            .two-column-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @@media (max-width: 991px) {
+            .main-content {
+                margin-left: 0;
+            }
+
+            .content-wrapper {
+                padding: 20px;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filters {
+                gap: 10px;
+            }
+
+            .filter-select {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .search-input {
+                min-width: 0;
+                flex: 1 1 100%;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .content-wrapper {
+                padding: 16px;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .column-card {
+                padding: 16px;
+            }
+
+            .column-card h2 {
+                font-size: 16px;
+                margin-bottom: 14px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-input,
+            .filter-select {
+                width: 100%;
+            }
+
+            .table-container .data-table {
+                min-width: 550px;
+            }
+
+            .summary-card {
+                padding: 18px;
+            }
+
+            .summary-card .value {
+                font-size: 26px;
+            }
+
+            .summary-card h3 {
+                font-size: 13px;
+                margin-bottom: 8px;
+            }
+
+            .data-table th {
+                padding: 10px;
+                font-size: 11px;
+            }
+
+            .data-table td {
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            .bottom-section {
+                padding: 16px;
+            }
+
+            .bottom-section h2 {
+                font-size: 16px;
+            }
+
+            .recent-item {
+                padding: 12px;
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+
+            .recent-info h4 {
+                font-size: 13px;
+            }
+
+            .recent-info p {
+                font-size: 12px;
+            }
+
+            .recent-date {
+                font-size: 12px;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .two-column-layout {
+                gap: 14px;
+                margin-bottom: 20px;
+            }
+
+            .column-card {
+                padding: 14px;
+            }
+
+            .column-card h2 {
+                font-size: 15px;
+                margin-bottom: 12px;
+            }
+
+            .view-all-link {
+                font-size: 12px;
+            }
+
+            .search-input, .filter-select {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .filters {
+                margin-bottom: 14px;
+                gap: 8px;
+            }
+
+            .table-container .data-table {
+                min-width: 480px;
+            }
+
+            .data-table th {
+                padding: 8px;
+                font-size: 10px;
+            }
+
+            .data-table td {
+                padding: 8px;
+                font-size: 12px;
+            }
+
+            .summary-card {
+                padding: 16px;
+            }
+
+            .summary-card .value {
+                font-size: 24px;
+            }
+
+            .bottom-section {
+                padding: 14px;
+            }
+
+            .bottom-section h2 {
+                font-size: 15px;
+                margin-bottom: 14px;
+            }
+        }
+
+        @@media (max-width: 400px) {
+            .content-wrapper {
+                padding: 10px;
+            }
+
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .summary-card {
+                padding: 14px;
+            }
+
+            .summary-card .value {
+                font-size: 22px;
+            }
+
+            .summary-card h3 {
+                font-size: 12px;
+                margin-bottom: 6px;
+            }
+
+            .two-column-layout {
+                gap: 12px;
+                margin-bottom: 16px;
+            }
+
+            .column-card {
+                padding: 12px;
+                border-radius: 10px;
+            }
+
+            .column-card h2 {
+                font-size: 14px;
+                margin-bottom: 10px;
+            }
+
+            .table-container .data-table {
+                min-width: 420px;
+            }
+
+            .data-table th {
+                padding: 7px;
+                font-size: 9px;
+            }
+
+            .data-table td {
+                padding: 7px;
+                font-size: 11px;
+            }
+
+            .status-badge {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+
+            .bottom-section {
+                padding: 12px;
+                border-radius: 10px;
+            }
+
+            .bottom-section h2 {
+                font-size: 14px;
+                margin-bottom: 12px;
+            }
+
+            .recent-item {
+                padding: 10px;
+                margin-bottom: 8px;
+            }
+
+            .recent-info h4 {
+                font-size: 12px;
+            }
+
+            .recent-info p {
+                font-size: 11px;
+            }
+
+            .recent-date {
+                font-size: 11px;
+            }
+
+            .type-badge {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+        }
+
+        @@media (max-width: 360px) {
+            .content-wrapper {
+                padding: 8px;
+            }
+
+            .column-card {
+                padding: 10px;
+                border-radius: 8px;
+            }
+
+            .column-card h2 {
+                font-size: 13px;
+            }
+
+            .table-container .data-table {
+                min-width: 380px;
+            }
+
+            .summary-card {
+                padding: 12px;
+            }
+
+            .summary-card .value {
+                font-size: 20px;
+            }
+
+            .bottom-section {
+                padding: 10px;
+                border-radius: 8px;
+            }
+        }
+    </style>
+}
+
+    @await Html.PartialAsync("_ChiefComplianceManagerSidebar", "ComplianceDashboard")
+
+    <!-- Main Content -->
+    <main class="main-content flex-grow-1">
+        @await Html.PartialAsync("_ComplianceManagerTopBar", (Title: "Compliance Dashboard", Description: "Overview of compliance metrics"))
+
+        <div class="content-wrapper">
+
+        <!-- Summary Cards -->
+        <div class="cards-wrapper">
+        <div class="summary-cards">
+            <a href="/ChiefComplianceManager/PolicyReview" class="summary-card">
+                <div class="card-icon blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                </div>
+                <div class="card-value">@Model.TotalPoliciesAssigned</div>
+                <div class="card-label">Total Policies Assigned</div>
+            </a>
+            <a href="/ChiefComplianceManager/SupplierCompliance" class="summary-card">
+                <div class="card-icon green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <div class="card-value">@Model.SuppliersCompliant</div>
+                <div class="card-label">Suppliers Compliant</div>
+            </a>
+            <a href="/ChiefComplianceManager/PolicyArchives" class="summary-card">
+                <div class="card-icon purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                        <rect x="1" y="3" width="22" height="5"></rect>
+                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                    </svg>
+                </div>
+                <div class="card-value">@Model.TotalArchivedPolicies</div>
+                <div class="card-label">Archived Policies</div>
+            </a>
+            <a href="/ChiefComplianceManager/SupplierCompliance" class="summary-card">
+                <div class="card-icon orange">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                    </svg>
+                </div>
+                <div class="card-value">@Model.SuspendedSuppliers</div>
+                <div class="card-label">Suspended Suppliers</div>
+            </a>
+        </div>
+        </div>
+
+        <!-- Two Column Layout -->
+        <div class="two-column-layout">
+            <!-- Left Column: Policy Import Queue -->
+            <div class="column-card">
+                <h2>
+                    <span>Policy Import Queue</span>
+                    <a href="/ComplianceManager/ExternalPolicyReferences" class="view-all-link">
+                        View All <i class="fas fa-arrow-right"></i>
+                    </a>
+                </h2>
+                <div class="filters">
+                    <input type="text" class="search-input" id="importSearch" placeholder="Search imports...">
+                    <select class="filter-select" id="importStatusFilter">
+                        <option value="">All Status</option>
+                        <option value="PendingReview">Pending Review</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="importTable">
+                        <thead>
+                            <tr>
+                                <th>Policy Title</th>
+                                <th>Category</th>
+                                <th>Status</th>
+                                <th>Imported</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.PolicyImportQueue)
+                            {
+                                <tr>
+                                    <td>@item.PolicyTitle</td>
+                                    <td>@item.Category</td>
+                                    <td>
+                                        <span class="status-badge @(item.ReviewStatus == "Approved" ? "status-compliant" : item.ReviewStatus == "Rejected" ? "status-not-compliant" : "status-pending")">
+                                            @(item.ReviewStatus == "PendingReview" ? "Pending Review" : item.ReviewStatus)
+                                        </span>
+                                    </td>
+                                    <td>@item.ImportedAt.ToString("MMM d, yyyy")</td>
+                                </tr>
+                            }
+                            @if (!Model.PolicyImportQueue.Any())
+                            {
+                                <tr><td colspan="4" style="text-align:center;color:#6b7280;padding:24px;">No pending imports.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right Column: Supplier Compliance -->
+            <div class="column-card">
+                <h2>
+                    <span>Supplier Compliance Overview</span>
+                    <a href="/ChiefComplianceManager/SupplierCompliance" class="view-all-link">
+                        View All <i class="fas fa-arrow-right"></i>
+                    </a>
+                </h2>
+                <div class="filters">
+                    <input type="text" class="search-input" id="supplierSearch" placeholder="Search suppliers...">
+                    <select class="filter-select" id="supplierStatusFilter">
+                        <option value="">All Status</option>
+                        <option value="Compliant">Compliant</option>
+                        <option value="Not Compliant">Not Compliant</option>
+                    </select>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="supplierTable">
+                        <thead>
+                            <tr>
+                                <th>Supplier Name</th>
+                                <th>Assigned Policy</th>
+                                <th>Status</th>
+                                <th>Assigned Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var supplier in Model.SupplierCompliance)
+                            {
+                                <tr>
+                                    <td>@supplier.SupplierName</td>
+                                    <td>@supplier.AssignedPolicy</td>
+                                    <td>
+                                        <span class="status-badge @(supplier.ComplianceStatus == "Compliant" ? "status-compliant" : "status-not-compliant")">
+                                            @supplier.ComplianceStatus
+                                        </span>
+                                    </td>
+                                    <td>@supplier.VerifiedDate</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Section: Recently Assigned Policies -->
+        <div class="bottom-section">
+            <h2>Recently Assigned Policies</h2>
+            <ul class="recent-list">
+                @foreach (var recent in Model.RecentlyAssigned)
+                {
+                    <li class="recent-item">
+                        <div class="recent-info">
+                            <h4>@recent.PolicyName <span class="type-badge @(recent.Type == "Employee" ? "type-employee" : "type-supplier")">@recent.Type</span></h4>
+                            <p>Assigned to: @recent.AssignedTo</p>
+                        </div>
+                        <span class="recent-date">@recent.DateAssigned</span>
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <!-- Policy Archives Section -->
+        <div class="archives-section">
+            <h2>
+                <span class="section-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                        <rect x="1" y="3" width="22" height="5"></rect>
+                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                    </svg>
+                    Policy Archives
+                </span>
+                <a href="/ChiefComplianceManager/PolicyArchives" class="view-all-link">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </h2>
+
+            @if (Model.RecentlyArchivedPolicies.Any())
+            {
+                <div class="table-container">
+                    <table class="data-table archive-table" id="archiveTable">
+                        <thead>
+                            <tr>
+                                <th>Policy Title</th>
+                                <th>Category</th>
+                                <th>Uploaded By</th>
+                                <th>Date Uploaded</th>
+                                <th>Archived Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var policy in Model.RecentlyArchivedPolicies)
+                            {
+                                <tr>
+                                    <td>@policy.PolicyTitle</td>
+                                    <td><span class="category-badge">@policy.Category</span></td>
+                                    <td>@policy.UploadedBy</td>
+                                    <td>@policy.DateUploaded</td>
+                                    <td class="archived-date">@policy.ArchivedDate</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-archives">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                        <rect x="1" y="3" width="22" height="5"></rect>
+                        <line x1="10" y1="12" x2="14" y2="12"></line>
+                    </svg>
+                    <p>No archived policies yet.</p>
+                </div>
+            }
+        </div>
+        </div>
+    </main>
+
+@section Scripts {
+    <script>
+        // Import Queue Table Filtering
+        function filterImportTable() {
+            const searchTerm = document.getElementById('importSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('importStatusFilter').value.toLowerCase();
+            const table = document.getElementById('importTable');
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (let row of rows) {
+                if (row.cells.length < 2) continue;
+                const title = row.cells[0].textContent.toLowerCase();
+                const status = row.cells[2].textContent.toLowerCase();
+
+                const matchesSearch = title.includes(searchTerm);
+                const matchesStatus = !statusFilter || status.includes(statusFilter.replace('pendingreview', 'pending'));
+
+                row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+            }
+        }
+
+        // Supplier Table Filtering
+        function filterSupplierTable() {
+            const searchTerm = document.getElementById('supplierSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('supplierStatusFilter').value.toLowerCase();
+            const table = document.getElementById('supplierTable');
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (let row of rows) {
+                const name = row.cells[0].textContent.toLowerCase();
+                const status = row.cells[2].textContent.toLowerCase();
+
+                const matchesSearch = name.includes(searchTerm);
+                const matchesStatus = !statusFilter || status.includes(statusFilter);
+
+                row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('importSearch').addEventListener('keyup', filterImportTable);
+        document.getElementById('importStatusFilter').addEventListener('change', filterImportTable);
+        document.getElementById('supplierSearch').addEventListener('keyup', filterSupplierTable);
+        document.getElementById('supplierStatusFilter').addEventListener('change', filterSupplierTable);
+    </script>
+}

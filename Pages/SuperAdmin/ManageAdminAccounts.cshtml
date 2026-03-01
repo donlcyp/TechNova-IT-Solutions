@@ -1,7 +1,7 @@
 @page
 @model TechNova_IT_Solutions.Pages.SuperAdmin.ManageAdminAccountsModel
 @{
-    ViewData["Title"] = "Manage Admin Accounts";
+    ViewData["Title"] = "Manage Global Accounts";
 }
 
 @section Styles {
@@ -71,7 +71,7 @@
         }
 
         th {
-            text-align: left;
+            text-align: center;
             padding: 14px 16px;
             font-size: 12px;
             font-weight: 600;
@@ -85,6 +85,12 @@
             padding: 14px 16px;
             border-bottom: 1px solid #e5e7eb;
             font-size: 14px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        td:first-child {
+            text-align: left;
         }
 
         tbody tr:last-child td {
@@ -102,22 +108,136 @@
         }
 
         .status-badge {
-            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
             font-weight: 600;
+            border: 1.5px solid;
+            background: transparent;
+        }
+
+        .status-badge::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
         }
 
         .status-badge.active {
-            color: #166534;
+            color: #16a34a;
+            border-color: #16a34a;
         }
 
         .status-badge.inactive {
-            color: #991b1b;
+            color: #dc2626;
+            border-color: #dc2626;
         }
 
         .actions-cell {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            border: 1px solid;
+            background: transparent;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            padding: 0;
+        }
+
+        .btn-icon svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .btn-icon.reset {
+            color: #2563eb;
+            border-color: #93c5fd;
+        }
+
+        .btn-icon.reset:hover {
+            background: #eff6ff;
+            border-color: #2563eb;
+        }
+
+        .btn-icon.danger {
+            color: #ef4444;
+            border-color: #fca5a5;
+        }
+
+        .btn-icon.danger:hover {
+            background: #fee2e2;
+            border-color: #ef4444;
+        }
+
+        .btn-icon.success {
+            color: #059669;
+            border-color: #86efac;
+        }
+
+        .btn-icon.success:hover {
+            background: #d1fae5;
+            border-color: #059669;
+        }
+
+        /* Pagination */
+        .pagination-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-top: 1px solid #e5e7eb;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pagination-info { font-size: 13px; color: #6b7280; }
+
+        .pagination-controls { display: flex; gap: 4px; align-items: center; }
+
+        .page-btn {
+            min-width: 32px;
+            height: 32px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: #fff;
+            color: #374151;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
+            transition: all 0.15s;
+        }
+
+        .page-btn:hover:not(:disabled) { border-color: #1e40af; color: #1e40af; }
+        .page-btn.active { background: #1e40af; border-color: #1e40af; color: #fff; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .page-size-select {
+            padding: 5px 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #374151;
+            background: #fff;
         }
 
         .btn-danger {
@@ -138,6 +258,29 @@
 
         .btn-success:hover {
             background: #ecfdf5;
+        }
+
+        .btn-reset {
+            border-color: #2563eb;
+            color: #2563eb;
+            background: #fff;
+        }
+
+        .btn-reset:hover {
+            background: #eff6ff;
+        }
+
+        .filter-btn {
+            padding: 6px 14px;
+            font-size: 13px;
+            border-radius: 20px;
+            transition: all .15s;
+        }
+
+        .filter-btn.active {
+            background: #1e40af;
+            border-color: #1e40af;
+            color: #fff;
         }
 
         .action-protected {
@@ -200,18 +343,30 @@
                 margin-left: 0;
             }
         }
+
+        /* ── Loading overlay ────────────────── */
+        .loading-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+        .loading-overlay.active { display:flex; }
+        .loading-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,.3); border-top:4px solid #fff; border-radius:50%; animation:spin .8s linear infinite; }
+        .loading-text { color:#fff; font-size:15px; font-weight:600; text-align:center; max-width:280px; line-height:1.4; }
+        @@keyframes spin { to { transform:rotate(360deg); } }
     </style>
 }
 
 @await Html.PartialAsync("_SuperAdminSidebar", "ManageAdminAccounts")
 
 <div class="main-content">
-    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Manage Admin Accounts", Description: "Create, edit, and control Admin and SuperAdmin accounts"))
+    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Manage Global Accounts", Description: "Create, edit, and control System Admin and Global Compliance accounts"))
 
     <div class="content-wrapper">
         <div class="actions-bar">
-            <button class="btn btn-primary" onclick="openCreateAdminModal()">Add Admin Account</button>
-            <a class="btn" href="/SuperAdmin/ResetDeactivateAccounts">Open Reset / Deactivate Accounts</a>
+            <button class="btn btn-primary" onclick="openCreateAdminModal()">Add Global Account</button>
+            <div style="display:flex; gap:8px; align-items:center; margin-left:auto;">
+                <span style="font-size:13px; color:#6b7280; font-weight:600;">Filter:</span>
+                <button class="btn filter-btn active" data-filter="all" onclick="filterTable('all')">All</button>
+                <button class="btn filter-btn" data-filter="Admin" onclick="filterTable('Admin')">System Admin</button>
+                <button class="btn filter-btn" data-filter="ChiefComplianceManager" onclick="filterTable('ChiefComplianceManager')">Global Compliance</button>
+            </div>
         </div>
 
         <div class="table-container">
@@ -228,7 +383,7 @@
                 <tbody>
                     @foreach (var user in Model.AdminUsers)
                     {
-                        <tr>
+                        <tr data-role="@user.Role">
                             <td>@user.FullName</td>
                             <td>@user.Email</td>
                             <td><span class="role-badge">@user.Role</span></td>
@@ -241,11 +396,21 @@
                                     }
                                     else if (user.Status == "Active")
                                     {
-                                        <button class="btn btn-danger" onclick="toggleAdminStatus('@user.UserId', 'deactivate')">Deactivate</button>
+                                        <button class="btn-icon reset" title="Reset Password" onclick="resetAdminPassword('@user.UserId')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                                        </button>
+                                        <button class="btn-icon danger" title="Deactivate" onclick="toggleAdminStatus('@user.UserId', 'deactivate')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                        </button>
                                     }
                                     else
                                     {
-                                        <button class="btn btn-success" onclick="toggleAdminStatus('@user.UserId', 'reactivate')">Reactivate</button>
+                                        <button class="btn-icon reset" title="Reset Password" onclick="resetAdminPassword('@user.UserId')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                                        </button>
+                                        <button class="btn-icon success" title="Reactivate" onclick="toggleAdminStatus('@user.UserId', 'reactivate')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/><polyline points="16 5 19 8 22 5"/></svg>
+                                        </button>
                                     }
                                 </div>
                             </td>
@@ -253,6 +418,18 @@
                     }
                 </tbody>
             </table>
+            <!-- Pagination -->
+            <div class="pagination-bar">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="pagination-info" id="paginationInfo"></span>
+                    <select class="page-size-select" id="pageSizeSelect" onchange="changePageSizeA()">
+                        <option value="10">10 / page</option>
+                        <option value="25">25 / page</option>
+                        <option value="50">50 / page</option>
+                    </select>
+                </div>
+                <div class="pagination-controls" id="paginationControls"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -260,17 +437,16 @@
 <div class="modal" id="createAdminModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); align-items:center; justify-content:center; z-index:1100;">
     <div style="background:#fff; width:90%; max-width:560px; border-radius:12px; border:1px solid #e5e7eb; overflow:hidden;">
         <div style="padding:16px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0; font-size:18px;">Add Admin Account</h3>
+            <h3 style="margin:0; font-size:18px;">Add Global Account</h3>
             <button class="btn" onclick="closeCreateAdminModal()">Close</button>
         </div>
         <div style="padding:20px; display:grid; gap:12px;">
             <input id="firstName" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="First name" />
             <input id="lastName" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="Last name" />
             <input id="email" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="Email" />
-            <input id="password" type="password" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="Password (min 8 chars)" />
             <select id="role" class="btn" style="width:100%; text-align:left; font-weight:400;">
-                <option value="Admin">Admin</option>
-                <option value="SuperAdmin">SuperAdmin</option>
+                <option value="Admin">System Admin</option>
+                <option value="ChiefComplianceManager">Global Compliance</option>
             </select>
             <button class="btn btn-primary" onclick="createAdmin()">Create Account</button>
         </div>
@@ -298,8 +474,17 @@
     </div>
 </div>
 
+<!-- ── Loading Overlay ── -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Processing...</div>
+</div>
+
 @section Scripts {
     <script>
+        function showLoading(msg = 'Processing...') { document.getElementById('loadingText').textContent = msg; document.getElementById('loadingOverlay').classList.add('active'); }
+        function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
         function showMessageModal(message, title = 'Notice') {
             return new Promise(resolve => {
                 const modal = document.getElementById('appMessageModal');
@@ -371,24 +556,30 @@
         async function createAdmin() {
             const userData = {
                 userId: '0',
-                firstName: document.getElementById('firstName').value,
-                lastName: document.getElementById('lastName').value,
-                email: document.getElementById('email').value,
-                password: document.getElementById('password').value,
+                firstName: document.getElementById('firstName').value.trim(),
+                lastName: document.getElementById('lastName').value.trim(),
+                email: document.getElementById('email').value.trim(),
                 role: document.getElementById('role').value,
                 status: 'Active'
             };
 
-            if (!userData.firstName || !userData.lastName || !userData.email || !userData.password) {
+            // Capitalize first/last name
+            if (userData.firstName) userData.firstName = userData.firstName.charAt(0).toUpperCase() + userData.firstName.slice(1);
+            if (userData.lastName) userData.lastName = userData.lastName.charAt(0).toUpperCase() + userData.lastName.slice(1);
+
+            if (!userData.firstName || !userData.lastName || !userData.email) {
                 await showMessageModal('Please complete all fields.', 'Validation');
                 return;
             }
 
-            if (userData.password.length < 8) {
-                await showMessageModal('Password must be at least 8 characters.', 'Validation');
+            // Validate email format
+            const emailRegex = /^[a-zA-Z0-9._%+\-]+@@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;;
+            if (!emailRegex.test(userData.email)) {
+                await showMessageModal('Please enter a valid email address (e.g. user@company.com)', 'Validation');
                 return;
             }
 
+            showLoading('Creating account & sending welcome email...');
             const response = await fetch('/SuperAdmin/CreateUser', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -396,22 +587,79 @@
             });
 
             const result = await response.json();
+            hideLoading();
             if (response.ok && result.success) {
                 await showMessageModal(result.message, 'Success');
                 window.location.reload();
                 return;
             }
 
-            await showMessageModal(result.message || 'Failed to create admin account.', 'Error');
+            await showMessageModal(result.message || 'Failed to create account.', 'Error');
         }
+
+        // Pagination state
+        let currentPageA = 1;
+        let pageSizeA = 10;
+        let filteredRowsA = [];
+
+        function changePageSizeA() {
+            pageSizeA = parseInt(document.getElementById('pageSizeSelect').value);
+            currentPageA = 1;
+            renderPageA();
+        }
+
+        function filterTable(role) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.filter-btn[data-filter="${role}"]`).classList.add('active');
+            const allRows = Array.from(document.querySelectorAll('tbody tr[data-role]'));
+            filteredRowsA = allRows.filter(row =>
+                role === 'all' || row.dataset.role === role || row.dataset.role === 'SuperAdmin'
+            );
+            allRows.forEach(r => r.style.display = 'none');
+            currentPageA = 1;
+            renderPageA();
+        }
+
+        function renderPageA() {
+            const allRows = Array.from(document.querySelectorAll('tbody tr[data-role]'));
+            allRows.forEach(r => r.style.display = 'none');
+            const start = (currentPageA - 1) * pageSizeA;
+            const end = start + pageSizeA;
+            filteredRowsA.slice(start, end).forEach(r => r.style.display = '');
+            const total = filteredRowsA.length;
+            const totalPages = Math.max(1, Math.ceil(total / pageSizeA));
+            document.getElementById('paginationInfo').textContent =
+                total === 0 ? 'No results' : `Showing ${start+1}–${Math.min(end,total)} of ${total}`;
+            const ctrl = document.getElementById('paginationControls');
+            ctrl.innerHTML = '';
+            const prev = Object.assign(document.createElement('button'), { className: 'page-btn', textContent: '‹', disabled: currentPageA===1 });
+            prev.onclick = () => { currentPageA--; renderPageA(); };
+            ctrl.appendChild(prev);
+            const maxV = 5, sp = Math.max(1, Math.min(currentPageA-2, totalPages-maxV+1)), ep = Math.min(totalPages, sp+maxV-1);
+            for (let p=sp; p<=ep; p++) {
+                const btn = Object.assign(document.createElement('button'), { className:'page-btn'+(p===currentPageA?' active':''), textContent:p });
+                btn.onclick=((pg)=>()=>{currentPageA=pg;renderPageA();})(p);
+                ctrl.appendChild(btn);
+            }
+            const next = Object.assign(document.createElement('button'), { className:'page-btn', textContent:'›', disabled: currentPageA===totalPages });
+            next.onclick = () => { currentPageA++; renderPageA(); };
+            ctrl.appendChild(next);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            filteredRowsA = Array.from(document.querySelectorAll('tbody tr[data-role]'));
+            renderPageA();
+        });
 
         async function toggleAdminStatus(userId, action) {
             const endpoint = action === 'deactivate' ? '/SuperAdmin/DeactivateUser' : '/SuperAdmin/ReactivateUser';
             const confirmed = await showConfirmModal(`Are you sure you want to ${action} this account?`, 'Confirm Account Action');
             if (!confirmed) return;
 
+            showLoading(`${action === 'deactivate' ? 'Deactivating' : 'Reactivating'} account & sending notification...`);
             const response = await fetch(`${endpoint}?userId=${userId}`, { method: 'POST' });
             const result = await response.json();
+            hideLoading();
 
             if (response.ok && result.success) {
                 await showMessageModal(result.message, 'Success');
@@ -420,6 +668,26 @@
             }
 
             await showMessageModal(result.message || `Failed to ${action} account.`, 'Error');
+        }
+
+        async function resetAdminPassword(userId) {
+            const confirmed = await showConfirmModal(
+                'Reset this account password to its role default value? The user will be required to change it on next login.',
+                'Confirm Password Reset'
+            );
+            if (!confirmed) return;
+
+            showLoading('Resetting password & sending notification...');
+            const response = await fetch(`/SuperAdmin/ResetUserPassword?userId=${userId}`, { method: 'POST' });
+            const result = await response.json();
+            hideLoading();
+
+            if (response.ok && result.success) {
+                await showMessageModal(result.message, 'Password Reset');
+                return;
+            }
+
+            await showMessageModal(result.message || 'Failed to reset password.', 'Error');
         }
     </script>
 }

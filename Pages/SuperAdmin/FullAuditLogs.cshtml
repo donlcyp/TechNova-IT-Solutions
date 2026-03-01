@@ -9,12 +9,31 @@
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; }
         .main-content { margin-left: 260px; min-height: 100vh; }
         .content-wrapper { padding: 24px; max-width: 1320px; margin: 0 auto; }
+        .filter-bar { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .filter-bar label { font-size: 13px; font-weight: 600; color: #374151; white-space: nowrap; }
+        .filter-bar select { padding: 7px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; color: #374151; background: #fff; min-width: 200px; }
+        .filter-bar select:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99,102,241,.15); }
+        .btn-filter { padding: 7px 18px; background: #6366f1; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .btn-filter:hover { background: #4f46e5; }
+        .btn-clear { padding: 7px 14px; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; cursor: pointer; }
+        .btn-clear:hover { background: #e5e7eb; }
         .table-container { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 860px; }
-        th, td { text-align: left; padding: 13px 15px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; min-width: 960px; }
+        th, td { text-align: center; padding: 13px 15px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
         th { font-size: 12px; color: #6b7280; text-transform: uppercase; background: #f9fafb; }
+        td:nth-child(4) { text-align: left; }
         tbody tr:hover { background: #f9fafb; }
         .role { display: inline-block; padding: 4px 9px; border-radius: 999px; background: #dbeafe; color: #1e40af; font-size: 12px; font-weight: 700; }
+        .branch-badge { display: inline-block; padding: 3px 9px; border-radius: 999px; background: #ede9fe; color: #6d28d9; font-size: 12px; font-weight: 600; }
+        /* Pagination */
+        .pagination-bar { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-top:1px solid #e5e7eb; flex-wrap:wrap; gap:10px; }
+        .pagination-info { font-size:13px; color:#6b7280; }
+        .pagination-controls { display:flex; gap:4px; align-items:center; }
+        .page-btn { min-width:32px; height:32px; border:1px solid #e5e7eb; border-radius:6px; background:#fff; color:#374151; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0 6px; transition:all .15s; }
+        .page-btn:hover:not(:disabled) { border-color:#1e40af; color:#1e40af; }
+        .page-btn.active { background:#1e40af; border-color:#1e40af; color:#fff; }
+        .page-btn:disabled { opacity:.4; cursor:not-allowed; }
+        .page-size-select { padding:5px 10px; border:1px solid #e5e7eb; border-radius:6px; font-size:13px; color:#374151; background:#fff; }
         @@media (max-width: 991px) { .main-content { margin-left: 0; } }
     </style>
 }
@@ -25,6 +44,29 @@
     @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Full Audit Logs", Description: "Centralized audit visibility for all modules"))
 
     <div class="content-wrapper">
+        <form method="get" class="filter-bar">
+            <label for="branchFilter">Filter by Branch:</label>
+            <select name="selectedBranchId" id="branchFilter">
+                <option value="">All Branches</option>
+                @foreach (var branch in Model.Branches)
+                {
+                    if (Model.SelectedBranchId == branch.BranchId)
+                    {
+                        <option value="@branch.BranchId" selected>@branch.BranchName</option>
+                    }
+                    else
+                    {
+                        <option value="@branch.BranchId">@branch.BranchName</option>
+                    }
+                }
+            </select>
+            <button type="submit" class="btn-filter">Apply</button>
+            @if (Model.SelectedBranchId.HasValue)
+            {
+                <a href="/SuperAdmin/FullAuditLogs" class="btn-clear">Clear</a>
+            }
+        </form>
+
         <div class="table-container">
             <table>
                 <thead>
@@ -32,6 +74,7 @@
                         <th>Log ID</th>
                         <th>User</th>
                         <th>Role</th>
+                        <th>Branch</th>
                         <th>Action</th>
                         <th>Module</th>
                         <th>Date & Time</th>
@@ -44,6 +87,7 @@
                             <td>LOG-@log.LogId.ToString("D4")</td>
                             <td>@log.UserName</td>
                             <td><span class="role">@log.Role</span></td>
+                            <td><span class="branch-badge">@log.BranchName</span></td>
                             <td>@log.Action</td>
                             <td>@log.Module</td>
                             <td>@log.DateTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
@@ -51,6 +95,58 @@
                     }
                 </tbody>
             </table>
+            <div class="pagination-bar">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span class="pagination-info" id="paginationInfo">Loading...</span>
+                    <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize()">
+                        <option value="10">10 / page</option>
+                        <option value="25">25 / page</option>
+                        <option value="50">50 / page</option>
+                    </select>
+                </div>
+                <div class="pagination-controls" id="paginationControls"></div>
+            </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        let currentPage = 1, pageSize = 10;
+        const allRows = Array.from(document.querySelectorAll('tbody tr'));
+
+        function renderPage() {
+            const total = allRows.length;
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
+            if (currentPage > totalPages) currentPage = totalPages;
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            allRows.forEach((r, i) => r.style.display = (i >= start && i < end) ? '' : 'none');
+            document.getElementById('paginationInfo').textContent =
+                total === 0 ? 'No records' : `Showing ${start + 1}–${Math.min(end, total)} of ${total}`;
+            const ctrl = document.getElementById('paginationControls');
+            ctrl.innerHTML = '';
+            const mkBtn = (label, page, disabled, active) => {
+                const b = document.createElement('button');
+                b.className = 'page-btn' + (active ? ' active' : '');
+                b.innerHTML = label; b.disabled = disabled;
+                if (!disabled) b.onclick = () => { currentPage = page; renderPage(); };
+                return b;
+            };
+            ctrl.appendChild(mkBtn('&laquo;', 1, currentPage === 1, false));
+            ctrl.appendChild(mkBtn('&lsaquo;', currentPage - 1, currentPage === 1, false));
+            const lo = Math.max(1, currentPage - 2), hi = Math.min(totalPages, currentPage + 2);
+            for (let p = lo; p <= hi; p++) ctrl.appendChild(mkBtn(p, p, false, p === currentPage));
+            ctrl.appendChild(mkBtn('&rsaquo;', currentPage + 1, currentPage === totalPages, false));
+            ctrl.appendChild(mkBtn('&raquo;', totalPages, currentPage === totalPages, false));
+        }
+
+        function changePageSize() {
+            pageSize = parseInt(document.getElementById('pageSizeSelect').value);
+            currentPage = 1;
+            renderPage();
+        }
+
+        window.addEventListener('DOMContentLoaded', renderPage);
+    </script>
+}

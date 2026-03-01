@@ -16,7 +16,8 @@ namespace TechNova_IT_Solutions.Models
 
     public class ExchangeRateApiSettings
     {
-        public string BaseUrl { get; set; } = "https://open.er-api.com/v6";
+        public string BaseUrl { get; set; } = "https://v6.exchangerate-api.com/v6";
+        public string ApiKey { get; set; } = string.Empty;
         public int Timeout { get; set; } = 30;
         public string BaseCurrency { get; set; } = "PHP";
     }

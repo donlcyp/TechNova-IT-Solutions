@@ -29,7 +29,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
 
             // Check user role - only ComplianceManager and Admin can access
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            if (userRole != RoleNames.ComplianceManager && userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
+            if (userRole != RoleNames.ComplianceManager && userRole != RoleNames.Admin)
             {
                 // Redirect to appropriate dashboard based on role
                 if (userRole == RoleNames.Employee)
@@ -39,10 +39,23 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
                 return RedirectToPage("/Account/Login");
             }
 
-            // Load supplier policy assignments from database
+            // Branch CM always scoped to their branch
+            int? callerBranchId = null;
+            {
+                var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+                if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))
+                {
+                    callerBranchId = bid;
+                }
+            }
+
+            bool scoped = callerBranchId.HasValue;
+
+            // Load supplier policy assignments from database (branch-scoped)
             var supplierPolicies = await _context.SupplierPolicies
                 .Include(sp => sp.Supplier)
                 .Include(sp => sp.Policy)
+                .Where(sp => !scoped || sp.Supplier == null || sp.Supplier.BranchId == callerBranchId || sp.Supplier.BranchId == null)
                 .ToListAsync();
 
             SupplierRecords = supplierPolicies
@@ -58,10 +71,11 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
                 .OrderBy(s => s.SupplierName)
                 .ToList();
 
-            // Build supplier details for modal
+            // Build supplier details for modal (branch-scoped)
             var suppliers = await _context.Suppliers
                 .Include(s => s.SupplierPolicies)
                 .ThenInclude(sp => sp.Policy)
+                .Where(s => !scoped || s.BranchId == callerBranchId || s.BranchId == null)
                 .ToListAsync();
 
             SupplierDetails = suppliers

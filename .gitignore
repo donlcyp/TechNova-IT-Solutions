@@ -1,2 +1,5 @@
 appsettings.json
 appsettings.json
+appsettings.json
+.gitignore
+create_all_tables.sql

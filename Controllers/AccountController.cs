@@ -7,10 +7,12 @@ namespace TechNova_IT_Solutions.Controllers
     public class AccountController : Controller
     {
         private readonly IAuthenticationService _authService;
+        private readonly IUserService _userService;
 
-        public AccountController(IAuthenticationService authService)
+        public AccountController(IAuthenticationService authService, IUserService userService)
         {
             _authService = authService;
+            _userService = userService;
         }
 
         [HttpGet]
@@ -51,6 +53,17 @@ namespace TechNova_IT_Solutions.Controllers
             HttpContext.Session.SetString(SessionKeys.UserEmail, user.Email);
             HttpContext.Session.SetString(SessionKeys.UserName, $"{user.FirstName} {user.LastName}");
 
+            if (user.BranchId.HasValue)
+            {
+                HttpContext.Session.SetString(SessionKeys.BranchId, user.BranchId.Value.ToString());
+                HttpContext.Session.SetString(SessionKeys.BranchName, user.Branch?.BranchName ?? string.Empty);
+            }
+            else
+            {
+                HttpContext.Session.Remove(SessionKeys.BranchId);
+                HttpContext.Session.Remove(SessionKeys.BranchName);
+            }
+
             // Redirect based on role
             return RedirectToDashboard(user.Role ?? RoleNames.Employee);
         }
@@ -77,6 +90,9 @@ namespace TechNova_IT_Solutions.Controllers
             if (role.Equals(RoleNames.Admin, StringComparison.OrdinalIgnoreCase))
                 return RedirectToAction("Dashboard", "Admin");
 
+            if (role.Equals(RoleNames.ChiefComplianceManager, StringComparison.OrdinalIgnoreCase))
+                return RedirectToPage("/ChiefComplianceManager/ComplianceDashboard");
+
             if (role.Equals(RoleNames.ComplianceManager, StringComparison.OrdinalIgnoreCase))
                 return RedirectToAction("Dashboard", "ComplianceManager");
 
@@ -88,5 +104,36 @@ namespace TechNova_IT_Solutions.Controllers
 
             return RedirectToAction("Dashboard", "Employee");
         }
+
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            var userIdStr = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (string.IsNullOrWhiteSpace(userIdStr) || !int.TryParse(userIdStr, out int userId))
+            {
+                return Unauthorized(new { success = false, message = "Not authenticated." });
+            }
+
+            if (string.IsNullOrWhiteSpace(request?.NewPassword) || request.NewPassword.Length < 8)
+            {
+                return BadRequest(new { success = false, message = "Password must be at least 8 characters." });
+            }
+
+            var result = await _userService.SetPasswordAsync(userId, request.NewPassword);
+            if (!result)
+            {
+                return BadRequest(new { success = false, message = "Failed to change password." });
+            }
+
+            // Clear forced password change flag
+            HttpContext.Session.Remove(SessionKeys.MustChangePassword);
+
+            return Ok(new { success = true, message = "Password changed successfully." });
+        }
     }
+}
+
+public class ChangePasswordRequest
+{
+    public string NewPassword { get; set; } = string.Empty;
 }

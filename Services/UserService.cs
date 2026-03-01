@@ -19,33 +19,40 @@ namespace TechNova_IT_Solutions.Services
         public async Task<List<UserData>> GetAllUsersAsync()
         {
             return await _context.Users
+                .Include(u => u.Branch)
                 .OrderBy(u => u.FirstName)
                 .ThenBy(u => u.LastName)
                 .Select(u => new UserData
                 {
-                    UserId = u.UserId.ToString(),
+                    UserId    = u.UserId.ToString(),
                     FirstName = u.FirstName ?? string.Empty,
-                    LastName = u.LastName ?? string.Empty,
-                    Email = u.Email ?? string.Empty,
-                    Role = u.Role ?? string.Empty,
-                    Status = u.Status ?? "Active"
+                    LastName  = u.LastName  ?? string.Empty,
+                    Email     = u.Email     ?? string.Empty,
+                    Role      = u.Role      ?? string.Empty,
+                    Status    = u.Status    ?? "Active",
+                    BranchId  = u.BranchId,
+                    BranchName = u.Branch != null ? u.Branch.BranchName : null
                 })
                 .ToListAsync();
         }
 
         public async Task<UserData?> GetUserByIdAsync(int userId)
         {
-            var user = await _context.Users.FindAsync(userId);
+            var user = await _context.Users
+                .Include(u => u.Branch)
+                .FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null) return null;
 
             return new UserData
             {
-                UserId = user.UserId.ToString(),
+                UserId    = user.UserId.ToString(),
                 FirstName = user.FirstName ?? string.Empty,
-                LastName = user.LastName ?? string.Empty,
-                Email = user.Email ?? string.Empty,
-                Role = user.Role ?? string.Empty,
-                Status = user.Status ?? "Active"
+                LastName  = user.LastName  ?? string.Empty,
+                Email     = user.Email     ?? string.Empty,
+                Role      = user.Role      ?? string.Empty,
+                Status    = user.Status    ?? "Active",
+                BranchId  = user.BranchId,
+                BranchName = user.Branch?.BranchName
             };
         }
 
@@ -53,20 +60,32 @@ namespace TechNova_IT_Solutions.Services
         {
             try
             {
-                // Use provided password or default if not provided
-                var passwordToHash = string.IsNullOrWhiteSpace(userData.Password) 
-                    ? "TempPassword123!" 
-                    : userData.Password;
+                // Assign role-based default password
+                var role = userData.Role ?? string.Empty;
+                string passwordToHash;
+                if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+                    passwordToHash = "admin123";
+                else if (string.Equals(role, "ChiefComplianceManager", StringComparison.OrdinalIgnoreCase))
+                    passwordToHash = "chiefcompliance123";
+                else if (role.Contains("Compliance", StringComparison.OrdinalIgnoreCase))
+                    passwordToHash = "compliance123";
+                else if (role.Contains("Supplier", StringComparison.OrdinalIgnoreCase))
+                    passwordToHash = "supplier123";
+                else
+                    passwordToHash = "employee123";
+
                 var hashedPassword = PasswordHasher.HashPassword(passwordToHash);
                 
                 var user = new User
                 {
                     FirstName = userData.FirstName,
-                    LastName = userData.LastName,
-                    Email = userData.Email,
-                    Role = userData.Role,
-                    Status = userData.Status,
-                    Password = hashedPassword
+                    LastName  = userData.LastName,
+                    Email     = userData.Email,
+                    Role      = userData.Role ?? string.Empty,
+                    Status    = userData.Status,
+                    Password  = hashedPassword,
+                    MustChangePassword = true,
+                    BranchId  = userData.BranchId
                 };
 
                 _context.Users.Add(user);
@@ -111,10 +130,11 @@ namespace TechNova_IT_Solutions.Services
                 if (user == null) return false;
 
                 user.FirstName = userData.FirstName;
-                user.LastName = userData.LastName;
-                user.Email = userData.Email;
-                user.Role = userData.Role;
-                user.Status = userData.Status;
+                user.LastName  = userData.LastName;
+                user.Email     = userData.Email;
+                user.Role      = userData.Role;
+                user.Status    = userData.Status;
+                user.BranchId  = userData.BranchId;
 
                 await _context.SaveChangesAsync();
                 return true;
@@ -193,7 +213,15 @@ namespace TechNova_IT_Solutions.Services
                 var role = user.Role ?? string.Empty;
                 string resetPassword;
 
-                if (role.Contains("Compliance", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    resetPassword = "admin123";
+                }
+                else if (string.Equals(role, "ChiefComplianceManager", StringComparison.OrdinalIgnoreCase))
+                {
+                    resetPassword = "chiefcompliance123";
+                }
+                else if (role.Contains("Compliance", StringComparison.OrdinalIgnoreCase))
                 {
                     resetPassword = "compliance123";
                 }
@@ -211,6 +239,7 @@ namespace TechNova_IT_Solutions.Services
                 }
 
                 user.Password = PasswordHasher.HashPassword(resetPassword);
+                user.MustChangePassword = true;
                 await _context.SaveChangesAsync();
 
                 return new PasswordResetResult
@@ -229,6 +258,41 @@ namespace TechNova_IT_Solutions.Services
                     Success = false,
                     ErrorMessage = "Failed to reset password."
                 };
+            }
+        }
+
+        public async Task<bool> SetPasswordAsync(int userId, string newPassword)
+        {
+            try
+            {
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null) return false;
+
+                user.Password = PasswordHasher.HashPassword(newPassword);
+                user.MustChangePassword = false;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> ClearMustChangePasswordAsync(int userId)
+        {
+            try
+            {
+                var user = await _context.Users.FindAsync(userId);
+                if (user == null) return false;
+
+                user.MustChangePassword = false;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
             }
         }
     }

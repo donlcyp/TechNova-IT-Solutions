@@ -2,7 +2,7 @@ namespace TechNova_IT_Solutions.Services.Interfaces
 {
     public interface IAdminService
     {
-        Task<AdminDashboardData> GetDashboardDataAsync();
+        Task<AdminDashboardData> GetDashboardDataAsync(int? branchId = null);
         
         // Policy operations
         Task<bool> CreatePolicyAsync(PolicyData policyData);
@@ -90,6 +90,8 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public DateTime? UploadedDate { get; set; }
         public bool IsArchived { get; set; }
         public DateTime? ArchivedDate { get; set; }
+        /// <summary>null = company-wide policy; non-null = branch-specific.</summary>
+        public int? BranchId { get; set; }
     }
 
     public class PolicyDetailData
@@ -121,6 +123,9 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public string? TerminationReason { get; set; }
         public DateTime? TerminatedAt { get; set; }
         public int? TerminatedByUserId { get; set; }
+        /// <summary>null = enterprise/global supplier; non-null = owned by a specific branch.</summary>
+        public int? BranchId { get; set; }
+        public string? BranchName { get; set; }
     }
 
     public class SupplierOperationResult
@@ -156,6 +161,8 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public DateTime? RevisedDeliveryDate { get; set; }
         public string? DelayReason { get; set; }
         public string? RejectionReason { get; set; }
+        /// <summary>null = company-wide procurement; non-null = branch-specific.</summary>
+        public int? BranchId { get; set; }
     }
 
     public class SupplierItemData

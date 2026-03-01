@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Models;
 using TechNova_IT_Solutions.Services.Interfaces;
@@ -8,22 +9,23 @@ namespace TechNova_IT_Solutions.Services
     public class AuthenticationService : IAuthenticationService
     {
         private readonly ApplicationDbContext _context;
-        private static Dictionary<string, LoginAttempt> _loginAttempts = new Dictionary<string, LoginAttempt>();
+        private readonly IMemoryCache _cache;
         private const int MaxFailedAttempts = 3;
         private const int LockoutMinutes = 15;
+        private const string LockoutCachePrefix = "login_lockout_";
 
-        public AuthenticationService(ApplicationDbContext context)
+        public AuthenticationService(ApplicationDbContext context, IMemoryCache cache)
         {
             _context = context;
+            _cache = cache;
         }
 
         public async Task<AuthenticationResult> AuthenticateUserAsync(string email, string password)
         {
             try
             {
-                // Trim whitespace
+                // Trim email only; passwords are case- and space-sensitive
                 email = email?.Trim() ?? string.Empty;
-                password = password?.Trim() ?? string.Empty;
 
                 // Validate inputs
                 if (string.IsNullOrWhiteSpace(email) && string.IsNullOrWhiteSpace(password))
@@ -53,8 +55,9 @@ namespace TechNova_IT_Solutions.Services
                     return new AuthenticationResult { Success = false, ErrorMessage = "Too many failed login attempts. Please try again later." };
                 }
 
-                // Find user
+                // Find user and include Branch for session population
                 var user = await _context.Users
+                    .Include(u => u.Branch)
                     .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
 
                 if (user == null)
@@ -127,51 +130,39 @@ namespace TechNova_IT_Solutions.Services
 
         public bool IsAccountLockedOut(string email)
         {
-            if (_loginAttempts.TryGetValue(email.ToLower(), out var attempt))
+            var key = LockoutCachePrefix + email.ToLower();
+            if (_cache.TryGetValue(key, out LoginAttempt? attempt) && attempt != null)
             {
-                if (attempt.FailedAttempts >= MaxFailedAttempts)
-                {
-                    var lockoutExpiry = attempt.LastAttemptTime.AddMinutes(LockoutMinutes);
-                    if (DateTime.Now < lockoutExpiry)
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        _loginAttempts.Remove(email.ToLower());
-                        return false;
-                    }
-                }
+                return attempt.FailedAttempts >= MaxFailedAttempts;
             }
             return false;
         }
 
         public void ClearFailedAttempts(string email)
         {
-            _loginAttempts.Remove(email.ToLower());
+            _cache.Remove(LockoutCachePrefix + email.ToLower());
         }
 
         private void RecordFailedAttempt(string email)
         {
-            var emailKey = email.ToLower();
-            if (_loginAttempts.TryGetValue(emailKey, out var attempt))
+            var key = LockoutCachePrefix + email.ToLower();
+            var attempt = _cache.GetOrCreate(key, entry =>
             {
-                attempt.FailedAttempts++;
-                attempt.LastAttemptTime = DateTime.Now;
-            }
-            else
-            {
-                _loginAttempts[emailKey] = new LoginAttempt
-                {
-                    FailedAttempts = 1,
-                    LastAttemptTime = DateTime.Now
-                };
-            }
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(LockoutMinutes);
+                return new LoginAttempt { FailedAttempts = 0, LastAttemptTime = DateTime.Now };
+            })!;
+
+            attempt.FailedAttempts++;
+            attempt.LastAttemptTime = DateTime.Now;
+
+            // Refresh cache so it persists in IMemoryCache
+            _cache.Set(key, attempt, TimeSpan.FromMinutes(LockoutMinutes));
         }
 
         private int GetRemainingAttempts(string email)
         {
-            if (_loginAttempts.TryGetValue(email.ToLower(), out var attempt))
+            var key = LockoutCachePrefix + email.ToLower();
+            if (_cache.TryGetValue(key, out LoginAttempt? attempt) && attempt != null)
             {
                 return Math.Max(0, MaxFailedAttempts - attempt.FailedAttempts);
             }

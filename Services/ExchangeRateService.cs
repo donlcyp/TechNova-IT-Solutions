@@ -61,7 +61,7 @@ namespace TechNova_IT_Solutions.Services
                 };
             }
 
-            var requestUrl = $"{_settings.BaseUrl.TrimEnd('/')}/latest/{Uri.EscapeDataString(source)}";
+            var requestUrl = $"{_settings.BaseUrl.TrimEnd('/')}/{_settings.ApiKey}/latest/{Uri.EscapeDataString(source)}";
 
             try
             {
@@ -71,7 +71,13 @@ namespace TechNova_IT_Solutions.Services
                 await using var contentStream = await response.Content.ReadAsStreamAsync();
                 using var document = await JsonDocument.ParseAsync(contentStream);
 
-                if (!document.RootElement.TryGetProperty("rates", out var ratesElement) ||
+                // The authenticated v6.exchangerate-api.com API uses "conversion_rates";
+                // fall back to "rates" for compatibility with the free open.er-api.com endpoint.
+                var ratesPropertyName = document.RootElement.TryGetProperty("conversion_rates", out _)
+                    ? "conversion_rates"
+                    : "rates";
+
+                if (!document.RootElement.TryGetProperty(ratesPropertyName, out var ratesElement) ||
                     ratesElement.ValueKind != JsonValueKind.Object ||
                     !ratesElement.TryGetProperty(target, out var rateElement))
                 {

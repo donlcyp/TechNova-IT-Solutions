@@ -71,7 +71,8 @@
 
         .search-box {
             flex: 1;
-            min-width: 250px;
+            min-width: 200px;
+            max-width: 400px;
             position: relative;
         }
 
@@ -277,10 +278,6 @@
             grid-template-rows: auto auto;
             gap: 0 12px;
             align-items: center;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
         }
 
         .card-icon {
@@ -617,6 +614,13 @@
                 width: 100%;
             }
         }
+
+        /* ── Loading overlay ────────────────── */
+        .loading-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+        .loading-overlay.active { display:flex; }
+        .loading-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,.3); border-top:4px solid #fff; border-radius:50%; animation:spin .8s linear infinite; }
+        .loading-text { color:#fff; font-size:15px; font-weight:600; text-align:center; max-width:280px; line-height:1.4; }
+        @@keyframes spin { to { transform:rotate(360deg); } }
     </style>
 }
 
@@ -683,32 +687,30 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <path d="m21 21-4.35-4.35"></path>
                 </svg>
-                <input type="text" placeholder="Search by policy title..." />
+                <input type="text" id="searchInput" placeholder="Search by policy title..." oninput="filterPolicies()" />
             </div>
             <div class="filter-group">
-                <select>
-                    <option>All Categories</option>
-                    <option>Data Privacy</option>
-                    <option>Cybersecurity</option>
-                    <option>Financial Compliance</option>
-                    <option>HR Policies</option>
-                    <option>Environmental</option>
+                <select id="categoryFilter" onchange="filterPolicies()">
+                    <option value="">All Categories</option>
+                    <option>Supplier Management</option>
+                    <option>Procurement Policy</option>
+                    <option>IT Governance</option>
+                    <option>Contract Management</option>
+                    <option>Quality Assurance</option>
+                    <option>Compliance &amp; Regulatory</option>
+                    <option>Code of Conduct</option>
+                    <option>Risk Management</option>
                 </select>
-                <select>
-                    <option>All Status</option>
+                <select id="statusFilter" onchange="filterPolicies()">
+                    <option value="">All Status</option>
                     <option>Draft</option>
                     <option>Approved</option>
                     <option>Active</option>
+                    <option>Archived</option>
                 </select>
             </div>
             </div>
-            <button onclick="openUploadModal()" class="add-policy-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Add Policy
-            </button>
+
         </div>
 
         <!-- Policies Table -->
@@ -745,13 +747,7 @@
                                         <button class="btn-action" onclick="viewPolicy(@policy.RawId)">View</button>
                                         @if (!policy.IsArchived)
                                         {
-                                            <button class="btn-action" onclick="editPolicy('@policy.PolicyId', '@policy.Title', '@policy.Category', '@policy.Status')">Edit</button>
                                             <button class="btn-action" onclick="openAssignModal('@policy.PolicyId', '@policy.Title')">Assign</button>
-                                            <button class="btn-action" onclick="archivePolicy(@policy.RawId, '@policy.Title')" style="color: #e53e3e;">Archive</button>
-                                        }
-                                        else
-                                        {
-                                            <button class="btn-action" onclick="restorePolicy(@policy.RawId, '@policy.Title')" style="color: #48bb78;">Restore</button>
                                         }
                                     </div>
                                 </td>
@@ -761,56 +757,6 @@
                 </table>
             </div>
         </div>
-        </div>
-    </div>
-
-    <!-- Upload/Edit Policy Modal -->
-    <div class="modal" id="uploadModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="uploadModalTitle">Upload New Policy</h2>
-                <button class="btn-close" onclick="closeUploadModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="policyForm">
-                    <div class="form-group">
-                        <label for="policyTitle">Policy Title</label>
-                        <input type="text" id="policyTitle" placeholder="Enter policy title" required />
-                    </div>
-                    <div class="form-group">
-                        <label for="policyDescription">Description</label>
-                        <textarea id="policyDescription" placeholder="Enter policy description" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="policyCategory">Category</label>
-                        <select id="policyCategory" required>
-                            <option value="">Select category</option>
-                            <option>Data Privacy</option>
-                            <option>Cybersecurity</option>
-                            <option>Financial Compliance</option>
-                            <option>HR Policies</option>
-                            <option>Environmental</option>
-                            <option>Health & Safety</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="policyFile">Upload File</label>
-                        <input type="file" id="policyFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.png,.jpg,.jpeg" />
-                    </div>
-                    <div class="form-group">
-                        <label for="policyStatus">Status</label>
-                        <select id="policyStatus" required>
-                            <option>Draft</option>
-                            <option>Approved</option>
-                            <option>Active</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeUploadModal()">Cancel</button>
-                <button class="btn-primary" onclick="savePolicy()">Save Policy</button>
-            </div>
         </div>
     </div>
 
@@ -865,58 +811,6 @@
         </div>
     </div>
 
-    <!-- Import API Policy Modal -->
-    <div class="modal" id="importApiModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Import Policy From API</h2>
-                <button class="btn-close" onclick="closeImportApiModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="importApiForm">
-                    <div class="form-group">
-                        <label for="importDocumentNumber">Federal Register Document Number</label>
-                        <input type="text" id="importDocumentNumber" placeholder="Example: 2019-25554" />
-                    </div>
-                    <div class="form-group">
-                        <label for="importExternalUrl">or Federal Register URL</label>
-                        <input type="url" id="importExternalUrl" placeholder="https://www.federalregister.gov/d/2019-25554" />
-                    </div>
-                    <div class="form-group">
-                        <label for="importCategory">Category</label>
-                        <select id="importCategory">
-                            <option value="">Use API Category</option>
-                            <option>Data Privacy</option>
-                            <option>Cybersecurity</option>
-                            <option>Financial Compliance</option>
-                            <option>HR Policies</option>
-                            <option>Environmental</option>
-                            <option>Health & Safety</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="importPolicyTitle">Override Policy Title (optional)</label>
-                        <input type="text" id="importPolicyTitle" placeholder="Leave empty to use API title" />
-                    </div>
-                    <div class="form-group">
-                        <label for="importDescription">Override Description (optional)</label>
-                        <textarea id="importDescription" placeholder="Leave empty to use API description"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="importForceCreate" />
-                            Force create if same title exists
-                        </label>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeImportApiModal()">Cancel</button>
-                <button class="btn-primary" onclick="importPolicyFromApi()">Import Policy</button>
-            </div>
-        </div>
-    </div>
-
     <!-- View Policy Modal -->
     <div class="modal" id="viewModal">
         <div class="modal-content" style="max-width: 700px;">
@@ -941,151 +835,19 @@
         </div>
     </div>
 
+<!-- ── Loading Overlay ── -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Processing...</div>
+</div>
+
 @section Scripts {
     <script>
         let currentPolicyId = null;
         let currentPolicyDbId = null;
 
-        function openUploadModal() {
-            document.getElementById('uploadModalTitle').textContent = 'Upload New Policy';
-            document.getElementById('policyForm').reset();
-            currentPolicyId = null;
-            currentPolicyDbId = null;
-            document.getElementById('uploadModal').classList.add('active');
-        }
-
-        function closeUploadModal() {
-            document.getElementById('uploadModal').classList.remove('active');
-            currentPolicyId = null;
-            currentPolicyDbId = null;
-        }
-
-        function openImportApiModal() {
-            document.getElementById('importApiForm').reset();
-            document.getElementById('importApiModal').classList.add('active');
-        }
-
-        function closeImportApiModal() {
-            document.getElementById('importApiModal').classList.remove('active');
-        }
-
-        async function importPolicyFromApi() {
-            const documentNumber = document.getElementById('importDocumentNumber').value.trim();
-            const externalUrl = document.getElementById('importExternalUrl').value.trim();
-            const category = document.getElementById('importCategory').value;
-            const policyTitle = document.getElementById('importPolicyTitle').value.trim();
-            const description = document.getElementById('importDescription').value.trim();
-            const forceCreate = document.getElementById('importForceCreate').checked;
-
-            if (!documentNumber && !externalUrl && !policyTitle) {
-                await window.showAppMessage('Provide a document number, URL, or a policy title.', 'Validation');
-                return;
-            }
-
-            const payload = {
-                sourceApi: 'Federal Register',
-                documentNumber: documentNumber || null,
-                externalUrl: externalUrl || null,
-                policyTitle: policyTitle || null,
-                description: description || null,
-                category: category || null,
-                forceCreate
-            };
-
-            fetch('/api/policy-references/import', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-            .then(async (res) => {
-                const result = await res.json();
-                return { ok: res.ok, status: res.status, result };
-            })
-            .then(async ({ ok, status, result }) => {
-                if (!ok) {
-                    if (status === 409 && result.existingPolicyId) {
-                        const useExisting = await window.showAppConfirm(
-                            (result.message || 'A policy with this title already exists.') + ' Open assign modal for existing policy?'
-                        );
-                        if (useExisting) {
-                            closeImportApiModal();
-                            openAssignModalByDbId(result.existingPolicyId, policyTitle || 'Existing Policy');
-                        }
-                        return;
-                    }
-
-                    await window.showAppMessage(result.message || 'Failed to import policy from API.', 'Error');
-                    return;
-                }
-
-                closeImportApiModal();
-                const assignNow = await window.showAppConfirm(
-                    `Policy "${result.policyTitle}" imported successfully. Assign it to employees/suppliers now?`
-                );
-
-                if (assignNow) {
-                    openAssignModalByDbId(result.policyId, result.policyTitle);
-                    return;
-                }
-
-                location.reload();
-            })
-            .catch(async () => await window.showAppMessage('Error importing policy from API.', 'Error'));
-        }
-
-        function editPolicy(id, title, category, status) {
-            currentPolicyId = id;
-            // Extract numeric DB ID from "POL-001" format
-            currentPolicyDbId = parseInt(id.replace('POL-', ''));
-            document.getElementById('uploadModalTitle').textContent = 'Edit Policy';
-            document.getElementById('policyTitle').value = title;
-            document.getElementById('policyCategory').value = category;
-            document.getElementById('policyStatus').value = status;
-            document.getElementById('uploadModal').classList.add('active');
-        }
-
-        async function savePolicy() {
-            const title = document.getElementById('policyTitle').value.trim();
-            const description = document.getElementById('policyDescription').value.trim();
-            const category = document.getElementById('policyCategory').value;
-            const status = document.getElementById('policyStatus').value;
-            const fileInput = document.getElementById('policyFile');
-
-            if (!title || !category) {
-                await window.showAppMessage('Please fill in all required fields', 'Validation');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('policyTitle', title);
-            formData.append('description', description);
-            formData.append('category', category);
-            formData.append('status', status);
-
-            if (fileInput.files.length > 0) {
-                formData.append('policyFile', fileInput.files[0]);
-            }
-
-            if (currentPolicyDbId) {
-                formData.append('policyId', currentPolicyDbId);
-            }
-
-            fetch('/AdminPolicy/UploadPolicy', {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(async result => {
-                if (result.success) {
-                    await window.showAppMessage(result.message || 'Policy saved successfully', 'Success');
-                    closeUploadModal();
-                    location.reload();
-                } else {
-                    await window.showAppMessage(result.message || 'Failed to save policy', 'Error');
-                }
-            })
-            .catch(async () => await window.showAppMessage('Error saving policy', 'Error'));
-        }
+        function showLoading(msg = 'Processing...') { document.getElementById('loadingText').textContent = msg; document.getElementById('loadingOverlay').classList.add('active'); }
+        function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
 
         function viewPolicy(dbId) {
             document.getElementById('viewModalBody').innerHTML = '<div style="text-align:center;padding:40px;">Loading...</div>';
@@ -1164,38 +926,6 @@
             document.getElementById('viewModal').classList.remove('active');
         }
 
-        async function archivePolicy(dbId, title) {
-            const confirmed = await window.showAppConfirm('Are you sure you want to archive the policy "' + title + '"? It can be restored later.');
-            if (!confirmed) return;
-
-            fetch('/AdminPolicy/ArchivePolicy?policyId=' + dbId, { method: 'POST' })
-            .then(res => res.json())
-            .then(async result => {
-                if (result.success) {
-                    location.reload();
-                } else {
-                    await window.showAppMessage(result.message || 'Failed to archive policy', 'Error');
-                }
-            })
-            .catch(async () => await window.showAppMessage('Error archiving policy', 'Error'));
-        }
-
-        async function restorePolicy(dbId, title) {
-            const confirmed = await window.showAppConfirm('Restore the policy "' + title + '" back to active?');
-            if (!confirmed) return;
-
-            fetch('/AdminPolicy/RestorePolicy?policyId=' + dbId, { method: 'POST' })
-            .then(res => res.json())
-            .then(async result => {
-                if (result.success) {
-                    location.reload();
-                } else {
-                    await window.showAppMessage(result.message || 'Failed to restore policy', 'Error');
-                }
-            })
-            .catch(async () => await window.showAppMessage('Error restoring policy', 'Error'));
-        }
-
         function openAssignModal(id, title) {
             currentPolicyId = id;
             currentPolicyDbId = parseInt(id.replace('POL-', ''));
@@ -1227,6 +957,7 @@
                 return;
             }
 
+            showLoading('Assigning policy & sending notification emails...');
             fetch('/AdminPolicy/AssignPolicy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1238,6 +969,7 @@
             })
             .then(res => res.json())
             .then(async result => {
+                hideLoading();
                 if (result.success) {
                     await window.showAppMessage(result.message || 'Policy assigned successfully!', 'Success');
                     closeAssignModal();
@@ -1246,7 +978,7 @@
                     await window.showAppMessage(result.message || 'Failed to assign policy', 'Error');
                 }
             })
-            .catch(async () => await window.showAppMessage('Error assigning policy', 'Error'));
+            .catch(async () => { hideLoading(); await window.showAppMessage('Error assigning policy', 'Error'); });
         }
 
         function resetAssignmentIndicators() {
@@ -1297,6 +1029,28 @@
                 .catch(() => {
                     document.getElementById('assignStatusNote').textContent = 'Unable to load existing assignment markers.';
                 });
+        }
+
+        function filterPolicies() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const category = document.getElementById('categoryFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            document.querySelectorAll('tbody tr').forEach(row => {
+                const tds = row.querySelectorAll('td');
+                if (tds.length < 4) return;
+
+                const title = tds[1].textContent.toLowerCase();
+                const rowCategory = tds[2].textContent.trim();
+                const statusBadge = tds[3].querySelector('.status-badge');
+                const rowStatus = statusBadge ? statusBadge.textContent.trim() : tds[3].textContent.trim();
+
+                const matchesSearch = !search || title.includes(search);
+                const matchesCategory = !category || rowCategory === category;
+                const matchesStatus = !status || rowStatus === status;
+
+                row.style.display = (matchesSearch && matchesCategory && matchesStatus) ? '' : 'none';
+            });
         }
 
         // Close modals when clicking outside

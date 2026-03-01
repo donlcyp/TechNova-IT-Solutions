@@ -12,6 +12,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
     {
         private readonly ApplicationDbContext _context;
         private readonly IComplianceManagerService _complianceService;
+        private int? _callerBranchId;
 
         public ComplianceReportsModel(ApplicationDbContext context, IComplianceManagerService complianceService)
         {
@@ -88,7 +89,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
             }
 
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            if (userRole != RoleNames.ComplianceManager && userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
+            if (userRole != RoleNames.ComplianceManager && userRole != RoleNames.Admin)
             {
                 if (userRole == RoleNames.Employee)
                 {
@@ -99,6 +100,15 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
             }
 
             GeneratedByRole = userRole ?? RoleNames.ComplianceManager;
+
+            // Extract branch scope
+            if (userRole == RoleNames.ComplianceManager || userRole == RoleNames.Admin)
+            {
+                var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+                if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))
+                    _callerBranchId = bid;
+            }
+
             return null;
         }
 
@@ -120,7 +130,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
 
         private async Task LoadSharedSummaryAsync()
         {
-            var reportsData = await _complianceService.GetComplianceReportsDataAsync();
+            var reportsData = await _complianceService.GetComplianceReportsDataAsync(_callerBranchId);
             TotalPolicies = reportsData.TotalPolicies;
             TotalEmployees = reportsData.TotalEmployees;
         }
@@ -142,12 +152,15 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
             var startDate = DateFrom!.Value.Date;
             var endDate = DateTo!.Value.Date.AddDays(1);
 
+            bool scoped = _callerBranchId.HasValue;
+
             EmployeeRows = await _context.PolicyAssignments
                 .AsNoTracking()
                 .Include(pa => pa.User)
                 .Include(pa => pa.Policy)
                 .Include(pa => pa.ComplianceStatus)
                 .Where(pa => pa.User != null && pa.User.Role == RoleNames.Employee)
+                .Where(pa => !scoped || pa.User!.BranchId == _callerBranchId)
                 .Where(pa => pa.AssignedDate.HasValue
                     && pa.AssignedDate.Value >= startDate
                     && pa.AssignedDate.Value < endDate)
@@ -176,11 +189,13 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
         {
             var startDate = DateFrom!.Value.Date;
             var endDate = DateTo!.Value.Date.AddDays(1);
+            bool scoped = _callerBranchId.HasValue;
 
             SupplierRows = await _context.SupplierPolicies
                 .AsNoTracking()
                 .Include(sp => sp.Supplier)
                 .Include(sp => sp.Policy)
+                .Where(sp => !scoped || sp.Supplier.BranchId == _callerBranchId)
                 .Where(sp => sp.AssignedDate.HasValue
                     && sp.AssignedDate.Value >= startDate
                     && sp.AssignedDate.Value < endDate)

@@ -4,12 +4,12 @@ namespace TechNova_IT_Solutions.Services.Interfaces
 {
     public interface IComplianceManagerService
     {
-        Task<ComplianceDashboardData> GetComplianceDashboardDataAsync();
-        Task<EmployeeComplianceReportData> GetEmployeeComplianceReportAsync();
-        Task<AuditTrailData> GetAuditTrailDataAsync();
-        Task<ComplianceReportsData> GetComplianceReportsDataAsync();
+        Task<ComplianceDashboardData> GetComplianceDashboardDataAsync(int? branchId = null);
+        Task<EmployeeComplianceReportData> GetEmployeeComplianceReportAsync(int? branchId = null);
+        Task<AuditTrailData> GetAuditTrailDataAsync(int? branchId = null);
+        Task<ComplianceReportsData> GetComplianceReportsDataAsync(int? branchId = null);
         Task<List<ExternalPolicyData>> GetExternalPolicyReferencesAsync(string category);
-        Task<PolicyArchivesData> GetPolicyArchivesAsync(string? searchTerm, string? categoryFilter);
+        Task<PolicyArchivesData> GetPolicyArchivesAsync(string? searchTerm, string? categoryFilter, int? branchId = null);
     }
 
     public class ComplianceDashboardData
@@ -41,6 +41,8 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public string AssignedPolicy { get; set; } = string.Empty;
         public string ComplianceStatus { get; set; } = string.Empty;
         public string VerifiedDate { get; set; } = string.Empty;
+        public int TotalPoliciesAssigned { get; set; }
+        public int PoliciesCompliant { get; set; }
     }
 
     public class RecentlyAssignedData
@@ -104,10 +106,14 @@ namespace TechNova_IT_Solutions.Services.Interfaces
     {
         public int LogId { get; set; }
         public string UserName { get; set; } = string.Empty;
+        public string UserEmail { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
         public string ActionPerformed { get; set; } = string.Empty;
+        public string FullDescription { get; set; } = string.Empty;
         public string Module { get; set; } = string.Empty;
         public string DateTime { get; set; } = string.Empty;
+        public string ExactTimestamp { get; set; } = string.Empty;
+        public string IpAddress { get; set; } = "N/A";
     }
 
     public class ComplianceReportsData

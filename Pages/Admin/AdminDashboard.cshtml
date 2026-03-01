@@ -53,9 +53,15 @@
             align-items: start;
         }
 
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        a.card {
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        a.card:hover {
+            border-color: #c7d2fe;
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.08);
         }
 
         .card-icon {
@@ -890,7 +896,7 @@
         <div class="content-wrapper">
         <!-- Top Summary Cards -->
         <div class="summary-cards">
-            <div class="card">
+            <a href="/Admin/UserManagement" class="card">
                     <div class="card-icon blue">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -899,9 +905,9 @@
                     </div>
                 <div class="card-value">@Model.TotalUsers</div>
                 <div class="card-label">Total Users</div>
-            </div>
+            </a>
 
-            <div class="card">
+            <a href="/Admin/Reports" class="card">
                     <div class="card-icon green">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -912,9 +918,9 @@
                     </div>
                 <div class="card-value">@Model.ActivePolicies</div>
                 <div class="card-label">Active Policies</div>
-            </div>
+            </a>
 
-            <div class="card">
+            <a href="/Admin/Reports" class="card">
                     <div class="card-icon red">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
@@ -924,9 +930,9 @@
                     </div>
                 <div class="card-value">@Model.PendingCompliance</div>
                 <div class="card-label">Pending Compliance</div>
-            </div>
+            </a>
 
-            <div class="card">
+            <a href="/Admin/SupplierManagement" class="card">
                     <div class="card-icon purple">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -937,9 +943,9 @@
                     </div>
                 <div class="card-value">@Model.TotalSuppliers</div>
                 <div class="card-label">Total Suppliers</div>
-            </div>
+            </a>
 
-            <div class="card">
+            <a href="/Admin/Procurement" class="card">
                     <div class="card-icon orange">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
@@ -948,9 +954,9 @@
                     </div>
                 <div class="card-value">@Model.RecentProcurements</div>
                 <div class="card-label">Recent Procurements</div>
-            </div>
+            </a>
 
-            <div class="card">
+            <a href="/Admin/AuditLogs" class="card">
                     <div class="card-icon teal">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
@@ -959,7 +965,7 @@
                     </div>
                 <div class="card-value">@Model.AuditLogsToday</div>
                 <div class="card-label">Audit Logs Today</div>
-            </div>
+            </a>
         </div>
 
         <!-- Two Column Section -->

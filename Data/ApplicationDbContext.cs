@@ -22,6 +22,8 @@ namespace TechNova_IT_Solutions.Data
         public DbSet<ProcurementStatusHistory> ProcurementStatusHistory { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<ExternalPolicyImport> ExternalPolicyImports { get; set; }
+        public DbSet<Branch> Branches { get; set; }
+        public DbSet<ComplianceViolation> ComplianceViolations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -119,6 +121,30 @@ namespace TechNova_IT_Solutions.Data
 
             // Add indexes for better query performance
             modelBuilder.Entity<User>()
+                .HasOne(u => u.Branch)
+                .WithMany(b => b.Users)
+                .HasForeignKey(u => u.BranchId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Supplier>()
+                .HasOne(s => s.Branch)
+                .WithMany()
+                .HasForeignKey(s => s.BranchId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Policy>()
+                .HasOne(p => p.Branch)
+                .WithMany(b => b.Policies)
+                .HasForeignKey(p => p.BranchId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Procurement>()
+                .HasOne(p => p.Branch)
+                .WithMany(b => b.Procurements)
+                .HasForeignKey(p => p.BranchId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
@@ -145,22 +171,26 @@ namespace TechNova_IT_Solutions.Data
             modelBuilder.Entity<ExternalPolicyImport>()
                 .HasIndex(e => e.ReviewStatus);
 
-            // ========== SEED DATA ==========
-            
-            // Seed Admin User Only
-            // Password: Admin@123 (hashed with BCrypt)
-            modelBuilder.Entity<User>().HasData(
-                new User
-                {
-                    UserId = 1,
-                    FirstName = "System",
-                    LastName = "Administrator",
-                    Email = "admin@technova.com",
-                    Password = "$2a$11$kzRScf92mLmEjZRJTh3BRub/Li1F07G3TA5vBdZXYQ7tM1C6Lm65i",
-                    Role = "Admin",
-                    Status = "Active"
-                }
-            );
+            // ── ComplianceViolation FKs ──
+            modelBuilder.Entity<ComplianceViolation>()
+                .HasOne(v => v.PolicyAssignment)
+                .WithMany()
+                .HasForeignKey(v => v.PolicyAssignmentId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ComplianceViolation>()
+                .HasOne(v => v.SupplierPolicy)
+                .WithMany()
+                .HasForeignKey(v => v.SupplierPolicyId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<ComplianceViolation>()
+                .HasOne(v => v.RaisedByUser)
+                .WithMany()
+                .HasForeignKey(v => v.RaisedByUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+
         }
     }
 }

@@ -39,7 +39,15 @@ namespace TechNova_IT_Solutions.Models
         [Column("archived_date")]
         public DateTime? ArchivedDate { get; set; }
 
+        /// <summary>
+        /// null = company-wide policy (created by Super Admin).
+        /// non-null = branch-specific policy (created by Branch Admin / Compliance Manager).
+        /// </summary>
+        [Column("branch_id")]
+        public int? BranchId { get; set; }
+
         // Navigation properties
+        public virtual Branch? Branch { get; set; }
         public virtual User? UploadedByUser { get; set; }
         public virtual ICollection<PolicyAssignment> PolicyAssignments { get; set; } = new List<PolicyAssignment>();
         public virtual ICollection<SupplierPolicy> SupplierPolicies { get; set; } = new List<SupplierPolicy>();

@@ -36,6 +36,7 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
                 new[] { RoleNames.SuperAdmin },
                 new Dictionary<string, string>
                 {
+                    [RoleNames.ChiefComplianceManager] = "/ComplianceManager/ComplianceDashboard",
                     [RoleNames.ComplianceManager] = "/ComplianceManager/ComplianceDashboard",
                     [RoleNames.Employee] = "/Employee/Dashboard",
                     [RoleNames.Supplier] = "/Supplier/Dashboard"

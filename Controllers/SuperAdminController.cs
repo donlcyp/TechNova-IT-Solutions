@@ -26,6 +26,12 @@ namespace TechNova_IT_Solutions.Controllers
                 return BadRequest(new { success = false, message = "Invalid user data" });
             }
 
+            // SuperAdmin accounts can only be created via the bootstrap mechanism, not manually
+            if (string.Equals(userData.Role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { success = false, message = "Super Admin accounts cannot be created manually. Use the bootstrap configuration instead." });
+            }
+
             var result = await _userService.CreateUserAsync(userData);
             if (result.Success)
             {
@@ -263,5 +269,67 @@ namespace TechNova_IT_Solutions.Controllers
                 emailError
             });
         }
+
+        [HttpPost]
+        public async Task<IActionResult> SetUserPassword(int userId, [FromBody] SetPasswordRequest request)
+        {
+            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
+
+            if (string.IsNullOrWhiteSpace(request?.NewPassword) || request.NewPassword.Length < 8)
+            {
+                return BadRequest(new { success = false, message = "Password must be at least 8 characters." });
+            }
+
+            var user = await _userService.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return NotFound(new { success = false, message = "User not found" });
+            }
+            if (string.Equals(user.Role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(new { success = false, message = "Super Admin accounts are protected." });
+            }
+
+            var result = await _userService.SetPasswordAsync(int.Parse(user.UserId), request.NewPassword);
+            if (!result)
+            {
+                return BadRequest(new { success = false, message = "Failed to set password." });
+            }
+
+            var emailAttempted = false;
+            var emailSent = false;
+            string? emailError = null;
+
+            if (!string.IsNullOrWhiteSpace(user.Email))
+            {
+                emailAttempted = true;
+                var subject = "TechNova Password Changed";
+                var body = $@"
+                    <h2>Password Changed</h2>
+                    <p>Hello {user.FirstName},</p>
+                    <p>Your account password has been changed by a Super Admin.</p>
+                    <p>If you did not request this change, contact your system administrator immediately.</p>";
+
+                var emailResult = await _emailService.SendEmailAsync(user.Email, subject, body);
+                emailSent = emailResult.Success;
+                emailError = emailResult.ErrorMessage;
+            }
+
+            var message = "Password updated successfully.";
+            if (emailAttempted)
+            {
+                message = emailSent
+                    ? $"{message} Email notification sent."
+                    : $"{message} Email failed: {emailError ?? "Unknown error"}";
+            }
+
+            return Ok(new { success = true, message });
+        }
     }
+}
+
+public class SetPasswordRequest
+{
+    public string NewPassword { get; set; } = string.Empty;
 }

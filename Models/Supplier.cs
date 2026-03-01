@@ -49,7 +49,15 @@ namespace TechNova_IT_Solutions.Models
         [Column("terminated_by_user_id")]
         public int? TerminatedByUserId { get; set; }
 
+        /// <summary>
+        /// null = enterprise-wide (global) supplier visible to all branches.
+        /// non-null = belongs to a specific branch (Branch Admin created it).
+        /// </summary>
+        [Column("branch_id")]
+        public int? BranchId { get; set; }
+
         // Navigation properties
+        public virtual Branch? Branch { get; set; }
         public virtual ICollection<SupplierPolicy> SupplierPolicies { get; set; } = new List<SupplierPolicy>();
         public virtual ICollection<Procurement> Procurements { get; set; } = new List<Procurement>();
         public virtual ICollection<SupplierItem> SupplierItems { get; set; } = new List<SupplierItem>();

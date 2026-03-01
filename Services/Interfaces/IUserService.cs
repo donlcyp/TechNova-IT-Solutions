@@ -10,6 +10,8 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         Task<bool> DeactivateUserAsync(int userId);
         Task<bool> ReactivateUserAsync(int userId);
         Task<PasswordResetResult> ResetPasswordByRoleAsync(int userId);
+        Task<bool> SetPasswordAsync(int userId, string newPassword);
+        Task<bool> ClearMustChangePasswordAsync(int userId);
     }
 
     public class UserCreationResult
@@ -39,6 +41,8 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public string Role { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+        public int? BranchId { get; set; }
+        public string? BranchName { get; set; }
         public string FullName => $"{FirstName} {LastName}";
     }
 }

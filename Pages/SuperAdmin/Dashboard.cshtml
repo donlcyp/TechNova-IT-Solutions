@@ -128,28 +128,58 @@
             <p>Manage system administrators, reset or lock accounts, enforce settings, and review platform-wide reports.</p>
         </div>
 
+        @* System-wide live stats *@
+        <div class="cards" style="margin-bottom:18px;">
+            <div class="card" style="border-left:4px solid #3b82f6;">
+                <h3 style="color:#3b82f6;">@Model.TotalBranches</h3>
+                <p>Total Branches</p>
+            </div>
+            <div class="card" style="border-left:4px solid #6366f1;">
+                <h3 style="color:#6366f1;">@Model.TotalUsers</h3>
+                <p>Total Users</p>
+            </div>
+            <div class="card" style="border-left:4px solid #0ea5e9;">
+                <h3 style="color:#0ea5e9;">@Model.TotalAdmins</h3>
+                <p>Branch Admins</p>
+            </div>
+            <div class="card" style="border-left:4px solid #10b981;">
+                <h3 style="color:#10b981;">@Model.TotalEmployees</h3>
+                <p>Employees</p>
+            </div>
+            <div class="card" style="border-left:4px solid #f59e0b;">
+                <h3 style="color:#f59e0b;">@Model.TotalSuppliers</h3>
+                <p>Suppliers</p>
+            </div>
+            <div class="card" style="border-left:4px solid #8b5cf6;">
+                <h3 style="color:#8b5cf6;">@Model.ActivePolicies <span style="font-size:12px;color:#94a3b8;">/ @Model.TotalPolicies</span></h3>
+                <p>Active / Total Policies</p>
+            </div>
+            <div class="card" style="border-left:4px solid #ec4899;">
+                <h3 style="color:#ec4899;">@Model.TotalProcurements</h3>
+                <p>Total Procurements</p>
+            </div>
+            <div class="card" style="border-left:4px solid #14b8a6;">
+                <h3 style="color:#14b8a6;">@Model.SystemComplianceRate%</h3>
+                <p>System Compliance Rate</p>
+            </div>
+        </div>
+
         <div class="reset-content">
             <h3>Reset / Deactivate Account Contents</h3>
             <ul>
                 <li>Deactivate account: immediately blocks user login while preserving audit and assignment history.</li>
                 <li>Reactivate account: restores access with the same role and profile details.</li>
                 <li>Password reset flow: edit user record and set a new secure password for account recovery.</li>
-                <li>Scope: applies to Admin, SuperAdmin, Employee, ComplianceManager, and Supplier accounts.</li>
-                <li>Access path: use <strong>Manage Admin Accounts</strong> for admin roles and <strong>User Management</strong> for all roles.</li>
+                <li>Scope: applies to Admin, SuperAdmin, Employee, Chief Compliance Manager, Compliance Manager, and Supplier accounts.</li>
+                <li>Access path: use <strong>Manage Global Accounts</strong> for admin roles and <strong>User Management</strong> for all roles.</li>
             </ul>
         </div>
 
         <div class="cards">
             <div class="card">
-                <h3>Manage System Admin Accounts</h3>
-                <p>Create, update, deactivate, and reactivate Admin and Super Admin users.</p>
-                <a href="/SuperAdmin/ManageAdminAccounts">Open Manage Admin Accounts</a>
-            </div>
-
-            <div class="card">
-                <h3>Reset / Lock Any Accounts</h3>
-                <p>Use account status controls in User Management to lock, disable, or restore user access.</p>
-                <a href="/SuperAdmin/ResetDeactivateAccounts">Open Account Controls</a>
+                <h3>Manage Global Accounts</h3>
+                <p>Create, update, deactivate, and reactivate System Admin and Global Compliance users.</p>
+                <a href="/SuperAdmin/ManageAdminAccounts">Open Manage Global Accounts</a>
             </div>
 
             <div class="card">
@@ -166,11 +196,12 @@
 
             <div class="card">
                 <h3>Override Permissions</h3>
-                <p>Super Admin access is enabled across Admin, Compliance Manager, and Employee modules.</p>
+                <p>Super Admin access is enabled across Admin, Compliance Manager, Employee, and Supplier modules.</p>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <a href="/Admin/AdminDashboard">Admin Module</a>
                     <a href="/ComplianceManager/ComplianceDashboard">Compliance Module</a>
                     <a href="/Employee/Dashboard">Employee Module</a>
+                    <a href="/Supplier/Dashboard">Supplier Module</a>
                 </div>
             </div>
         </div>

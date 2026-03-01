@@ -23,10 +23,34 @@ namespace TechNova_IT_Solutions.Controllers
             return userRole == RoleNames.Admin || userRole == RoleNames.SuperAdmin;
         }
 
+        private bool IsSuperAdmin()
+        {
+            return HttpContext.Session.GetString(SessionKeys.UserRole) == RoleNames.SuperAdmin;
+        }
+
         private int? GetCurrentUserId()
         {
             var s = HttpContext.Session.GetString(SessionKeys.UserId);
             return int.TryParse(s, out var id) ? id : null;
+        }
+
+        private int? GetCallerBranchId()
+        {
+            var s = HttpContext.Session.GetString(SessionKeys.BranchId);
+            return int.TryParse(s, out var id) ? id : null;
+        }
+
+        /// <summary>
+        /// Returns true if the caller may modify this supplier.
+        /// SuperAdmin: always allowed.
+        /// Branch Admin: allowed only for suppliers they own (matching BranchId).
+        /// Global suppliers (null BranchId) can only be modified by SuperAdmin.
+        /// </summary>
+        private bool CanModifySupplier(int? supplierBranchId)
+        {
+            if (IsSuperAdmin()) return true;
+            var callerBranchId = GetCallerBranchId();
+            return callerBranchId.HasValue && supplierBranchId == callerBranchId;
         }
 
         [HttpPost]
@@ -34,6 +58,16 @@ namespace TechNova_IT_Solutions.Controllers
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
             if (supplierData == null) return BadRequest(new { success = false, message = "Invalid supplier data" });
+
+            // Branch Admins automatically stamp their branch; SuperAdmin can supply an explicit BranchId or null (global)
+            if (!IsSuperAdmin())
+            {
+                var callerBranchId = GetCallerBranchId();
+                if (!callerBranchId.HasValue)
+                    return BadRequest(new { success = false, message = "You have no branch assigned. A Super Admin must assign you to a branch first." });
+                supplierData.BranchId = callerBranchId;
+            }
+
             var normalizedEmail = (supplierData.Email ?? string.Empty).Trim().ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(normalizedEmail))
             {
@@ -69,11 +103,17 @@ namespace TechNova_IT_Solutions.Controllers
             if (supplierData == null) return BadRequest(new { success = false, message = "Invalid supplier data" });
             if (supplierData.SupplierId <= 0) return BadRequest(new { success = false, message = "Invalid supplier id." });
 
-            var currentStatus = await _context.Suppliers
+            var dbSupplier = await _context.Suppliers
                 .Where(s => s.SupplierId == supplierData.SupplierId)
-                .Select(s => s.Status)
+                .Select(s => new { s.Status, s.BranchId, s.Email })
                 .FirstOrDefaultAsync();
-            if (string.Equals(currentStatus, "Terminated", StringComparison.OrdinalIgnoreCase))
+
+            if (dbSupplier == null) return NotFound(new { success = false, message = "Supplier not found." });
+
+            if (!CanModifySupplier(dbSupplier.BranchId))
+                return Forbid();
+
+            if (string.Equals(dbSupplier.Status, "Terminated", StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest(new { success = false, message = "Terminated suppliers cannot be edited. Use Restore first." });
             }
@@ -91,12 +131,7 @@ namespace TechNova_IT_Solutions.Controllers
                 return BadRequest(new { success = false, message = "Another supplier account already uses this email." });
             }
 
-            var currentSupplierEmail = await _context.Suppliers
-                .Where(s => s.SupplierId == supplierData.SupplierId)
-                .Select(s => s.Email)
-                .FirstOrDefaultAsync();
-            var currentSupplierEmailNormalized = (currentSupplierEmail ?? string.Empty).Trim().ToLowerInvariant();
-
+            var currentSupplierEmailNormalized = (dbSupplier.Email ?? string.Empty).Trim().ToLowerInvariant();
             var userEmailExists = await _context.Users
                 .AnyAsync(u => u.Email != null &&
                                u.Email.ToLower() == normalizedEmail &&
@@ -105,6 +140,9 @@ namespace TechNova_IT_Solutions.Controllers
             {
                 return BadRequest(new { success = false, message = "A user account with this email already exists." });
             }
+
+            // Preserve the original BranchId — it is set at creation time and not changed
+            supplierData.BranchId = dbSupplier.BranchId;
 
             var result = await _adminService.UpdateSupplierAsync(supplierData);
             if (result.Success)
@@ -120,6 +158,14 @@ namespace TechNova_IT_Solutions.Controllers
         public async Task<IActionResult> DeleteSupplier(int supplierId)
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var supplierBranchId = await _context.Suppliers
+                .Where(s => s.SupplierId == supplierId)
+                .Select(s => (int?)s.BranchId)
+                .FirstOrDefaultAsync();
+
+            if (!CanModifySupplier(supplierBranchId))
+                return Forbid();
 
             var result = await _adminService.DeleteSupplierAsync(supplierId);
             if (result)
@@ -144,6 +190,14 @@ namespace TechNova_IT_Solutions.Controllers
                 return BadRequest(new { success = false, message = "Termination reason is required." });
             }
 
+            var supplierBranchId = await _context.Suppliers
+                .Where(s => s.SupplierId == terminationData.SupplierId)
+                .Select(s => (int?)s.BranchId)
+                .FirstOrDefaultAsync();
+
+            if (!CanModifySupplier(supplierBranchId))
+                return Forbid();
+
             var result = await _adminService.TerminateSupplierAsync(terminationData, GetCurrentUserId());
             if (!result)
             {
@@ -163,6 +217,14 @@ namespace TechNova_IT_Solutions.Controllers
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
             if (supplierId <= 0) return BadRequest(new { success = false, message = "Invalid supplier id." });
+
+            var supplierBranchId = await _context.Suppliers
+                .Where(s => s.SupplierId == supplierId)
+                .Select(s => (int?)s.BranchId)
+                .FirstOrDefaultAsync();
+
+            if (!CanModifySupplier(supplierBranchId))
+                return Forbid();
 
             var result = await _adminService.RestoreSupplierAsync(supplierId, GetCurrentUserId());
             if (!result)

@@ -39,36 +39,59 @@ namespace TechNova_IT_Solutions.Pages
             if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
                 if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
-                if (userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 return RedirectToPage("/Account/Login");
             }
 
             UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? "admin@technova.com";
             UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
 
-            // Calculate summary statistics
-            TotalPoliciesAssigned = await _context.PolicyAssignments.CountAsync();
-            
+            // Branch scoping: Branch Admins only see their branch data; SuperAdmin sees all
+            int? callerBranchId = null;
+            if (userRole == RoleNames.Admin)
+            {
+                var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+                if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))
+                {
+                    callerBranchId = bid;
+                }
+            }
+
+            bool scoped = callerBranchId.HasValue;
+
+            // Calculate summary statistics (branch-scoped)
+            TotalPoliciesAssigned = await _context.PolicyAssignments
+                .Include(pa => pa.User)
+                .Where(pa => !scoped || (pa.User != null && pa.User.BranchId == callerBranchId))
+                .CountAsync();
+
             EmployeesCompliant = await _context.ComplianceStatuses
+                .Include(cs => cs.PolicyAssignment!.User)
                 .Where(cs => cs.Status == "Acknowledged")
+                .Where(cs => !scoped || (cs.PolicyAssignment != null && cs.PolicyAssignment.User != null && cs.PolicyAssignment.User.BranchId == callerBranchId))
                 .CountAsync();
-            
+
             EmployeesNotCompliant = await _context.ComplianceStatuses
+                .Include(cs => cs.PolicyAssignment!.User)
                 .Where(cs => cs.Status == "Pending" || cs.Status == "Overdue")
+                .Where(cs => !scoped || (cs.PolicyAssignment != null && cs.PolicyAssignment.User != null && cs.PolicyAssignment.User.BranchId == callerBranchId))
                 .CountAsync();
-            
+
             SuppliersCompliant = await _context.SupplierPolicies
+                .Include(sp => sp.Supplier)
                 .Where(sp => sp.ComplianceStatus == "Compliant")
+                .Where(sp => !scoped || sp.Supplier == null || sp.Supplier.BranchId == callerBranchId || sp.Supplier.BranchId == null)
                 .Select(sp => sp.SupplierId)
                 .Distinct()
                 .CountAsync();
 
-            // Fetch employee compliance data
+            // Fetch employee compliance data (branch-scoped)
             var employeeData = await _context.PolicyAssignments
                 .Include(pa => pa.User)
                 .Include(pa => pa.Policy)
                 .Include(pa => pa.ComplianceStatus)
                 .Where(pa => pa.User != null && pa.User.Role == RoleNames.Employee)
+                .Where(pa => !scoped || (pa.User != null && pa.User.BranchId == callerBranchId))
                 .ToListAsync();
 
             EmployeeCompliance = employeeData
@@ -85,10 +108,11 @@ namespace TechNova_IT_Solutions.Pages
                 .OrderBy(x => x.Name)
                 .ToList();
 
-            // Fetch supplier compliance data
+            // Fetch supplier compliance data (branch-scoped)
             SupplierCompliance = await _context.SupplierPolicies
                 .Include(sp => sp.Supplier)
                 .Include(sp => sp.Policy)
+                .Where(sp => !scoped || sp.Supplier == null || sp.Supplier.BranchId == callerBranchId || sp.Supplier.BranchId == null)
                 .OrderBy(sp => sp.Supplier.SupplierName)
                 .Select(sp => new SupplierComplianceItem
                 {

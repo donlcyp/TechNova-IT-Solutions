@@ -75,9 +75,26 @@ namespace TechNova_IT_Solutions.Pages.Supplier
                 HttpContext.Session.SetString(SessionKeys.UserName, $"{result.User.FirstName} {result.User.LastName}");
                 HttpContext.Session.SetString(SessionKeys.UserRole, result.User.Role);
 
+                if (result.User.BranchId.HasValue)
+                {
+                    HttpContext.Session.SetString(SessionKeys.BranchId, result.User.BranchId.Value.ToString());
+                    HttpContext.Session.SetString(SessionKeys.BranchName, result.User.Branch?.BranchName ?? string.Empty);
+                }
+                else
+                {
+                    HttpContext.Session.Remove(SessionKeys.BranchId);
+                    HttpContext.Session.Remove(SessionKeys.BranchName);
+                }
+
                 if (RememberMe)
                 {
                     HttpContext.Session.SetString(SessionKeys.RememberMe, "true");
+                }
+
+                // Flag if the user must change their default password
+                if (result.User.MustChangePassword)
+                {
+                    HttpContext.Session.SetString(SessionKeys.MustChangePassword, "true");
                 }
 
                 return RedirectToPage("/Supplier/Dashboard");

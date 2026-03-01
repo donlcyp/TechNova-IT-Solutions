@@ -5,6 +5,7 @@
     var showReturnToSuperAdmin =
         sessionRole.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) &&
         !Context.Request.Path.StartsWithSegments("/SuperAdmin", StringComparison.OrdinalIgnoreCase);
+    var branchName = Context.Session.GetString("BranchName");
 }
 
 <div class="top-bar">
@@ -20,6 +21,13 @@
         <div class="account-info">
             <h4>@Context.Session.GetString("UserName")</h4>
             <p>@(Context.Session.GetString("UserRole") == "SuperAdmin" ? "Super Administrator" : "Administrator")</p>
+            @if (!string.IsNullOrEmpty(branchName))
+            {
+                <div class="branch-indicator">
+                    <i class="fas fa-location-dot"></i>
+                    <span>@branchName</span>
+                </div>
+            }
         </div>
         <div class="account-avatar">
             @{
@@ -102,10 +110,27 @@
         border-color: #93c5fd;
     }
 
+    .branch-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: #6366f1;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        margin-top: 1px;
+    }
+
+    .branch-indicator i {
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
     .account-info {
         text-align: right;
         display: flex;
         flex-direction: column;
+        align-items: flex-end;
         gap: 2px;
     }
 
@@ -158,6 +183,12 @@
 
         .account-info {
             display: none;
+        }
+
+        .branch-indicator {
+            font-size: 11px;
+            height: 30px;
+            padding: 0 8px;
         }
 
         .return-super-admin-btn {

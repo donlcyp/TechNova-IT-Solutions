@@ -36,7 +36,7 @@ namespace TechNova_IT_Solutions.Pages.Employee
             if (userRole != RoleNames.Employee && userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
                 // Redirect to appropriate dashboard based on role
-                if (userRole == RoleNames.ComplianceManager)
+                if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager)
                 {
                     return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 }

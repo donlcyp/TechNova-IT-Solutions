@@ -281,14 +281,8 @@ D:\C#\repos\TechNova IT Solutions\artifacts\verify-build\runtimes\win-arm64\nati
 D:\C#\repos\TechNova IT Solutions\artifacts\verify-build\runtimes\win-x64\native\e_sqlite3.dll
 D:\C#\repos\TechNova IT Solutions\artifacts\verify-build\runtimes\win-x86\native\e_sqlite3.dll
 D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\appsettings.json
-D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\artifacts\verify-build\appsettings.json
-D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\artifacts\verify-build\TechNova IT Solutions.deps.json
-D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\artifacts\verify-build\TechNova IT Solutions.runtimeconfig.json
-D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\artifacts\verify-build\TechNova IT Solutions.staticwebassets.endpoints.json
-D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\artifacts\verify-build\TechNova IT Solutions.staticwebassets.runtime.json
 D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\TechNova IT Solutions.staticwebassets.runtime.json
 D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\TechNova IT Solutions.staticwebassets.endpoints.json
-D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\TechNova IT Solutions.exe
 D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\TechNova IT Solutions.deps.json
 D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\TechNova IT Solutions.runtimeconfig.json
 D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\TechNova IT Solutions.dll
@@ -722,3 +716,4 @@ D:\C#\repos\TechNova IT Solutions\obj\Debug\net10.0\refint\TechNova IT Solutions
 D:\C#\repos\TechNova IT Solutions\obj\Debug\net10.0\TechNova IT Solutions.pdb
 D:\C#\repos\TechNova IT Solutions\obj\Debug\net10.0\TechNova IT Solutions.genruntimeconfig.cache
 D:\C#\repos\TechNova IT Solutions\obj\Debug\net10.0\ref\TechNova IT Solutions.dll
+D:\C#\repos\TechNova IT Solutions\bin\Debug\net10.0\TechNova IT Solutions.exe

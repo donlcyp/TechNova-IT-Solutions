@@ -22,9 +22,20 @@ namespace TechNova_IT_Solutions.Controllers
             return userRole == RoleNames.Admin || userRole == RoleNames.SuperAdmin;
         }
 
+        private bool IsSuperAdmin()
+        {
+            return HttpContext.Session.GetString(SessionKeys.UserRole) == RoleNames.SuperAdmin;
+        }
+
         private int? GetCurrentUserId()
         {
             var s = HttpContext.Session.GetString(SessionKeys.UserId);
+            return int.TryParse(s, out var id) ? id : null;
+        }
+
+        private int? GetCallerBranchId()
+        {
+            var s = HttpContext.Session.GetString(SessionKeys.BranchId);
             return int.TryParse(s, out var id) ? id : null;
         }
 
@@ -58,11 +69,37 @@ namespace TechNova_IT_Solutions.Controllers
             return Ok(new { success = true, policies });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetSupplierCompliantPoliciesByItemCategory(int supplierId, int supplierItemId)
+        {
+            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var policies = await _context.Policies
+                .Where(p => !p.IsArchived)
+                .Select(p => new
+                {
+                    Id = p.PolicyId,
+                    Title = p.PolicyTitle,
+                    Category = p.Category
+                })
+                .OrderBy(p => p.Title)
+                .ToListAsync();
+
+            return Ok(new { success = true, policies });
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateProcurement([FromBody] ProcurementData procurementData)
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
             if (procurementData == null) return BadRequest(new { success = false, message = "Invalid procurement data" });
+
+            // Branch Admins automatically stamp their branch; SuperAdmin keeps null (company-wide)
+            if (!IsSuperAdmin())
+            {
+                var callerBranchId = GetCallerBranchId();
+                procurementData.BranchId = callerBranchId;
+            }
 
             if (procurementData.SupplierId <= 0)
                 return BadRequest(new { success = false, message = "Please select a supplier." });

@@ -18,71 +18,19 @@ namespace TechNova_IT_Solutions.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Dashboard()
+        private int? GetCallerBranchId()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
-            if (denied != null) return denied;
-
-            var data = await _complianceService.GetComplianceDashboardDataAsync();
-            return View(data);
-        }
-
-        public async Task<IActionResult> EmployeeCompliance()
-        {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
-            if (denied != null) return denied;
-
-            var data = await _complianceService.GetEmployeeComplianceReportAsync();
-            return View(data);
-        }
-
-        public async Task<IActionResult> AuditTrail()
-        {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
-            if (denied != null) return denied;
-
-            var data = await _complianceService.GetAuditTrailDataAsync();
-            return View(data);
-        }
-
-        public async Task<IActionResult> ComplianceReports()
-        {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
-            if (denied != null) return denied;
-
-            var data = await _complianceService.GetComplianceReportsDataAsync();
-            return View(data);
-        }
-
-        public IActionResult PolicyReview()
-        {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
-            if (denied != null) return denied;
-
-            return View();
-        }
-
-        public IActionResult SupplierCompliance()
-        {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
-            if (denied != null) return denied;
-
-            return View();
-        }
-
-        public IActionResult Settings()
-        {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
-            if (denied != null) return denied;
-
-            return View();
+            var s = HttpContext.Session.GetString(SessionKeys.BranchId);
+            return int.TryParse(s, out var id) ? id : null;
         }
 
         public async Task<IActionResult> ExternalPolicyReferences(string category = "all")
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            // External Policy API is Chief-level only — Branch CM cannot access
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ChiefComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole) ?? string.Empty;
+            var branchId = GetCallerBranchId();
 
             // Fetch external policy references by category
             var externalPolicies = await _complianceService.GetExternalPolicyReferencesAsync(category);
@@ -112,14 +60,16 @@ namespace TechNova_IT_Solutions.Controllers
 
             var employees = await _context.Users
                 .AsNoTracking()
-                .Where(u => u.Role == RoleNames.Employee && u.Status == "Active")
+                .Where(u => u.Role == RoleNames.Employee && u.Status == "Active"
+                    && (!branchId.HasValue || u.BranchId == branchId))
                 .OrderBy(u => u.FirstName)
                 .Select(u => new { u.UserId, Name = (u.FirstName + " " + u.LastName).Trim() })
                 .ToListAsync();
 
             var suppliers = await _context.Suppliers
                 .AsNoTracking()
-                .Where(s => s.Status == "Active")
+                .Where(s => s.Status == "Active"
+                    && (!branchId.HasValue || s.BranchId == branchId || s.BranchId == null))
                 .OrderBy(s => s.SupplierName)
                 .Select(s => new { s.SupplierId, Name = s.SupplierName ?? string.Empty })
                 .ToListAsync();
@@ -138,7 +88,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> GetExternalPolicyJson(string policyId)
         {
-            var unauthorized = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.ComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            var unauthorized = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.ChiefComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
             if (unauthorized != null) return unauthorized;
 
             // API endpoint for AJAX calls to get specific policy details

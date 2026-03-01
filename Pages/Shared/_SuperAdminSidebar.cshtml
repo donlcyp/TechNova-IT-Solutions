@@ -37,21 +37,12 @@
             </svg>
             <span class="nav-text">Dashboard</span>
         </a>
-        <a href="/SuperAdmin/ManageAdminAccounts" class="nav-item @(Model == "ManageAdminAccounts" ? "active" : "")" title="Manage Admin Accounts">
+        <a href="/SuperAdmin/ManageAdminAccounts" class="nav-item @(Model == "ManageAdminAccounts" ? "active" : "")" title="Manage Global Accounts">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                 <circle cx="12" cy="7" r="4"></circle>
             </svg>
-            <span class="nav-text">Manage Admin Accounts</span>
-        </a>
-        <a href="/SuperAdmin/ResetDeactivateAccounts" class="nav-item @(Model == "ResetDeactivateAccounts" ? "active" : "")" title="Reset or Deactivate Accounts">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                <circle cx="9" cy="7" r="4"></circle>
-                <line x1="17" y1="8" x2="22" y2="13"></line>
-                <line x1="22" y1="8" x2="17" y2="13"></line>
-            </svg>
-            <span class="nav-text">Reset / Deactivate Accounts</span>
+            <span class="nav-text">Manage Global Accounts</span>
         </a>
         <a href="/SuperAdmin/SystemSettingsPolicies" class="nav-item @(Model == "SystemSettingsPolicies" ? "active" : "")" title="System Settings and Policies">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -59,6 +50,13 @@
                 <polyline points="14 2 14 8 20 8"></polyline>
             </svg>
             <span class="nav-text">System Settings & Policies</span>
+        </a>
+        <a href="/SuperAdmin/ManageBranches" class="nav-item @(Model == "ManageBranches" ? "active" : "")" title="Manage Branches">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+                <path d="M9 21V12h6v9"/>
+            </svg>
+            <span class="nav-text">Manage Branches</span>
         </a>
         <a href="/SuperAdmin/AllReports" class="nav-item @(Model == "AllReports" ? "active" : "")" title="All Reports">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

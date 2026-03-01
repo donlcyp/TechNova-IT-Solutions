@@ -33,13 +33,20 @@ namespace TechNova_IT_Solutions.Models
         [Required]
         [StringLength(50)]
         [Column("role")]
-        public string Role { get; set; } = string.Empty; // SuperAdmin, Admin, ComplianceManager, Employee, Supplier
+        public string Role { get; set; } = string.Empty; // SuperAdmin, Admin, ChiefComplianceManager, ComplianceManager, Employee, Supplier
 
         [StringLength(20)]
         [Column("status")]
         public string Status { get; set; } = "Active"; // Active, Inactive
 
+        [Column("mustChangePassword")]
+        public bool MustChangePassword { get; set; } = false;
+
+        [Column("branchId")]
+        public int? BranchId { get; set; }
+
         // Navigation properties
+        public virtual Branch? Branch { get; set; }
         public virtual ICollection<Policy> UploadedPolicies { get; set; } = new List<Policy>();
         public virtual ICollection<PolicyAssignment> PolicyAssignments { get; set; } = new List<PolicyAssignment>();
         public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();

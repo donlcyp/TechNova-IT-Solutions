@@ -1,0 +1,37 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using TechNova_IT_Solutions.Infrastructure;
+using TechNova_IT_Solutions.Services.Interfaces;
+
+namespace TechNova_IT_Solutions.Pages.SuperAdmin
+{
+    public class ManageBranchesModel : PageModel
+    {
+        private readonly IBranchService _branchService;
+
+        public ManageBranchesModel(IBranchService branchService)
+        {
+            _branchService = branchService;
+        }
+
+        public List<BranchData> Branches { get; set; } = new();
+
+        public async Task<IActionResult> OnGet()
+        {
+            var denied = RoleAccess.RequireRoleOrRedirect(
+                this,
+                new[] { RoleNames.SuperAdmin },
+                new Dictionary<string, string>
+                {
+                    [RoleNames.ChiefComplianceManager] = "/ComplianceManager/ComplianceDashboard",
+                    [RoleNames.ComplianceManager] = "/ComplianceManager/ComplianceDashboard",
+                    [RoleNames.Employee]           = "/Employee/Dashboard",
+                    [RoleNames.Supplier]           = "/Supplier/Dashboard"
+                });
+            if (denied != null) return denied;
+
+            Branches = await _branchService.GetAllBranchesAsync();
+            return Page();
+        }
+    }
+}

@@ -45,15 +45,20 @@ namespace TechNova_IT_Solutions.Pages
             if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
                 if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
-                if (userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 return RedirectToPage("/Account/Login");
             }
 
             UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? "admin@technova.com";
             UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
 
-            // Get dashboard data from service
-            var dashboardData = await _adminService.GetDashboardDataAsync();
+            // Get dashboard data from service — branch-scoped for Branch Admins
+            int? callerBranchId = null;
+            var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+            if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var parsedBranchId))
+                callerBranchId = parsedBranchId;
+
+            var dashboardData = await _adminService.GetDashboardDataAsync(callerBranchId);
             
             // Map data to PageModel properties
             TotalUsers = dashboardData.TotalUsers;

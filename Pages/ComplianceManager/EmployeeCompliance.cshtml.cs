@@ -29,7 +29,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
 
             // Check user role - only ComplianceManager and Admin can access
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            if (userRole != RoleNames.ComplianceManager && userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
+            if (userRole != RoleNames.ComplianceManager && userRole != RoleNames.Admin)
             {
                 // Redirect to appropriate dashboard based on role
                 if (userRole == RoleNames.Employee)
@@ -39,8 +39,17 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
                 return RedirectToPage("/Account/Login");
             }
 
+            // Extract branch scope
+            int? callerBranchId = null;
+            if (userRole == RoleNames.ComplianceManager || userRole == RoleNames.Admin)
+            {
+                var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+                if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))
+                    callerBranchId = bid;
+            }
+
             // Get employee compliance data from service
-            var reportData = await _complianceService.GetEmployeeComplianceReportAsync();
+            var reportData = await _complianceService.GetEmployeeComplianceReportAsync(callerBranchId);
             
             TotalEmployeesAssigned = reportData.TotalEmployeesAssigned;
             EmployeesCompliant = reportData.EmployeesCompliant;

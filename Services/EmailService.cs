@@ -37,7 +37,7 @@ namespace TechNova_IT_Solutions.Services
             var fromEmail = (emailSettings["FromEmail"] ?? username)?.Trim();
             var useSsl = bool.TryParse(emailSettings["UseSsl"], out var parsedUseSsl) && parsedUseSsl;
 
-            if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(fromEmail))
             {
                 _logger.LogWarning("Email settings are incomplete. Skipping email send to {Email}.", to);
                 return new EmailSendResult
@@ -48,7 +48,7 @@ namespace TechNova_IT_Solutions.Services
             }
 
             var email = new MimeMessage();
-            email.From.Add(MailboxAddress.Parse(fromEmail));
+            email.From.Add(MailboxAddress.Parse(fromEmail!));
             email.To.Add(MailboxAddress.Parse(to));
             email.Subject = subject;
             var htmlBody = BuildBrandedHtmlBody(subject, body, fromEmail);

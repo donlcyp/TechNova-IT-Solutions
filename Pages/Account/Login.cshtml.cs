@@ -61,20 +61,41 @@ namespace TechNova_IT_Solutions.Pages.Account
                 }
 
                 // Store user info in Session
-                HttpContext.Session.SetString(SessionKeys.UserId, result.User.UserId.ToString());
+                HttpContext.Session.SetString(SessionKeys.UserId,  result.User.UserId.ToString());
                 HttpContext.Session.SetString(SessionKeys.UserEmail, result.User.Email);
                 HttpContext.Session.SetString(SessionKeys.UserName, $"{result.User.FirstName} {result.User.LastName}");
                 HttpContext.Session.SetString(SessionKeys.UserRole, result.User.Role);
+
+                if (result.User.BranchId.HasValue)
+                {
+                    HttpContext.Session.SetString(SessionKeys.BranchId, result.User.BranchId.Value.ToString());
+                    HttpContext.Session.SetString(SessionKeys.BranchName, result.User.Branch?.BranchName ?? string.Empty);
+                }
+                else
+                {
+                    HttpContext.Session.Remove(SessionKeys.BranchId);
+                    HttpContext.Session.Remove(SessionKeys.BranchName);
+                }
 
                 if (RememberMe)
                 {
                     HttpContext.Session.SetString(SessionKeys.RememberMe, "true");
                 }
 
+                // Flag if the user must change their default password
+                if (result.User.MustChangePassword)
+                {
+                    HttpContext.Session.SetString(SessionKeys.MustChangePassword, "true");
+                }
+
                 // Route based on user role
                 if (result.User.Role == RoleNames.SuperAdmin)
                 {
                     return RedirectToPage("/SuperAdmin/Dashboard");
+                }
+                else if (result.User.Role == RoleNames.ChiefComplianceManager)
+                {
+                    return RedirectToPage("/ChiefComplianceManager/ComplianceDashboard");
                 }
                 else if (result.User.Role == RoleNames.ComplianceManager)
                 {

@@ -30,9 +30,21 @@ namespace TechNova_IT_Solutions.Controllers
             return userRole == RoleNames.Admin || userRole == RoleNames.SuperAdmin;
         }
 
+        private bool IsSuperAdmin()
+        {
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            return userRole == RoleNames.SuperAdmin;
+        }
+
         private int? GetCurrentUserId()
         {
             var s = HttpContext.Session.GetString(SessionKeys.UserId);
+            return int.TryParse(s, out var id) ? id : null;
+        }
+
+        private int? GetCallerBranchId()
+        {
+            var s = HttpContext.Session.GetString(SessionKeys.BranchId);
             return int.TryParse(s, out var id) ? id : null;
         }
 
@@ -89,171 +101,6 @@ namespace TechNova_IT_Solutions.Controllers
             return summary;
         }
 
-        private async Task<EmailNotificationSummary> NotifyEmployeesPolicyUpdatedAsync(int policyId, string policyTitle)
-        {
-            var summary = new EmailNotificationSummary();
-            var employeeIds = await _context.PolicyAssignments
-                .Where(pa => pa.PolicyId == policyId)
-                .Select(pa => pa.UserId)
-                .Distinct()
-                .ToListAsync();
-
-            if (!employeeIds.Any()) return summary;
-
-            var employees = await _context.Users
-                .Where(u => employeeIds.Contains(u.UserId) &&
-                            u.Role == RoleNames.Employee &&
-                            !string.IsNullOrEmpty(u.Email))
-                .ToListAsync();
-
-            summary.Recipients = employees.Count;
-            foreach (var employee in employees)
-            {
-                var subject = "Assigned Policy Updated";
-                var body = $@"
-                    <h2>Policy update notice</h2>
-                    <p>Hello {employee.FirstName},</p>
-                    <p>Your assigned policy <strong>{policyTitle}</strong> has been updated.</p>
-                    <p>Please review the updated policy in your TechNova account.</p>";
-
-                var emailResult = await _emailService.SendEmailAsync(employee.Email!, subject, body);
-                if (emailResult.Success)
-                {
-                    summary.SentCount++;
-                }
-                else
-                {
-                    summary.FailedCount++;
-                    summary.FailedRecipients.Add(employee.Email!);
-                }
-            }
-
-            return summary;
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> CreatePolicy([FromBody] PolicyData policyData)
-        {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
-            if (policyData == null) return BadRequest(new { success = false, message = "Invalid policy data" });
-
-            policyData.UploadedDate ??= DateTime.Now;
-            var result = await _adminService.CreatePolicyAsync(policyData);
-            if (result)
-            {
-                await _adminService.LogActivityAsync(GetCurrentUserId(), $"Created policy: {policyData.PolicyTitle}", "Policy");
-                return Ok(new { success = true, message = "Policy created successfully" });
-            }
-
-            return BadRequest(new { success = false, message = "Failed to create policy" });
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> UpdatePolicy([FromBody] PolicyData policyData)
-        {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
-            if (policyData == null) return BadRequest(new { success = false, message = "Invalid policy data" });
-
-            var result = await _adminService.UpdatePolicyAsync(policyData);
-            if (result)
-            {
-                await _adminService.LogActivityAsync(GetCurrentUserId(), $"Updated policy: {policyData.PolicyTitle}", "Policy");
-                var emailSummary = new EmailNotificationSummary();
-                if (policyData.PolicyId > 0)
-                {
-                    emailSummary = await NotifyEmployeesPolicyUpdatedAsync(policyData.PolicyId, policyData.PolicyTitle);
-                }
-
-                return Ok(new
-                {
-                    success = true,
-                    message = $"Policy updated successfully. Email sent: {emailSummary.SentCount}, failed: {emailSummary.FailedCount}.",
-                    emailRecipients = emailSummary.Recipients,
-                    emailSent = emailSummary.SentCount,
-                    emailFailed = emailSummary.FailedCount,
-                    failedRecipients = emailSummary.FailedRecipients
-                });
-            }
-
-            return BadRequest(new { success = false, message = "Failed to update policy" });
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> UploadPolicy(IFormFile? policyFile, [FromForm] string policyTitle, [FromForm] string category, [FromForm] string description, [FromForm] string status, [FromForm] int? policyId)
-        {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
-            if (string.IsNullOrWhiteSpace(policyTitle)) return BadRequest(new { success = false, message = "Policy title is required" });
-
-            string filePath = string.Empty;
-
-            if (policyFile != null && policyFile.Length > 0)
-            {
-                var uploadsDir = Path.Combine(_environment.WebRootPath, "uploads", "policies");
-                Directory.CreateDirectory(uploadsDir);
-
-                var safeFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{Path.GetFileName(policyFile.FileName)}";
-                var fullPath = Path.Combine(uploadsDir, safeFileName);
-
-                await using (var stream = new FileStream(fullPath, FileMode.Create))
-                {
-                    await policyFile.CopyToAsync(stream);
-                }
-
-                filePath = $"/uploads/policies/{safeFileName}";
-            }
-
-            var policyData = new PolicyData
-            {
-                PolicyTitle = policyTitle,
-                Category = category,
-                Description = description,
-                FilePath = filePath,
-                UploadedDate = DateTime.Now
-            };
-
-            bool result;
-            if (policyId.HasValue && policyId.Value > 0)
-            {
-                policyData.PolicyId = policyId.Value;
-                if (string.IsNullOrEmpty(filePath))
-                {
-                    policyData.FilePath = null!;
-                }
-
-                result = await _adminService.UpdatePolicyAsync(policyData);
-                if (result)
-                {
-                    await _adminService.LogActivityAsync(GetCurrentUserId(), $"Updated policy with file: {policyTitle}", "Policy");
-                }
-            }
-            else
-            {
-                result = await _adminService.CreatePolicyAsync(policyData);
-                if (result) await _adminService.LogActivityAsync(GetCurrentUserId(), $"Created policy with file: {policyTitle}", "Policy");
-            }
-
-            if (result)
-            {
-                var emailSummary = new EmailNotificationSummary();
-                if (policyId.HasValue && policyId.Value > 0)
-                {
-                    emailSummary = await NotifyEmployeesPolicyUpdatedAsync(policyData.PolicyId, policyTitle);
-                }
-
-                return Ok(new
-                {
-                    success = true,
-                    message = $"Policy saved successfully. Email sent: {emailSummary.SentCount}, failed: {emailSummary.FailedCount}.",
-                    emailRecipients = emailSummary.Recipients,
-                    emailSent = emailSummary.SentCount,
-                    emailFailed = emailSummary.FailedCount,
-                    failedRecipients = emailSummary.FailedRecipients
-                });
-            }
-
-            return BadRequest(new { success = false, message = "Failed to save policy" });
-        }
-
         [HttpGet]
         public IActionResult DownloadPolicyFile(int policyId)
         {
@@ -301,20 +148,6 @@ namespace TechNova_IT_Solutions.Controllers
             return PhysicalFile(fullPath, contentType, fileName);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> DeletePolicy(int policyId)
-        {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
-            var result = await _adminService.DeletePolicyAsync(policyId);
-            if (result)
-            {
-                await _adminService.LogActivityAsync(GetCurrentUserId(), $"Deleted policy ID: {policyId}", "Policy");
-                return Ok(new { success = true, message = "Policy deleted successfully" });
-            }
-
-            return BadRequest(new { success = false, message = "Failed to delete policy" });
-        }
-
         [HttpGet]
         public async Task<IActionResult> GetPolicyDetail(int policyId)
         {
@@ -351,34 +184,6 @@ namespace TechNova_IT_Solutions.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ArchivePolicy(int policyId)
-        {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
-            var result = await _adminService.ArchivePolicyAsync(policyId);
-            if (result)
-            {
-                await _adminService.LogActivityAsync(GetCurrentUserId(), $"Archived policy ID: {policyId}", "Policy");
-                return Ok(new { success = true, message = "Policy archived successfully" });
-            }
-
-            return BadRequest(new { success = false, message = "Failed to archive policy" });
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> RestorePolicy(int policyId)
-        {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
-            var result = await _adminService.RestorePolicyAsync(policyId);
-            if (result)
-            {
-                await _adminService.LogActivityAsync(GetCurrentUserId(), $"Restored policy ID: {policyId}", "Policy");
-                return Ok(new { success = true, message = "Policy restored successfully" });
-            }
-
-            return BadRequest(new { success = false, message = "Failed to restore policy" });
-        }
-
-        [HttpPost]
         public async Task<IActionResult> AssignPolicy([FromBody] PolicyAssignmentRequest request)
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
@@ -393,6 +198,34 @@ namespace TechNova_IT_Solutions.Controllers
             if (!policyIds.Any())
             {
                 return BadRequest(new { success = false, message = "At least one policy must be selected." });
+            }
+
+            // Branch Admins can only assign to employees in their own branch and accessible suppliers
+            if (!IsSuperAdmin())
+            {
+                var callerBranchId = GetCallerBranchId();
+                if (callerBranchId.HasValue)
+                {
+                    if (request.EmployeeIds.Any())
+                    {
+                        var hasOutOfBranchEmployees = await _context.Users
+                            .Where(u => request.EmployeeIds.Contains(u.UserId) && u.BranchId != callerBranchId)
+                            .AnyAsync();
+                        if (hasOutOfBranchEmployees)
+                            return BadRequest(new { success = false, message = "You can only assign policies to employees within your branch." });
+                    }
+
+                    if (request.SupplierIds.Any())
+                    {
+                        var hasInvalidSuppliers = await _context.Suppliers
+                            .Where(s => request.SupplierIds.Contains(s.SupplierId)
+                                && s.BranchId != callerBranchId
+                                && s.BranchId != null)
+                            .AnyAsync();
+                        if (hasInvalidSuppliers)
+                            return BadRequest(new { success = false, message = "You can only assign policies to your branch's suppliers or global (Main) suppliers." });
+                    }
+                }
             }
 
             var success = true;

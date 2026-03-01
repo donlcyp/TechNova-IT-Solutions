@@ -53,10 +53,6 @@
             align-items: center;
         }
 
-        .card:hover {
-            transform: translateY(-2px);
-        }
-
         .card-icon {
             width: 56px;
             height: 56px;
@@ -406,6 +402,15 @@
             }
         }
 
+        /* Tab Switch */
+        .tab-switch { display: flex; gap: 8px; margin-bottom: 16px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 6px; width: fit-content; }
+        .tab-btn { padding: 8px 22px; border-radius: 7px; border: none; background: transparent; color: #6b7280; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; display: flex; align-items: center; gap: 8px; }
+        .tab-btn svg { width: 16px; height: 16px; }
+        .tab-btn.active { background: #1e40af; color: #fff; }
+        .tab-btn:not(.active):hover { background: #f3f4f6; color: #1f2937; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
         @@media (max-width: 991px) {
             .main-content {
                 margin-left: 0;
@@ -528,7 +533,20 @@
             </div>
         </div>
 
+        <!-- Tab Switch -->
+        <div class="tab-switch">
+            <button class="tab-btn active" id="tabEmployee" onclick="switchTab('employee')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Employee Compliance
+            </button>
+            <button class="tab-btn" id="tabSupplier" onclick="switchTab('supplier')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Supplier Compliance
+            </button>
+        </div>
+
         <!-- Employee Compliance Section -->
+        <div class="tab-panel active" id="panelEmployee">
         <div class="section-card">
             <div class="section-header">
                 <div class="section-title">
@@ -602,8 +620,10 @@
             </table>
             </div>
         </div>
+        </div><!-- end panelEmployee -->
 
         <!-- Supplier Compliance Section -->
+        <div class="tab-panel" id="panelSupplier">
         <div class="section-card">
             <div class="section-header">
                 <div class="section-title">
@@ -670,6 +690,7 @@
             </table>
             </div>
         </div>
+        </div><!-- end panelSupplier -->
     </div>
 
     <!-- Detail Modal -->
@@ -687,6 +708,13 @@
 
 @section Scripts {
     <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('panel' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+        }
+
         function showEmployeeDetail(name, policy, dateAssigned, status, acknowledgedDate) {
             const modal = document.getElementById('detailModal');
             const modalBody = document.getElementById('modalBody');

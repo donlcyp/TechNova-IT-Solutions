@@ -1,0 +1,222 @@
+[
+  {
+    "ContainingType": "TechNova_IT_Solutions.Controllers.ExternalPolicyController",
+    "Method": "GetRule",
+    "RelativePath": "api/ExternalPolicy",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "TechNova_IT_Solutions.Controllers.PoliciesController",
+    "Method": "GetPolicies",
+    "RelativePath": "api/policies",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "TechNova_IT_Solutions.Controllers.PoliciesController",
+    "Method": "GetPolicyAcknowledgments",
+    "RelativePath": "api/policies/{id}/acknowledgments",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "TechNova_IT_Solutions.Controllers.PoliciesController",
+    "Method": "AcknowledgePolicy",
+    "RelativePath": "api/policies/{id}/acknowledgments",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "TechNova_IT_Solutions.Controllers.PoliciesController\u002BPostPolicyAcknowledgmentRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "TechNova_IT_Solutions.Controllers.PoliciesController",
+    "Method": "GetPolicyVersions",
+    "RelativePath": "api/policies/{id}/versions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "TechNova_IT_Solutions.Controllers.PolicyReferencesController",
+    "Method": "GetPolicyReferences",
+    "RelativePath": "api/policy-references",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "category",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "q",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "source",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "fromDate",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "toDate",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "TechNova_IT_Solutions.Controllers.PolicyReferencesController",
+    "Method": "ImportPolicyReference",
+    "RelativePath": "api/policy-references/import",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "TechNova_IT_Solutions.Controllers.PolicyReferencesController\u002BImportPolicyReferenceRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "TechNova_IT_Solutions.Controllers.PolicyReferencesController",
+    "Method": "GetStagingQueue",
+    "RelativePath": "api/policy-references/staging",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "status",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "TechNova_IT_Solutions.Controllers.PolicyReferencesController",
+    "Method": "ApproveStagedPolicy",
+    "RelativePath": "api/policy-references/staging/{importId}/approve",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "importId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "TechNova_IT_Solutions.Controllers.PolicyReferencesController\u002BApproveStagedPolicyRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "TechNova_IT_Solutions.Controllers.PolicyReferencesController",
+    "Method": "AssignApprovedStagedPolicy",
+    "RelativePath": "api/policy-references/staging/{importId}/assign",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "importId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "TechNova_IT_Solutions.Controllers.PolicyReferencesController\u002BAssignApprovedPolicyRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "TechNova_IT_Solutions.Controllers.PolicyReferencesController",
+    "Method": "RejectStagedPolicy",
+    "RelativePath": "api/policy-references/staging/{importId}/reject",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "importId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "request",
+        "Type": "TechNova_IT_Solutions.Controllers.PolicyReferencesController\u002BRejectStagedPolicyRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "TechNova_IT_Solutions.Controllers.PolicyReferencesController",
+    "Method": "StagePolicyReference",
+    "RelativePath": "api/policy-references/staging/import",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "TechNova_IT_Solutions.Controllers.PolicyReferencesController\u002BStagePolicyReferenceRequest",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

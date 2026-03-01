@@ -4,12 +4,7 @@
     ViewData["Title"] = "Employee Compliance";
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"]</title>
+@section Styles {
     <style>
         * {
             margin: 0;
@@ -270,7 +265,7 @@
 
         .modal-header h2 {
             font-size: 24px;
-            color: #e5e7eb;
+            color: #1f2937;
         }
 
         .close-btn {
@@ -299,7 +294,7 @@
             color: #1e40af;
             margin-bottom: 16px;
             padding-bottom: 12px;
-            border-bottom: 1px solid #2d3548;
+            border-bottom: 2px solid #e5e7eb;
         }
 
         .detail-grid {
@@ -316,14 +311,15 @@
 
         .detail-label {
             font-size: 12px;
-            color: #9ca3af;
-            font-weight: 500;
+            color: #6b7280;
+            font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         .detail-value {
             font-size: 14px;
-            color: #e5e7eb;
+            color: #374151;
         }
 
         .policy-list {
@@ -331,16 +327,17 @@
         }
 
         .policy-item {
-            background: #252940;
+            background: #f9fafb;
             padding: 16px;
             border-radius: 8px;
             margin-bottom: 12px;
+            border: 1px solid #e5e7eb;
             border-left: 3px solid #1e40af;
         }
 
         .policy-item h4 {
             font-size: 15px;
-            color: #e5e7eb;
+            color: #1f2937;
             margin-bottom: 8px;
         }
 
@@ -411,8 +408,8 @@
             }
         }
     </style>
-</head>
-<body>
+}
+
     @await Html.PartialAsync("_ComplianceManagerSidebar", "EmployeeCompliance")
 
     <!-- Main Content -->
@@ -660,5 +657,3 @@
         document.getElementById('policyFilter').addEventListener('change', filterTable);
         document.getElementById('statusFilter').addEventListener('change', filterTable);
     </script>
-</body>
-</html>

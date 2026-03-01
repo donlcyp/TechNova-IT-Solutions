@@ -12,6 +12,9 @@ namespace TechNova_IT_Solutions.Pages
 
         public string UserEmail { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
+        public bool IsSuperAdmin { get; set; }
+        public int? CallerBranchId { get; set; }
+        public string BranchDisplayName { get; set; } = string.Empty;
 
         // Summary Data
         public int TotalPolicies { get; set; }
@@ -40,12 +43,20 @@ namespace TechNova_IT_Solutions.Pages
             if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
             {
                 if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
-                if (userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 return RedirectToPage("/Account/Login");
             }
 
             UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? "admin@technova.com";
             UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
+            IsSuperAdmin = userRole == RoleNames.SuperAdmin;
+
+            var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+            if (int.TryParse(branchIdStr, out var branchId))
+            {
+                CallerBranchId = branchId;
+                BranchDisplayName = HttpContext.Session.GetString(SessionKeys.BranchName) ?? string.Empty;
+            }
 
             // Calculate summary statistics
             TotalPolicies = await _context.Policies.CountAsync();
@@ -79,9 +90,14 @@ namespace TechNova_IT_Solutions.Pages
                 })
                 .ToListAsync();
 
-            // Fetch employees for policy assignment
-            Employees = await _context.Users
-                .Where(u => u.Role == RoleNames.Employee && u.Status == "Active")
+            // Fetch employees for policy assignment — scoped to caller's branch
+            var employeeQuery = _context.Users
+                .Where(u => u.Role == RoleNames.Employee && u.Status == "Active");
+            if (!IsSuperAdmin && CallerBranchId.HasValue)
+            {
+                employeeQuery = employeeQuery.Where(u => u.BranchId == CallerBranchId);
+            }
+            Employees = await employeeQuery
                 .OrderBy(u => u.FirstName)
                 .Select(u => new PolicyEmployee
                 {
@@ -90,9 +106,13 @@ namespace TechNova_IT_Solutions.Pages
                 })
                 .ToListAsync();
 
-            // Fetch suppliers for policy assignment
-            Suppliers = await _context.Suppliers
-                .Where(s => s.Status == "Active")
+            // Fetch suppliers for policy assignment — Branch Admin sees own branch + global (null), SuperAdmin sees all
+            var supplierQuery = _context.Suppliers.Where(s => s.Status == "Active");
+            if (!IsSuperAdmin && CallerBranchId.HasValue)
+            {
+                supplierQuery = supplierQuery.Where(s => s.BranchId == CallerBranchId || s.BranchId == null);
+            }
+            Suppliers = await supplierQuery
                 .OrderBy(s => s.SupplierName)
                 .Select(s => new PolicySupplier
                 {

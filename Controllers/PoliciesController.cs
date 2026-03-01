@@ -28,6 +28,7 @@ namespace TechNova_IT_Solutions.Controllers
                 RoleNames.Employee,
                 RoleNames.Admin,
                 RoleNames.SuperAdmin,
+                RoleNames.ChiefComplianceManager,
                 RoleNames.ComplianceManager);
 
             if (unauthorized != null)
@@ -35,8 +36,24 @@ namespace TechNova_IT_Solutions.Controllers
                 return unauthorized;
             }
 
-            var policies = await _context.Policies
-                .AsNoTracking()
+            // Determine branch scope for the current user
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            int? callerBranchId = null;
+            var branchStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+            if (!string.IsNullOrEmpty(branchStr) && int.TryParse(branchStr, out var bid))
+                callerBranchId = bid;
+
+            var query = _context.Policies.AsNoTracking().AsQueryable();
+
+            // SuperAdmin and ChiefComplianceManager see all; others see company-wide (null) + their branch
+            if (userRole != RoleNames.SuperAdmin && userRole != RoleNames.ChiefComplianceManager)
+            {
+                query = callerBranchId.HasValue
+                    ? query.Where(p => p.BranchId == null || p.BranchId == callerBranchId)
+                    : query.Where(p => p.BranchId == null);
+            }
+
+            var policies = await query
                 .OrderByDescending(p => p.DateUploaded)
                 .Select(p => new PolicyListItemResponse
                 {
@@ -63,6 +80,7 @@ namespace TechNova_IT_Solutions.Controllers
                 RoleNames.Employee,
                 RoleNames.Admin,
                 RoleNames.SuperAdmin,
+                RoleNames.ChiefComplianceManager,
                 RoleNames.ComplianceManager);
 
             if (unauthorized != null)
@@ -135,6 +153,7 @@ namespace TechNova_IT_Solutions.Controllers
                 RoleNames.Employee,
                 RoleNames.Admin,
                 RoleNames.SuperAdmin,
+                RoleNames.ChiefComplianceManager,
                 RoleNames.ComplianceManager);
 
             if (unauthorized != null)
@@ -188,6 +207,7 @@ namespace TechNova_IT_Solutions.Controllers
                 RoleNames.Employee,
                 RoleNames.Admin,
                 RoleNames.SuperAdmin,
+                RoleNames.ChiefComplianceManager,
                 RoleNames.ComplianceManager);
 
             if (unauthorized != null)
@@ -202,7 +222,7 @@ namespace TechNova_IT_Solutions.Controllers
             }
 
             var targetUserId = currentUserId;
-            var canAcknowledgeForOtherUsers = RoleAccess.HasAnyRole(HttpContext, RoleNames.Admin, RoleNames.SuperAdmin, RoleNames.ComplianceManager);
+            var canAcknowledgeForOtherUsers = RoleAccess.HasAnyRole(HttpContext, RoleNames.Admin, RoleNames.SuperAdmin, RoleNames.ChiefComplianceManager, RoleNames.ComplianceManager);
             if (request?.UserId is > 0 && canAcknowledgeForOtherUsers)
             {
                 targetUserId = request.UserId.Value;

@@ -42,7 +42,11 @@ namespace TechNova_IT_Solutions.Pages.Supplier
             Policies = supplier.SupplierPolicies
                 .Select(sp => new SupplierComplianceItem
                 {
+                    PolicyId = sp.PolicyId,
                     PolicyTitle = sp.Policy.PolicyTitle,
+                    Category = sp.Policy.Category,
+                    Description = sp.Policy.Description,
+                    FilePath = sp.Policy.FilePath,
                     AssignedDate = sp.AssignedDate ?? DateTime.MinValue,
                     Status = sp.ComplianceStatus
                 })
@@ -55,7 +59,11 @@ namespace TechNova_IT_Solutions.Pages.Supplier
 
     public class SupplierComplianceItem
     {
+        public int PolicyId { get; set; }
         public string PolicyTitle { get; set; } = string.Empty;
+        public string? Category { get; set; }
+        public string? Description { get; set; }
+        public string? FilePath { get; set; }
         public DateTime AssignedDate { get; set; }
         public string Status { get; set; } = string.Empty;
     }

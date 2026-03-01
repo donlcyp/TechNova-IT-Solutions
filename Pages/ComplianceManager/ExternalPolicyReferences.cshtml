@@ -734,7 +734,20 @@
     }
 </style>
 
-@await Html.PartialAsync("_ComplianceManagerSidebar", "ExternalPolicyReferences")
+@{
+    var callerRole = Context.Session.GetString("UserRole") ?? string.Empty;
+    var isChiefCM = callerRole.Equals("ChiefComplianceManager", StringComparison.OrdinalIgnoreCase)
+                 || callerRole.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase);
+}
+
+@if (isChiefCM)
+{
+    @await Html.PartialAsync("_ChiefComplianceManagerSidebar", "ExternalPolicyReferences")
+}
+else
+{
+    @await Html.PartialAsync("_AdminSidebar", "ExternalPolicyReferences")
+}
 
 <main class="main-content">
     @await Html.PartialAsync("_ComplianceManagerTopBar", (Title: "External Policy References", Description: "Filtered Federal Register data mapped to TechNova policy domains"))

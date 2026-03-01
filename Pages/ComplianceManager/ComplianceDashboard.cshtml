@@ -31,83 +31,55 @@
         }
 
         /* Summary Cards */
+        .cards-wrapper {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #e5e7eb;
+            margin-bottom: 28px;
+        }
+
         .summary-cards {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 20px;
-            margin-bottom: 32px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
         }
 
         .summary-card {
             background: #ffffff;
-            padding: 24px;
-            border-radius: 12px;
-            border: 1px solid #e5e7eb;
-            cursor: pointer;
-            transition: all 0.3s;
+            padding: 20px 24px;
+            border-radius: 0;
+            border: none;
             text-decoration: none;
             display: flex;
             flex-direction: column;
-            min-height: 140px;
-        }
-
-        .summary-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 16px rgba(30, 64, 175, 0.2);
-            border-color: #1e40af;
+            min-height: 120px;
+            box-shadow: none;
         }
 
         .summary-card h3 {
-            font-size: 14px;
+            font-size: 13px;
             color: #6b7280;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             font-weight: 500;
-            min-height: 40px;
             line-height: 1.35;
         }
 
         .summary-card .value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #1f2937;
+            font-size: 30px;
+            font-weight: 700;
             line-height: 1;
             margin-top: auto;
         }
 
-        .summary-card.gradient-1 .value {
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .summary-card.gradient-2 .value {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .summary-card.gradient-3 .value {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .summary-card.gradient-4 .value {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .summary-card.gradient-5 .value {
-            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+        .summary-card.gradient-1 .value { color: #2563eb; }
+        .summary-card.gradient-2 .value { color: #059669; }
+        .summary-card.gradient-3 .value { color: #dc2626; }
+        .summary-card.gradient-4 .value { color: #d97706; }
+        .summary-card.gradient-5 .value { color: #7c3aed; }
+        .summary-card.gradient-6 .value { color: #dc2626; }
+        .summary-card.gradient-7 .value { color: #ea580c; }
+        .summary-card.gradient-8 .value { color: #7c3aed; }
 
         /* Two Column Layout */
         .two-column-layout {
@@ -372,7 +344,7 @@
             }
 
             .summary-cards {
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(2, 1fr);
             }
         }
 
@@ -410,9 +382,7 @@
             }
 
             .summary-cards {
-                grid-template-columns: 1fr;
-                gap: 14px;
-                margin-bottom: 20px;
+                grid-template-columns: repeat(2, 1fr);
             }
 
             .column-card {
@@ -559,13 +529,11 @@
             }
 
             .summary-cards {
-                gap: 10px;
-                margin-bottom: 16px;
+                grid-template-columns: repeat(2, 1fr);
             }
 
             .summary-card {
                 padding: 14px;
-                border-radius: 10px;
             }
 
             .summary-card .value {
@@ -687,8 +655,9 @@
         <div class="content-wrapper">
 
         <!-- Summary Cards -->
+        <div class="cards-wrapper">
         <div class="summary-cards">
-            <a href="/ComplianceManager/PolicyReview" class="summary-card gradient-1">
+            <a href="/ComplianceManager/PolicyManagement" class="summary-card gradient-1">
                 <h3>Total Policies Assigned</h3>
                 <div class="value">@Model.TotalPoliciesAssigned</div>
             </a>
@@ -704,10 +673,23 @@
                 <h3>Suppliers Compliant</h3>
                 <div class="value">@Model.SuppliersCompliant</div>
             </a>
-            <a href="/ComplianceManager/PolicyArchives" class="summary-card gradient-5">
+            <a href="/ComplianceManager/ComplianceReports" class="summary-card gradient-5">
                 <h3>Archived Policies</h3>
                 <div class="value">@Model.TotalArchivedPolicies</div>
             </a>
+            <a href="/ComplianceManager/ViolationManagement" class="summary-card gradient-6">
+                <h3>Open Violations</h3>
+                <div class="value">@Model.OpenViolations</div>
+            </a>
+            <a href="/ComplianceManager/ViolationManagement" class="summary-card gradient-7">
+                <h3>Escalated</h3>
+                <div class="value">@Model.EscalatedViolations</div>
+            </a>
+            <a href="/ComplianceManager/SupplierCompliance" class="summary-card gradient-8">
+                <h3>Suspended Suppliers</h3>
+                <div class="value">@Model.SuspendedSuppliers</div>
+            </a>
+        </div>
         </div>
 
         <!-- Two Column Layout -->
@@ -842,7 +824,7 @@
                     </svg>
                     Policy Archives
                 </span>
-                <a href="/ComplianceManager/PolicyArchives" class="view-all-link">
+                <a href="/ComplianceManager/ComplianceReports" class="view-all-link">
                     View All <i class="fas fa-arrow-right"></i>
                 </a>
             </h2>
