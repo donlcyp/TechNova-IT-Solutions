@@ -5,6 +5,7 @@
     var showReturnToSuperAdmin =
         sessionRole.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) &&
         !Context.Request.Path.StartsWithSegments("/SuperAdmin", StringComparison.OrdinalIgnoreCase);
+    var empBranchName = Context.Session.GetString("BranchName");
 }
 
 <div class="top-bar">
@@ -17,9 +18,30 @@
         {
             <a class="return-super-admin-btn" href="/SuperAdmin/Dashboard">Back to Super Admin</a>
         }
+        <!-- Notification Bell -->
+        <div class="notif-wrap" id="empNotifWrap">
+            <button class="notif-btn" id="empNotifBtn" onclick="toggleEmpNotif()" aria-label="Notifications">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span class="notif-badge" id="empNotifBadge" style="display:none;">0</span>
+            </button>
+            <div class="notif-dropdown" id="empNotifDropdown">
+                <div class="notif-header">Notifications</div>
+                <div id="empNotifItems"><div class="notif-loading">Loading…</div></div>
+            </div>
+        </div>
         <div class="account-info">
             <h4>@Context.Session.GetString("UserName")</h4>
             <p>@(sessionRole.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) ? "Super Administrator" : "Employee")</p>
+            @if (!string.IsNullOrEmpty(empBranchName))
+            {
+                <div class="branch-indicator">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>@empBranchName</span>
+                </div>
+            }
         </div>
         <div class="account-avatar">
             @{
@@ -107,6 +129,119 @@
         gap: 2px;
     }
 
+    .branch-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        color: #7c3aed;
+        font-weight: 500;
+        margin-top: 1px;
+    }
+
+    /* Notification bell */
+    .notif-wrap {
+        position: relative;
+    }
+
+    .notif-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .notif-btn:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+    }
+
+    .notif-btn svg {
+        width: 18px;
+        height: 18px;
+        color: #374151;
+    }
+
+    .notif-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #ef4444;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 3px;
+        border: 2px solid #fff;
+    }
+
+    .notif-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: 300px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.12);
+        z-index: 100;
+        overflow: hidden;
+    }
+
+    .notif-dropdown.open {
+        display: block;
+    }
+
+    .notif-header {
+        padding: 12px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #111827;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .notif-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #f9fafb;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item:hover { background: #f9fafb; }
+
+    .notif-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-top: 4px;
+        flex-shrink: 0;
+    }
+
+    .notif-dot.orange { background: #f97316; }
+    .notif-dot.red    { background: #ef4444; }
+
+    .notif-item-text { font-size: 13px; line-height: 1.4; color: #374151; }
+    .notif-item-sub  { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+    .notif-none      { padding: 16px; font-size: 13px; color: #6b7280; text-align: center; }
+    .notif-loading   { padding: 14px 16px; font-size: 13px; color: #9ca3af; }
+
     .account-info h4 {
         font-size: 14px;
         font-weight: 600;
@@ -193,3 +328,62 @@
         }
     }
 </style>
+<script>
+(function() {
+    // Load notification count on every page
+    async function loadEmpNotifications() {
+        try {
+            const res = await fetch('/Employee/GetEmployeeNotifications').then(r => r.json());
+            if (!res.success) return;
+            const total = res.total;
+            const badge = document.getElementById('empNotifBadge');
+            const items = document.getElementById('empNotifItems');
+            if (total > 0) {
+                badge.textContent = total > 99 ? '99+' : total;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+            let html = '';
+            if (res.pendingPolicies > 0) {
+                html += `<a class="notif-item" href="/Employee/AssignedPolicies">
+                    <span class="notif-dot orange"></span>
+                    <div>
+                        <div class="notif-item-text"><strong>${res.pendingPolicies}</strong> pending polic${res.pendingPolicies === 1 ? 'y' : 'ies'} to acknowledge</div>
+                        <div class="notif-item-sub">Tap to review your assigned policies</div>
+                    </div></a>`;
+            }
+            if (res.activeViolations > 0) {
+                html += `<a class="notif-item" href="/Employee/ComplianceStatus">
+                    <span class="notif-dot red"></span>
+                    <div>
+                        <div class="notif-item-text"><strong>${res.activeViolations}</strong> active compliance violation${res.activeViolations === 1 ? '' : 's'}</div>
+                        <div class="notif-item-sub">You have been flagged for a policy violation</div>
+                    </div></a>`;
+            }
+            if (!html) {
+                html = '<div class="notif-none">You\'re all caught up!</div>';
+            }
+            items.innerHTML = html;
+        } catch { /* silent */ }
+    }
+
+    function toggleEmpNotif() {
+        const dd = document.getElementById('empNotifDropdown');
+        dd.classList.toggle('open');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const wrap = document.getElementById('empNotifWrap');
+        if (wrap && !wrap.contains(e.target)) {
+            document.getElementById('empNotifDropdown').classList.remove('open');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadEmpNotifications);
+    // Also expose for manual refresh
+    window.loadEmpNotifications = loadEmpNotifications;
+    window.toggleEmpNotif = toggleEmpNotif;
+}());
+</script>

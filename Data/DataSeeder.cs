@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TechNova_IT_Solutions.Constants;
 using TechNova_IT_Solutions.Models;
 
 namespace TechNova_IT_Solutions.Data
@@ -83,7 +84,7 @@ namespace TechNova_IT_Solutions.Data
             if (await context.Policies.AnyAsync().ConfigureAwait(false))
                 return;
 
-            var adminId = await context.Users.Where(u => u.Role == "Admin").Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
+            var adminId = await context.Users.Where(u => u.Role == RoleNames.SystemAdmin || u.Role == RoleNames.BranchAdmin).Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
             var uploadedBy = adminId > 0 ? adminId : (int?)null;
             var date = DateTime.UtcNow;
 
@@ -277,7 +278,7 @@ namespace TechNova_IT_Solutions.Data
             if (await context.AuditLogs.AnyAsync().ConfigureAwait(false))
                 return;
 
-            var adminId = await context.Users.Where(u => u.Role == "Admin").Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
+            var adminId = await context.Users.Where(u => u.Role == RoleNames.SystemAdmin || u.Role == RoleNames.BranchAdmin).Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
             var complianceUserId = await context.Users.Where(u => u.Email == "compliance@technova.com").Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
 
             context.AuditLogs.Add(new AuditLog { UserId = adminId > 0 ? adminId : null, Action = "Login", Module = "Account", LogDate = DateTime.UtcNow.AddHours(-2) });

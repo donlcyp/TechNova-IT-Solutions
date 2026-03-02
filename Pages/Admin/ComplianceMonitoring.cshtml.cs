@@ -36,7 +36,7 @@ namespace TechNova_IT_Solutions.Pages
 
             // Check user role - only Admin can access
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
+            if (!RoleNames.IsAdminRole(userRole) && userRole != RoleNames.SuperAdmin)
             {
                 if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
                 if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
@@ -48,7 +48,7 @@ namespace TechNova_IT_Solutions.Pages
 
             // Branch scoping: Branch Admins only see their branch data; SuperAdmin sees all
             int? callerBranchId = null;
-            if (userRole == RoleNames.Admin)
+            if (RoleNames.IsAdminRole(userRole))
             {
                 var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
                 if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))

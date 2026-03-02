@@ -30,10 +30,14 @@ namespace TechNova_IT_Solutions.Controllers
 
         // ── Auth helpers ─────────────────────────────────────────────
 
+        /// <summary>
+        /// Branch compliance assignment is a Compliance Manager responsibility.
+        /// Admin should manage operations (procurement, suppliers, users), not compliance assignments.
+        /// </summary>
         private bool HasAccess()
         {
             var role = HttpContext.Session.GetString(SessionKeys.UserRole);
-            return role == RoleNames.Admin || role == RoleNames.SuperAdmin
+            return role == RoleNames.SuperAdmin
                 || role == RoleNames.ComplianceManager || role == RoleNames.ChiefComplianceManager;
         }
 
@@ -212,7 +216,7 @@ namespace TechNova_IT_Solutions.Controllers
             var branchId = IsGlobalRole() ? (int?)null : GetCallerBranchId();
 
             var policies = await _context.Policies
-                .Where(p => !p.IsArchived)
+                .Where(p => !p.IsArchived && p.ReviewStatus == "Approved")
                 .Where(p => p.BranchId == null || p.BranchId == branchId)
                 .OrderBy(p => p.PolicyTitle)
                 .Select(p => new

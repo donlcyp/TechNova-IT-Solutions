@@ -27,7 +27,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
 
             // Check user role - only ComplianceManager and Admin can access
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            if (userRole != RoleNames.ComplianceManager && userRole != RoleNames.Admin)
+            if (userRole != RoleNames.ComplianceManager && !RoleNames.IsAdminRole(userRole))
             {
                 if (userRole == RoleNames.Employee)
                 {

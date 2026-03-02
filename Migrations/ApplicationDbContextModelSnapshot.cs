@@ -202,6 +202,12 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("resolved_date");
 
+                    b.Property<string>("SeverityLevel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("severity_level");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -358,11 +364,56 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("is_archived");
 
+                    b.Property<string>("PendingCategory")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("pending_category");
+
+                    b.Property<string>("PendingDescription")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("pending_description");
+
+                    b.Property<string>("PendingFilePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("pending_file_path");
+
+                    b.Property<string>("PendingTitle")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("pending_title");
+
+                    b.Property<DateTime?>("PendingUpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("pending_updated_at");
+
+                    b.Property<int?>("PendingUpdatedBy")
+                        .HasColumnType("int")
+                        .HasColumnName("pending_updated_by");
+
                     b.Property<string>("PolicyTitle")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("policy_title");
+
+                    b.Property<string>("ReviewNotes")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("review_notes");
+
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("review_status");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<int?>("ReviewedBy")
+                        .HasColumnType("int")
+                        .HasColumnName("reviewed_by");
 
                     b.Property<int?>("UploadedBy")
                         .HasColumnType("int")
@@ -371,6 +422,8 @@ namespace TechNova_IT_Solutions.Migrations
                     b.HasKey("PolicyId");
 
                     b.HasIndex("BranchId");
+
+                    b.HasIndex("ReviewedBy");
 
                     b.HasIndex("UploadedBy");
 
@@ -639,6 +692,66 @@ namespace TechNova_IT_Solutions.Migrations
                     b.ToTable("Suppliers");
                 });
 
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierContract", b =>
+                {
+                    b.Property<int>("ContractId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("contractID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ContractId"));
+
+                    b.Property<DateTime?>("ApprovalDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("approval_date");
+
+                    b.Property<int?>("ApprovedBy")
+                        .HasColumnType("int")
+                        .HasColumnName("approved_by");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("expiry_date");
+
+                    b.Property<int?>("LinkedPolicyId")
+                        .HasColumnType("int")
+                        .HasColumnName("linked_policyID");
+
+                    b.Property<string>("RiskLevel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("risk_level");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasColumnName("status");
+
+                    b.Property<int>("SupplierId")
+                        .HasColumnType("int")
+                        .HasColumnName("supplierID");
+
+                    b.HasKey("ContractId");
+
+                    b.HasIndex("ApprovedBy");
+
+                    b.HasIndex("LinkedPolicyId");
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("Supplier_Contracts");
+                });
+
             modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierItem", b =>
                 {
                     b.Property<int>("SupplierItemId")
@@ -871,12 +984,19 @@ namespace TechNova_IT_Solutions.Migrations
                         .HasForeignKey("BranchId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("TechNova_IT_Solutions.Models.User", "ReviewedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReviewedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("TechNova_IT_Solutions.Models.User", "UploadedByUser")
                         .WithMany("UploadedPolicies")
                         .HasForeignKey("UploadedBy")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Branch");
+
+                    b.Navigation("ReviewedByUser");
 
                     b.Navigation("UploadedByUser");
                 });
@@ -943,6 +1063,31 @@ namespace TechNova_IT_Solutions.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierContract", b =>
+                {
+                    b.HasOne("TechNova_IT_Solutions.Models.User", "ApprovedByUser")
+                        .WithMany()
+                        .HasForeignKey("ApprovedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("TechNova_IT_Solutions.Models.Policy", "LinkedPolicy")
+                        .WithMany()
+                        .HasForeignKey("LinkedPolicyId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("TechNova_IT_Solutions.Models.Supplier", "Supplier")
+                        .WithMany("SupplierContracts")
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApprovedByUser");
+
+                    b.Navigation("LinkedPolicy");
+
+                    b.Navigation("Supplier");
                 });
 
             modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierItem", b =>
@@ -1016,6 +1161,8 @@ namespace TechNova_IT_Solutions.Migrations
             modelBuilder.Entity("TechNova_IT_Solutions.Models.Supplier", b =>
                 {
                     b.Navigation("Procurements");
+
+                    b.Navigation("SupplierContracts");
 
                     b.Navigation("SupplierItems");
 

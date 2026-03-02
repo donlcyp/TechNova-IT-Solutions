@@ -16,7 +16,7 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> Dashboard()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
@@ -33,7 +33,7 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> ComplianceStatus()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
@@ -50,7 +50,7 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> AssignedPolicies()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
@@ -67,7 +67,7 @@ namespace TechNova_IT_Solutions.Controllers
 
         public IActionResult Settings()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             return View();
@@ -76,7 +76,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> AcknowledgePolicy([FromBody] AcknowledgeRequest request)
         {
-            var unauthorized = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.Employee, RoleNames.Admin, RoleNames.SuperAdmin);
+            var unauthorized = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.Employee, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (unauthorized != null) return unauthorized;
 
             var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
@@ -91,10 +91,42 @@ namespace TechNova_IT_Solutions.Controllers
                 ? Ok(new { success = true, message = "Policy acknowledged successfully" })
                 : BadRequest(new { success = false, message = "Failed to acknowledge policy" });
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetEmployeeNotifications()
+        {
+            var unauthorized = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.Employee, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
+            if (unauthorized != null) return unauthorized;
+
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (!int.TryParse(userIdString, out int userId))
+                return Unauthorized(new { success = false });
+
+            // Pending policy acknowledgements
+            var pendingPolicies = await _employeeService.GetPendingPoliciesCountAsync(userId);
+
+            // Active violations (not resolved) linked to this employee's assignments
+            var activeViolations = await _employeeService.GetActiveViolationsCountAsync(userId);
+
+            return Ok(new EmpNotificationResult
+            {
+                Success = true,
+                PendingPolicies = pendingPolicies,
+                ActiveViolations = activeViolations
+            });
+        }
     }
 
     public class AcknowledgeRequest
     {
         public int PolicyId { get; set; }
+    }
+
+    public class EmpNotificationResult
+    {
+        public bool Success { get; set; }
+        public int PendingPolicies { get; set; }
+        public int ActiveViolations { get; set; }
+        public int Total => PendingPolicies + ActiveViolations;
     }
 }

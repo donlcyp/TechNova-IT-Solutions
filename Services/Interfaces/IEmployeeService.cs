@@ -6,6 +6,8 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         Task<EmployeeComplianceStatusData> GetEmployeeComplianceStatusAsync(int userId);
         Task<List<AssignedPolicyData>> GetAssignedPoliciesAsync(int userId);
         Task<bool> AcknowledgePolicyAsync(int userId, int policyId);
+        Task<int> GetPendingPoliciesCountAsync(int userId);
+        Task<int> GetActiveViolationsCountAsync(int userId);
     }
 
     public class EmployeeDashboardData

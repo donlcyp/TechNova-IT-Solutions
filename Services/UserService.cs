@@ -63,9 +63,13 @@ namespace TechNova_IT_Solutions.Services
                 // Assign role-based default password
                 var role = userData.Role ?? string.Empty;
                 string passwordToHash;
-                if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
-                    passwordToHash = "admin123";
-                else if (string.Equals(role, "ChiefComplianceManager", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
+                    passwordToHash = "superadmin123";
+                else if (string.Equals(role, RoleNames.SystemAdmin, StringComparison.OrdinalIgnoreCase))
+                    passwordToHash = "systemadmin123";
+                else if (string.Equals(role, RoleNames.BranchAdmin, StringComparison.OrdinalIgnoreCase))
+                    passwordToHash = "branchadmin123";
+                else if (string.Equals(role, RoleNames.ChiefComplianceManager, StringComparison.OrdinalIgnoreCase))
                     passwordToHash = "chiefcompliance123";
                 else if (role.Contains("Compliance", StringComparison.OrdinalIgnoreCase))
                     passwordToHash = "compliance123";
@@ -213,11 +217,19 @@ namespace TechNova_IT_Solutions.Services
                 var role = user.Role ?? string.Empty;
                 string resetPassword;
 
-                if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
                 {
-                    resetPassword = "admin123";
+                    resetPassword = "superadmin123";
                 }
-                else if (string.Equals(role, "ChiefComplianceManager", StringComparison.OrdinalIgnoreCase))
+                else if (string.Equals(role, RoleNames.SystemAdmin, StringComparison.OrdinalIgnoreCase))
+                {
+                    resetPassword = "systemadmin123";
+                }
+                else if (string.Equals(role, RoleNames.BranchAdmin, StringComparison.OrdinalIgnoreCase))
+                {
+                    resetPassword = "branchadmin123";
+                }
+                else if (string.Equals(role, RoleNames.ChiefComplianceManager, StringComparison.OrdinalIgnoreCase))
                 {
                     resetPassword = "chiefcompliance123";
                 }

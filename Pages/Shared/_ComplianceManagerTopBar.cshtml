@@ -5,6 +5,7 @@
     var showReturnToSuperAdmin =
         sessionRole.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) &&
         !Context.Request.Path.StartsWithSegments("/SuperAdmin", StringComparison.OrdinalIgnoreCase);
+    var branchName = Context.Session.GetString("BranchName");
 }
 
 <div class="top-bar">
@@ -20,6 +21,13 @@
         <div class="account-info">
             <h4>@Context.Session.GetString("UserName")</h4>
             <p>@(sessionRole.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) ? "Super Administrator" : sessionRole.Equals("ChiefComplianceManager", StringComparison.OrdinalIgnoreCase) ? "Chief Compliance Manager" : "Branch Compliance Officer")</p>
+            @if (!string.IsNullOrEmpty(branchName))
+            {
+                <div class="branch-indicator">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>@branchName</span>
+                </div>
+            }
         </div>
         <div class="account-avatar">
             @{
@@ -100,6 +108,17 @@
     .return-super-admin-btn:hover {
         background: #eff6ff;
         border-color: #93c5fd;
+    }
+
+    .branch-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: #6366f1;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        margin-top: 1px;
     }
 
     .account-info {

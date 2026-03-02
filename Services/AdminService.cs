@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Models;
 using TechNova_IT_Solutions.Services.Interfaces;
+using TechNova_IT_Solutions.Constants;
 
 namespace TechNova_IT_Solutions.Services
 {
@@ -164,6 +165,11 @@ namespace TechNova_IT_Solutions.Services
         {
             try
             {
+                // Determine if this policy requires CCM review.
+                // Policies created by Branch roles (Admin / ComplianceManager) need review.
+                // Policies created by SuperAdmin or ChiefComplianceManager are auto-approved.
+                bool needsReview = policyData.CallerRole is RoleNames.BranchAdmin or RoleNames.ComplianceManager;
+
                 var policy = new Models.Policy
                 {
                     PolicyTitle = policyData.PolicyTitle,
@@ -171,27 +177,54 @@ namespace TechNova_IT_Solutions.Services
                     Description = policyData.Description,
                     FilePath = policyData.FilePath,
                     DateUploaded = policyData.UploadedDate ?? DateTime.Now,
-                    BranchId = policyData.BranchId  // null = company-wide, non-null = branch-specific
+                    BranchId = policyData.BranchId,
+                    UploadedBy = policyData.CallerUserId,
+                    ReviewStatus = needsReview ? "PendingReview" : "Approved",
+                    ReviewedAt = needsReview ? null : DateTime.Now
                 };
 
                 _context.Policies.Add(policy);
                 await _context.SaveChangesAsync();
 
-                // Notify all active users about the new policy
-                var users = await _context.Users.Where(u => u.Status == "Active" && u.Email != null).ToListAsync();
-                foreach (var user in users)
+                if (needsReview)
                 {
-                    if (!string.IsNullOrEmpty(user.Email))
+                    // Notify Chief Compliance Manager(s) that a new policy is pending review
+                    var ccmUsers = await _context.Users
+                        .Where(u => u.Role == RoleNames.ChiefComplianceManager && u.Status == "Active" && u.Email != null)
+                        .ToListAsync();
+
+                    var branchName = policyData.BranchId.HasValue
+                        ? (await _context.Branches.FindAsync(policyData.BranchId.Value))?.BranchName ?? "Unknown Branch"
+                        : "Company-wide";
+
+                    foreach (var ccm in ccmUsers)
                     {
-                        var subject = $"New Policy: {policyData.PolicyTitle}";
+                        var subject = $"Policy Pending Review: {policyData.PolicyTitle}";
                         var body = $@"
-                            <h2>A new policy has been added</h2>
+                            <h2>A new policy requires your review</h2>
                             <p><strong>Title:</strong> {policyData.PolicyTitle}</p>
                             <p><strong>Category:</strong> {policyData.Category}</p>
-                            <p>Please log in to the portal to review it.</p>";
-                        
-                        // Fire and forget to avoid blocking
-                        _ = _emailService.SendEmailAsync(user.Email, subject, body);
+                            <p><strong>Branch:</strong> {branchName}</p>
+                            <p>Please log in to the Policy Review page to approve or reject this policy.</p>";
+                        _ = _emailService.SendEmailAsync(ccm.Email!, subject, body);
+                    }
+                }
+                else
+                {
+                    // Auto-approved: notify all active users about the new policy
+                    var users = await _context.Users.Where(u => u.Status == "Active" && u.Email != null).ToListAsync();
+                    foreach (var user in users)
+                    {
+                        if (!string.IsNullOrEmpty(user.Email))
+                        {
+                            var subject = $"New Policy: {policyData.PolicyTitle}";
+                            var body = $@"
+                                <h2>A new policy has been added</h2>
+                                <p><strong>Title:</strong> {policyData.PolicyTitle}</p>
+                                <p><strong>Category:</strong> {policyData.Category}</p>
+                                <p>Please log in to the portal to review it.</p>";
+                            _ = _emailService.SendEmailAsync(user.Email, subject, body);
+                        }
                     }
                 }
 
@@ -211,14 +244,51 @@ namespace TechNova_IT_Solutions.Services
                 var policy = await _context.Policies.FindAsync(policyData.PolicyId);
                 if (policy == null) return false;
 
-                policy.PolicyTitle = policyData.PolicyTitle;
-                policy.Category = policyData.Category;
-                policy.Description = policyData.Description;
-                // Only update file path if a new file was provided
-                if (policyData.FilePath != null)
-                    policy.FilePath = policyData.FilePath;
+                // Branch roles stage their changes for CCM review instead of applying directly.
+                bool needsReview = policyData.CallerRole is RoleNames.BranchAdmin or RoleNames.ComplianceManager;
 
-                await _context.SaveChangesAsync();
+                if (needsReview && policy.ReviewStatus == "Approved")
+                {
+                    // Stage the update — keep the live policy unchanged.
+                    policy.PendingTitle = policyData.PolicyTitle;
+                    policy.PendingCategory = policyData.Category;
+                    policy.PendingDescription = policyData.Description;
+                    if (policyData.FilePath != null)
+                        policy.PendingFilePath = policyData.FilePath;
+                    policy.PendingUpdatedBy = policyData.CallerUserId;
+                    policy.PendingUpdatedAt = DateTime.Now;
+                    policy.ReviewStatus = "PendingUpdate";
+
+                    await _context.SaveChangesAsync();
+
+                    // Notify CCM(s)
+                    var ccmUsers = await _context.Users
+                        .Where(u => u.Role == RoleNames.ChiefComplianceManager && u.Status == "Active" && u.Email != null)
+                        .ToListAsync();
+                    foreach (var ccm in ccmUsers)
+                    {
+                        var subject = $"Policy Update Pending Review: {policy.PolicyTitle}";
+                        var body = $@"
+                            <h2>A policy update requires your review</h2>
+                            <p><strong>Current Title:</strong> {policy.PolicyTitle}</p>
+                            <p><strong>Proposed Title:</strong> {policyData.PolicyTitle}</p>
+                            <p><strong>Category:</strong> {policyData.Category}</p>
+                            <p>Please log in to the Policy Review page to approve or reject this update.</p>";
+                        _ = _emailService.SendEmailAsync(ccm.Email!, subject, body);
+                    }
+                }
+                else
+                {
+                    // SuperAdmin / CCM — apply directly.
+                    policy.PolicyTitle = policyData.PolicyTitle;
+                    policy.Category = policyData.Category;
+                    policy.Description = policyData.Description;
+                    if (policyData.FilePath != null)
+                        policy.FilePath = policyData.FilePath;
+
+                    await _context.SaveChangesAsync();
+                }
+
                 return true;
             }
             catch (Exception ex)
@@ -242,7 +312,9 @@ namespace TechNova_IT_Solutions.Services
                 FilePath = policy.FilePath,
                 UploadedDate = policy.DateUploaded,
                 IsArchived = policy.IsArchived,
-                ArchivedDate = policy.ArchivedDate
+                ArchivedDate = policy.ArchivedDate,
+                ReviewStatus = policy.ReviewStatus,
+                BranchId = policy.BranchId
             };
         }
 
@@ -278,13 +350,36 @@ namespace TechNova_IT_Solutions.Services
         {
             try
             {
-                var policy = await _context.Policies.FindAsync(policyId);
+                var policy = await _context.Policies
+                    .Include(p => p.Branch)
+                    .FirstOrDefaultAsync(p => p.PolicyId == policyId);
                 if (policy == null) return false;
 
                 policy.IsArchived = true;
                 policy.ArchivedDate = DateTime.Now;
+                policy.ReviewStatus = "Archived";
 
                 await _context.SaveChangesAsync();
+
+                // Notify CCM(s) about the archival if it's a branch policy
+                if (policy.BranchId.HasValue)
+                {
+                    var ccmUsers = await _context.Users
+                        .Where(u => u.Role == RoleNames.ChiefComplianceManager && u.Status == "Active" && u.Email != null)
+                        .ToListAsync();
+                    var branchName = policy.Branch?.BranchName ?? "Unknown Branch";
+                    foreach (var ccm in ccmUsers)
+                    {
+                        var subject = $"Policy Archived: {policy.PolicyTitle}";
+                        var body = $@"
+                            <h2>A branch policy has been archived</h2>
+                            <p><strong>Title:</strong> {policy.PolicyTitle}</p>
+                            <p><strong>Branch:</strong> {branchName}</p>
+                            <p><strong>Archived:</strong> {DateTime.Now:MMMM dd, yyyy h:mm tt}</p>";
+                        _ = _emailService.SendEmailAsync(ccm.Email!, subject, body);
+                    }
+                }
+
                 return true;
             }
             catch (Exception ex)
@@ -303,6 +398,9 @@ namespace TechNova_IT_Solutions.Services
 
                 policy.IsArchived = false;
                 policy.ArchivedDate = null;
+                // Branch policy being un-archived goes back to PendingReview for CCM approval.
+                // Company-wide (SuperAdmin/CCM created) goes straight to Approved.
+                policy.ReviewStatus = policy.BranchId.HasValue ? "PendingReview" : "Approved";
 
                 await _context.SaveChangesAsync();
                 return true;
@@ -328,6 +426,226 @@ namespace TechNova_IT_Solutions.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to delete policy {PolicyId}", policyId);
+                return false;
+            }
+        }
+
+        // ── Review Workflow Methods ──────────────────────────────────────
+
+        /// <summary>
+        /// CCM approves a PendingReview policy, making it available for assignment.
+        /// </summary>
+        public async Task<bool> ApprovePolicyAsync(int policyId, int reviewedByUserId, string? reviewNotes = null)
+        {
+            try
+            {
+                var policy = await _context.Policies
+                    .Include(p => p.UploadedByUser)
+                    .Include(p => p.Branch)
+                    .FirstOrDefaultAsync(p => p.PolicyId == policyId);
+                if (policy == null || policy.ReviewStatus != "PendingReview") return false;
+
+                policy.ReviewStatus = "Approved";
+                policy.ReviewedBy = reviewedByUserId;
+                policy.ReviewedAt = DateTime.Now;
+                policy.ReviewNotes = reviewNotes;
+                policy.IsArchived = false;
+                policy.ArchivedDate = null;
+
+                await _context.SaveChangesAsync();
+
+                // Notify the branch creator
+                if (policy.UploadedByUser?.Email != null)
+                {
+                    var subject = $"Policy Approved: {policy.PolicyTitle}";
+                    var body = $@"
+                        <h2>Your policy has been approved</h2>
+                        <p><strong>Title:</strong> {policy.PolicyTitle}</p>
+                        <p><strong>Category:</strong> {policy.Category}</p>
+                        {(string.IsNullOrWhiteSpace(reviewNotes) ? "" : $"<p><strong>Notes:</strong> {reviewNotes}</p>")}
+                        <p>You can now assign this policy to employees and supplier contracts.</p>";
+                    _ = _emailService.SendEmailAsync(policy.UploadedByUser.Email, subject, body);
+                }
+
+                // Also notify branch compliance managers
+                if (policy.BranchId.HasValue)
+                {
+                    var branchCMs = await _context.Users
+                        .Where(u => u.BranchId == policy.BranchId && u.Status == "Active" && u.Email != null
+                            && (u.Role == RoleNames.ComplianceManager || RoleNames.IsAdminRole(u.Role)))
+                        .ToListAsync();
+                    foreach (var cm in branchCMs)
+                    {
+                        if (cm.UserId == policy.UploadedBy) continue; // already notified
+                        var subject = $"Policy Approved: {policy.PolicyTitle}";
+                        var body = $@"
+                            <h2>A branch policy has been approved by CCM</h2>
+                            <p><strong>Title:</strong> {policy.PolicyTitle}</p>
+                            <p>This policy is now available for assignment.</p>";
+                        _ = _emailService.SendEmailAsync(cm.Email!, subject, body);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to approve policy {PolicyId}", policyId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// CCM rejects a PendingReview policy.
+        /// </summary>
+        public async Task<bool> RejectPolicyAsync(int policyId, int reviewedByUserId, string? reviewNotes = null)
+        {
+            try
+            {
+                var policy = await _context.Policies
+                    .Include(p => p.UploadedByUser)
+                    .FirstOrDefaultAsync(p => p.PolicyId == policyId);
+                if (policy == null || (policy.ReviewStatus != "PendingReview" && policy.ReviewStatus != "PendingUpdate"))
+                    return false;
+
+                // If rejecting a PendingUpdate, clear pending fields and revert to Approved
+                if (policy.ReviewStatus == "PendingUpdate")
+                {
+                    policy.PendingTitle = null;
+                    policy.PendingCategory = null;
+                    policy.PendingDescription = null;
+                    policy.PendingFilePath = null;
+                    policy.PendingUpdatedBy = null;
+                    policy.PendingUpdatedAt = null;
+                    policy.ReviewStatus = "Approved"; // Keep original version active
+                }
+                else
+                {
+                    policy.ReviewStatus = "Rejected";
+                }
+
+                policy.ReviewedBy = reviewedByUserId;
+                policy.ReviewedAt = DateTime.Now;
+                policy.ReviewNotes = reviewNotes;
+
+                await _context.SaveChangesAsync();
+
+                // Notify the branch creator
+                if (policy.UploadedByUser?.Email != null)
+                {
+                    var statusLabel = policy.ReviewStatus == "Approved" ? "Update Rejected" : "Policy Rejected";
+                    var subject = $"{statusLabel}: {policy.PolicyTitle}";
+                    var body = $@"
+                        <h2>Your policy submission has been rejected</h2>
+                        <p><strong>Title:</strong> {policy.PolicyTitle}</p>
+                        <p><strong>Category:</strong> {policy.Category}</p>
+                        {(string.IsNullOrWhiteSpace(reviewNotes) ? "" : $"<p><strong>Reason:</strong> {reviewNotes}</p>")}
+                        <p>Please review the feedback and make any necessary changes before resubmitting.</p>";
+                    _ = _emailService.SendEmailAsync(policy.UploadedByUser.Email, subject, body);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to reject policy {PolicyId}", policyId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// CCM approves a PendingUpdate. Stages are applied, and employee compliance is reset.
+        /// </summary>
+        public async Task<bool> ApproveUpdateAsync(int policyId, int reviewedByUserId, string? reviewNotes = null)
+        {
+            try
+            {
+                var policy = await _context.Policies
+                    .Include(p => p.UploadedByUser)
+                    .Include(p => p.Branch)
+                    .FirstOrDefaultAsync(p => p.PolicyId == policyId);
+                if (policy == null || policy.ReviewStatus != "PendingUpdate") return false;
+
+                // Apply the staged changes
+                if (policy.PendingTitle != null) policy.PolicyTitle = policy.PendingTitle;
+                if (policy.PendingCategory != null) policy.Category = policy.PendingCategory;
+                if (policy.PendingDescription != null) policy.Description = policy.PendingDescription;
+                if (policy.PendingFilePath != null) policy.FilePath = policy.PendingFilePath;
+
+                // Clear pending fields
+                policy.PendingTitle = null;
+                policy.PendingCategory = null;
+                policy.PendingDescription = null;
+                policy.PendingFilePath = null;
+                policy.PendingUpdatedBy = null;
+                policy.PendingUpdatedAt = null;
+
+                policy.ReviewStatus = "Approved";
+                policy.ReviewedBy = reviewedByUserId;
+                policy.ReviewedAt = DateTime.Now;
+                policy.ReviewNotes = reviewNotes;
+
+                // Reset compliance statuses so employees have to re-acknowledge
+                var assignmentIds = await _context.PolicyAssignments
+                    .Where(pa => pa.PolicyId == policyId)
+                    .Select(pa => pa.AssignmentId)
+                    .ToListAsync();
+
+                if (assignmentIds.Count > 0)
+                {
+                    var complianceRecords = await _context.ComplianceStatuses
+                        .Where(cs => assignmentIds.Contains(cs.AssignmentId))
+                        .ToListAsync();
+
+                    foreach (var record in complianceRecords)
+                    {
+                        record.Status = "Pending";
+                        record.AcknowledgedDate = null;
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                // Notify the branch creator
+                if (policy.UploadedByUser?.Email != null)
+                {
+                    var subject = $"Policy Update Approved: {policy.PolicyTitle}";
+                    var body = $@"
+                        <h2>Your policy update has been approved</h2>
+                        <p><strong>Title:</strong> {policy.PolicyTitle}</p>
+                        <p><strong>Category:</strong> {policy.Category}</p>
+                        {(string.IsNullOrWhiteSpace(reviewNotes) ? "" : $"<p><strong>Notes:</strong> {reviewNotes}</p>")}
+                        <p>The updated policy is now live. Employees will be required to re-acknowledge compliance.</p>";
+                    _ = _emailService.SendEmailAsync(policy.UploadedByUser.Email, subject, body);
+                }
+
+                // Notify assigned employees to re-acknowledge
+                if (assignmentIds.Count > 0)
+                {
+                    var assignedEmployees = await _context.PolicyAssignments
+                        .Where(pa => pa.PolicyId == policyId)
+                        .Include(pa => pa.User)
+                        .Select(pa => pa.User)
+                        .Where(u => u != null && u.Status == "Active" && u.Email != null)
+                        .ToListAsync();
+
+                    foreach (var emp in assignedEmployees)
+                    {
+                        var subject = $"Policy Updated – Re-acknowledgment Required: {policy.PolicyTitle}";
+                        var body = $@"
+                            <h2>A policy you are assigned to has been updated</h2>
+                            <p><strong>Title:</strong> {policy.PolicyTitle}</p>
+                            <p><strong>Category:</strong> {policy.Category}</p>
+                            <p>Please log in to the portal and re-acknowledge your compliance with this updated policy.</p>";
+                        _ = _emailService.SendEmailAsync(emp!.Email!, subject, body);
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to approve policy update {PolicyId}", policyId);
                 return false;
             }
         }
@@ -392,7 +710,8 @@ namespace TechNova_IT_Solutions.Services
                         Password = PasswordHasher.HashPassword(cleanedData.Password), // Hash the password
                         Role = "Supplier",
                         Status = "Active",
-                        BranchId = cleanedData.BranchId  // inherit branch from supplier record
+                        BranchId = cleanedData.BranchId,  // inherit branch from supplier record
+                        MustChangePassword = true
                     };
 
                     _context.Users.Add(user);
@@ -1312,7 +1631,7 @@ namespace TechNova_IT_Solutions.Services
                 }
 
                 var staffEmails = await _context.Users
-                    .Where(u => (u.Role == "Admin" || u.Role == "ChiefComplianceManager" || u.Role == "ComplianceManager" || u.Role == "SuperAdmin") &&
+                    .Where(u => (u.Role == RoleNames.SystemAdmin || u.Role == RoleNames.BranchAdmin || u.Role == "ChiefComplianceManager" || u.Role == "ComplianceManager" || u.Role == "SuperAdmin") &&
                                 u.Status == "Active" &&
                                 u.Email != null)
                     .Select(u => u.Email!)
@@ -1354,6 +1673,14 @@ namespace TechNova_IT_Solutions.Services
         {
             try
             {
+                // Block assignment if the policy is not approved
+                var policy = await _context.Policies.FindAsync(policyId);
+                if (policy == null || policy.ReviewStatus != "Approved")
+                {
+                    _logger.LogWarning("Attempted to assign non-approved policy {PolicyId} (status: {Status})", policyId, policy?.ReviewStatus);
+                    return false;
+                }
+
                 foreach (var empId in employeeIds)
                 {
                     // Skip if already assigned
@@ -1392,6 +1719,14 @@ namespace TechNova_IT_Solutions.Services
         {
             try
             {
+                // Block assignment if the policy is not approved
+                var policy = await _context.Policies.FindAsync(policyId);
+                if (policy == null || policy.ReviewStatus != "Approved")
+                {
+                    _logger.LogWarning("Attempted to assign non-approved policy {PolicyId} to suppliers (status: {Status})", policyId, policy?.ReviewStatus);
+                    return false;
+                }
+
                 foreach (var supId in supplierIds)
                 {
                     var isActiveSupplier = await _context.Suppliers

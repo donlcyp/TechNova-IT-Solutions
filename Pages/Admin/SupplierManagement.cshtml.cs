@@ -38,7 +38,7 @@ namespace TechNova_IT_Solutions.Pages
 
             // Check user role - only Admin can access
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
+            if (!RoleNames.IsAdminRole(userRole) && userRole != RoleNames.SuperAdmin)
             {
                 if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
                 if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");

@@ -1,7 +1,7 @@
 @page
 @model TechNova_IT_Solutions.Pages.UserManagementModel
 @{
-    ViewData["Title"] = "User Management";
+    ViewData["Title"] = "Branch Admin Management";
 }
 
 @section Styles {
@@ -594,25 +594,10 @@
 
     <!-- Main Content -->
     <div class="main-content">
-        @await Html.PartialAsync("_AdminTopBar", (Title: "User Management", Description: "Manage system users and permissions"))
+        @await Html.PartialAsync("_AdminTopBar", (Title: "Branch Admin Management", Description: "Create and manage Branch Administrator accounts"))
 
         <div class="content-wrapper">
-            <p style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 18px;margin-bottom:18px;color:#166534;font-size:14px;line-height:1.5;">Deactivate immediately blocks login. Reactivate restores access. Reset Password now applies role defaults: <strong>compliance123</strong> for compliance roles, <strong>employee123</strong> for employee roles, and <strong>supplier123</strong> for supplier roles.</p>
-            @if (!Model.IsSuperAdmin)
-            {
-                @if (Model.BranchDisplayName != null)
-                {
-                    <div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:12px 18px;margin-bottom:18px;color:#1e40af;font-size:14px;">
-                        <strong>Branch:</strong> @Model.BranchDisplayName &nbsp;—&nbsp; You can only manage employees and compliance managers assigned to your branch.
-                    </div>
-                }
-                else
-                {
-                    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 18px;margin-bottom:18px;color:#92400e;font-size:14px;">
-                        <strong>No branch assigned.</strong> Please contact Super Admin to assign you to a branch before managing employees.
-                    </div>
-                }
-            }
+            <p style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px 18px;margin-bottom:18px;color:#166534;font-size:14px;line-height:1.5;">Branch Admins manage employees, compliance managers, and procurement within their assigned branch. Reset Password applies the default: <strong>branchadmin123</strong>. Deactivate immediately blocks login.</p>
             <!-- Filter Section -->
             <div class="filter-section">
             <div class="filter-grid">
@@ -621,14 +606,13 @@
                     <input type="text" id="searchInput" placeholder="Search by name or email..." />
                 </div>
                 <div class="form-group">
-                    <label>Role</label>
-                    <select id="roleFilter">
-                        <option value="">All Roles</option>
-                        <option value="SuperAdmin">Super Admin</option>
-                        <option value="Admin">Admin</option>
-                        <option value="ChiefComplianceManager">Chief Compliance Manager</option>
-                        <option value="ComplianceManager">Branch Compliance Manager</option>
-                        <option value="Employee">Employee</option>
+                    <label>Branch</label>
+                    <select id="branchFilter">
+                        <option value="">All Branches</option>
+                        @foreach (var branch in Model.Branches)
+                        {
+                            <option value="@branch.BranchName">@branch.BranchName</option>
+                        }
                     </select>
                 </div>
                 <div class="form-group">
@@ -639,12 +623,12 @@
                         <option value="Inactive">Inactive</option>
                     </select>
                 </div>
-                <button class="btn-primary" onclick="openModal('add')" @((!Model.IsSuperAdmin && Model.BranchDisplayName == null) ? "disabled title=\"No branch assigned\"" : "")>
+                <button class="btn-primary" onclick="openModal('add')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    Add User
+                    Add Branch Admin
                 </button>
             </div>
         </div>
@@ -654,16 +638,15 @@
             <table id="userTable">
                 <thead>
                     <tr>
-                        <th>User</th>
+                        <th>Branch Admin</th>
                         <th>Email</th>
-                        <th>Role</th>
-                        <th>Branch</th>
+                        <th>Assigned Branch</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var user in Model.Users)
+                    @foreach (var user in Model.BranchAdmins)
                     {
                         <tr>
                             <td>
@@ -676,11 +659,10 @@
                                 </div>
                             </td>
                             <td>@user.Email</td>
-                            <td><span class="role-badge">@(user.Role == "ComplianceManager" ? "Branch Compliance Manager" : user.Role == "ChiefComplianceManager" ? "Chief Compliance Manager" : user.Role)</span></td>
                             <td>
                                 @if (user.BranchId == null)
                                 {
-                                    <span class="role-badge" style="background:#dbeafe;color:#1e40af;border:1px solid #93c5fd;">Main</span>
+                                    <span class="role-badge" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">Unassigned</span>
                                 }
                                 else
                                 {
@@ -690,30 +672,23 @@
                             <td><span class="status-badge @user.Status.ToLower()">@user.Status</span></td>
                             <td>
                                 <div class="actions">
-                                    @if (string.Equals(user.Role, "SuperAdmin", StringComparison.OrdinalIgnoreCase))
+                                    @if (user.Status == "Active")
                                     {
-                                        <span class="action-protected">Protected</span>
+                                        <button class="btn-action-icon reset" title="Reset Password" onclick="resetUserPassword('@user.UserId')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                                        </button>
+                                        <button class="btn-action-icon danger" title="Deactivate" onclick="toggleUserStatus('@user.UserId', 'deactivate')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                        </button>
                                     }
                                     else
                                     {
-                                        @if (user.Status == "Active")
-                                        {
-                                            <button class="btn-action-icon reset" title="Reset Password" onclick="resetUserPassword('@user.UserId')">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-                                            </button>
-                                            <button class="btn-action-icon danger" title="Deactivate" onclick="toggleUserStatus('@user.UserId', 'deactivate')">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                                            </button>
-                                        }
-                                        else
-                                        {
-                                            <button class="btn-action-icon reset" title="Reset Password" onclick="resetUserPassword('@user.UserId')">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-                                            </button>
-                                            <button class="btn-action-icon success" title="Reactivate" onclick="toggleUserStatus('@user.UserId', 'reactivate')">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/><polyline points="16 5 19 8 22 5"/></svg>
-                                            </button>
-                                        }
+                                        <button class="btn-action-icon reset" title="Reset Password" onclick="resetUserPassword('@user.UserId')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                                        </button>
+                                        <button class="btn-action-icon success" title="Reactivate" onclick="toggleUserStatus('@user.UserId', 'reactivate')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/><polyline points="16 5 19 8 22 5"/></svg>
+                                        </button>
                                     }
                                 </div>
                             </td>
@@ -892,20 +867,7 @@
                 });
             }
 
-            function toggleDepartmentField() {
-                const role = document.getElementById('role').value;
-                const departmentGroup = document.getElementById('departmentGroup');
-                const departmentSelect = document.getElementById('department');
-                
-                if (role === 'Employee') {
-                    departmentGroup.style.display = 'block';
-                    departmentSelect.required = true;
-                } else {
-                    departmentGroup.style.display = 'none';
-                    departmentSelect.required = false;
-                    departmentSelect.value = '';
-                }
-            }
+            // Branch Admin form — no department toggle needed
 
         async function openModal(mode, userId) {
             currentMode = mode;
@@ -915,11 +877,10 @@
             const modalTitle = document.getElementById('modalTitle');
             
             if (mode === 'add') {
-                modalTitle.textContent = 'Add User';
+                modalTitle.textContent = 'Add Branch Admin';
                 document.getElementById('userForm').reset();
-                toggleDepartmentField();
             } else {
-                modalTitle.textContent = 'Edit User';
+                modalTitle.textContent = 'Edit Branch Admin';
                 
                 // Load user data
                 try {
@@ -931,9 +892,8 @@
                         document.getElementById('firstName').value = user.firstName;
                         document.getElementById('lastName').value = user.lastName;
                         document.getElementById('email').value = user.email;
-                        document.getElementById('role').value = user.role;
+                        if (user.branchId) document.getElementById('branchId').value = user.branchId;
                         document.getElementById('status').value = user.status;
-                        toggleDepartmentField();
                     } else {
                         await showMessageModal('Failed to load user data', 'Error');
                         return;
@@ -957,12 +917,11 @@
             const firstName = document.getElementById('firstName').value.trim();
             const lastName = document.getElementById('lastName').value.trim();
             const email = document.getElementById('email').value.trim();
-            const role = document.getElementById('role').value;
-            const department = document.getElementById('department').value;
+            const branchId = document.getElementById('branchId').value;
             const status = document.getElementById('status').value;
 
-            if (!firstName || !lastName || !email || !role) {
-                await showMessageModal('Please fill in all required fields', 'Validation');
+            if (!firstName || !lastName || !email || !branchId) {
+                await showMessageModal('Please fill in all required fields including branch', 'Validation');
                 return;
             }
 
@@ -977,18 +936,14 @@
                 return;
             }
 
-            if (role === 'Employee' && !department) {
-                await showMessageModal('Please select a department for Employee role', 'Validation');
-                return;
-            }
-
-            // Prepare user data
+            // Prepare user data — role is always BranchAdmin
             const userData = {
                 userId: currentUserId || '0',
                 firstName: capFirst,
                 lastName: capLast,
                 email: email,
-                role: role,
+                role: 'BranchAdmin',
+                branchId: parseInt(branchId),
                 status: status
             };
 
@@ -1061,7 +1016,7 @@
         let filteredRows = [];
 
         document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; filterTable(); });
-        document.getElementById('roleFilter').addEventListener('change', () => { currentPage = 1; filterTable(); });
+        document.getElementById('branchFilter').addEventListener('change', () => { currentPage = 1; filterTable(); });
         document.getElementById('statusFilter').addEventListener('change', () => { currentPage = 1; filterTable(); });
 
         function changePageSize() {
@@ -1072,28 +1027,22 @@
 
         function filterTable() {
             const searchValue = document.getElementById('searchInput').value.toLowerCase();
-            const roleValue = document.getElementById('roleFilter').value;
+            const branchValue = document.getElementById('branchFilter').value.toLowerCase();
             const statusValue = document.getElementById('statusFilter').value;
-
-            const roleLabelMap = {
-                'ComplianceManager': 'Branch Compliance Manager',
-                'ChiefComplianceManager': 'Chief Compliance Manager'
-            };
-            const roleLabel = roleLabelMap[roleValue] || roleValue;
 
             const rows = Array.from(document.querySelectorAll('#userTable tbody tr'));
 
             filteredRows = rows.filter(row => {
                 const name = row.querySelector('.user-cell-name')?.textContent.toLowerCase() || '';
                 const email = row.cells[1]?.textContent.toLowerCase() || '';
-                const role = row.cells[2]?.textContent.trim() || '';
+                const branch = row.cells[2]?.textContent.toLowerCase() || '';
                 const statusEl = row.querySelector('.status-badge');
                 const status = statusEl ? statusEl.textContent.replace(/[•\s]/g,'').trim() : '';
 
                 const matchesSearch = name.includes(searchValue) || email.includes(searchValue);
-                const matchesRole = !roleValue || role === roleLabel || role === roleValue;
+                const matchesBranch = !branchValue || branch.includes(branchValue);
                 const matchesStatus = !statusValue || status === statusValue;
-                return matchesSearch && matchesRole && matchesStatus;
+                return matchesSearch && matchesBranch && matchesStatus;
             });
 
             rows.forEach(r => r.style.display = 'none');

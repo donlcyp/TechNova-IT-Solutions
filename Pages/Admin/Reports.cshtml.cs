@@ -84,17 +84,17 @@ namespace TechNova_IT_Solutions.Pages
             }
 
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            if (userRole != RoleNames.Admin && userRole != RoleNames.SuperAdmin)
+            if (!RoleNames.IsAdminRole(userRole) && userRole != RoleNames.SuperAdmin)
             {
                 if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
                 if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
                 return RedirectToPage("/Account/Login");
             }
 
-            GeneratedByRole = userRole ?? RoleNames.Admin;
+            GeneratedByRole = userRole ?? RoleNames.BranchAdmin;
 
             // Branch scoping: Branch Admins only see their branch reports; SuperAdmin sees all
-            if (userRole == RoleNames.Admin)
+            if (RoleNames.IsAdminRole(userRole))
             {
                 var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
                 if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))

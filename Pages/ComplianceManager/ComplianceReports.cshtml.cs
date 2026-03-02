@@ -89,7 +89,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
             }
 
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            if (userRole != RoleNames.ComplianceManager && userRole != RoleNames.Admin)
+            if (userRole != RoleNames.ComplianceManager && !RoleNames.IsAdminRole(userRole))
             {
                 if (userRole == RoleNames.Employee)
                 {
@@ -102,7 +102,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
             GeneratedByRole = userRole ?? RoleNames.ComplianceManager;
 
             // Extract branch scope
-            if (userRole == RoleNames.ComplianceManager || userRole == RoleNames.Admin)
+            if (userRole == RoleNames.ComplianceManager || RoleNames.IsAdminRole(userRole))
             {
                 var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
                 if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))

@@ -1,0 +1,8 @@
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["appsettings*.json"],
+      "url": "https://json.schemastore.org/appsettings.json"
+    }
+  ]
+}

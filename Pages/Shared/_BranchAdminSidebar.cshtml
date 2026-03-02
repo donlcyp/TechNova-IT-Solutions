@@ -1,0 +1,147 @@
+@model string
+@* Current page name for active state *@
+
+<!-- Mobile Hamburger Button -->
+<button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileSidebar()" aria-label="Toggle Menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+</button>
+
+<!-- Mobile Overlay -->
+<div class="mobile-overlay" id="mobileOverlay" onclick="closeMobileSidebar()"></div>
+
+<!-- Sidebar -->
+<div class="sidebar" id="adminSidebar">
+    <div class="logo">
+        <img src="/images/logo2.png" alt="TechNova Logo" class="logo-image" />
+        <span class="logo-text">TechNova</span>
+    </div>
+
+    <button class="toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+    </button>
+
+    <nav class="nav-menu">
+        <a href="/BranchAdmin/Dashboard" class="nav-item @(Model == "Dashboard" ? "active" : "")" title="Dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span class="nav-text">Branch Dashboard</span>
+        </a>
+        <a href="/BranchAdmin/UserManagement" class="nav-item @(Model == "UserManagement" ? "active" : "")" title="User Management">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span class="nav-text">User Management</span>
+        </a>
+        <a href="/BranchAdmin/Procurement" class="nav-item @(Model == "Procurement" ? "active" : "")" title="Procurement">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+            <span class="nav-text">Procurement</span>
+        </a>
+        <a href="/BranchAdmin/Reports" class="nav-item @(Model == "Reports" ? "active" : "")" title="Reports">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span class="nav-text">Reports</span>
+        </a>
+    </nav>
+
+    <button type="button" class="logout-btn js-logout-trigger" title="Logout" aria-label="Logout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span class="logout-text">Logout</span>
+    </button>
+</div>
+@await Html.PartialAsync("_LogoutModal")
+
+<style>
+    .sidebar {
+        width: 260px;
+        background: #ffffff;
+        border-right: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        height: 100vh;
+        transition: width 0.3s ease;
+    }
+    .sidebar.collapsed { width: 70px; }
+    .logo { padding: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; }
+    .logo-text { font-size: 18px; font-weight: 700; color: #1e40af; white-space: nowrap; }
+    .sidebar.collapsed .logo-text { display: none; }
+    .toggle-btn { background: #f3f4f6; border: none; color: #6b7280; padding: 12px; margin: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
+    .toggle-btn:hover { background: #e5e7eb; color: #1e40af; }
+    .toggle-btn svg { width: 24px; height: 24px; }
+    .logo-image { height: 45px; width: auto; object-fit: contain; }
+    .sidebar.collapsed .logo-image { height: 32px; }
+    .nav-menu { flex: 1; padding: 8px 0; overflow-y: auto; min-height: 0; }
+    .nav-item { padding: 14px 24px; color: #6b7280; text-decoration: none; border: none; background: transparent; width: 100%; text-align: left; display: flex; align-items: center; gap: 12px; transition: all 0.3s; font-size: 14px; font-weight: 500; white-space: nowrap; }
+    .nav-item:hover { background: rgba(30, 64, 175, 0.1); color: #1e40af; }
+    .nav-item.active { background: linear-gradient(90deg, rgba(30, 64, 175, 0.15) 0%, transparent 100%); color: #1e40af; border-left: 3px solid #1e40af; }
+    .nav-item svg { width: 24px; height: 24px; min-width: 24px; }
+    .logout-btn { border: none; background: transparent; width: 100%; text-align: left; padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; align-items: center; gap: 12px; color: #ef4444; text-decoration: none; transition: all 0.3s; margin-top: auto; white-space: nowrap; font-size: 15px; font-weight: 500; }
+    .logout-btn:hover { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    .logout-btn svg { width: 24px; height: 24px; min-width: 24px; }
+    .sidebar.collapsed .nav-text, .sidebar.collapsed .logout-text { display: none; }
+    .sidebar.collapsed .logo { justify-content: center; }
+    .sidebar.collapsed .nav-item { justify-content: center; padding: 12px; }
+    .sidebar.collapsed .logout-btn { justify-content: center; padding: 16px; }
+    body:has(.sidebar.collapsed) .main-content { margin-left: 70px !important; }
+    .mobile-menu-btn { position: fixed; top: 16px; left: 16px; z-index: 1001; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); display: none; }
+    .mobile-menu-btn svg { width: 24px; height: 24px; color: #1f2937; }
+    .mobile-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 998; opacity: 0; visibility: hidden; transition: all 0.3s; display: none; }
+    .mobile-overlay.active { opacity: 1; visibility: visible; }
+    @@media (max-width: 991px) { .mobile-overlay { display: block; } }
+    @@media (max-width: 991px) { .mobile-menu-btn { display: flex; align-items: center; justify-content: center; } .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; z-index: 999; width: 280px; } .sidebar.mobile-open { transform: translateX(0); } .sidebar.collapsed { width: 280px; } .sidebar.collapsed .nav-text, .sidebar.collapsed .logout-text { display: inline; } .toggle-btn { display: none; } body:has(.sidebar.collapsed) .main-content { margin-left: 0 !important; } }
+    @@media (max-width: 576px) { .sidebar { width: 260px; } .sidebar.collapsed { width: 260px; } }
+</style>
+
+<script>
+    function toggleSidebar() {
+        const sidebar = document.getElementById('adminSidebar');
+        sidebar.classList.toggle('collapsed');
+        localStorage.setItem('adminSidebarCollapsed', sidebar.classList.contains('collapsed'));
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('adminSidebar');
+        if (localStorage.getItem('adminSidebarCollapsed') === 'true') sidebar.classList.add('collapsed');
+    });
+    function toggleMobileSidebar() {
+        const sidebar = document.getElementById('adminSidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+        document.body.style.overflow = sidebar.classList.contains('mobile-open') ? 'hidden' : '';
+    }
+    function closeMobileSidebar() {
+        const sidebar = document.getElementById('adminSidebar');
+        const overlay = document.getElementById('mobileOverlay');
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    document.querySelectorAll('.nav-item').forEach(item => { item.addEventListener('click', function() { if (window.innerWidth <= 991) closeMobileSidebar(); }); });
+    window.addEventListener('resize', function() { if (window.innerWidth > 991) closeMobileSidebar(); });
+    document.addEventListener('keydown', function (event) { if (event.key === 'Escape') closeMobileSidebar(); });
+</script>

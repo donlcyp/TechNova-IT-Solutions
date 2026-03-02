@@ -364,7 +364,7 @@
             <div style="display:flex; gap:8px; align-items:center; margin-left:auto;">
                 <span style="font-size:13px; color:#6b7280; font-weight:600;">Filter:</span>
                 <button class="btn filter-btn active" data-filter="all" onclick="filterTable('all')">All</button>
-                <button class="btn filter-btn" data-filter="Admin" onclick="filterTable('Admin')">System Admin</button>
+                <button class="btn filter-btn" data-filter="SystemAdmin" onclick="filterTable('SystemAdmin')">System Admin</button>
                 <button class="btn filter-btn" data-filter="ChiefComplianceManager" onclick="filterTable('ChiefComplianceManager')">Global Compliance</button>
             </div>
         </div>
@@ -445,7 +445,7 @@
             <input id="lastName" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="Last name" />
             <input id="email" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="Email" />
             <select id="role" class="btn" style="width:100%; text-align:left; font-weight:400;">
-                <option value="Admin">System Admin</option>
+                <option value="SystemAdmin">System Admin</option>
                 <option value="ChiefComplianceManager">Global Compliance</option>
             </select>
             <button class="btn btn-primary" onclick="createAdmin()">Create Account</button>

@@ -29,7 +29,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
 
             // Check user role - only ComplianceManager and Admin can access
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            if (userRole != RoleNames.ComplianceManager && userRole != RoleNames.Admin)
+            if (userRole != RoleNames.ComplianceManager && !RoleNames.IsAdminRole(userRole))
             {
                 // Redirect to appropriate dashboard based on role
                 if (userRole == RoleNames.Employee)
@@ -41,7 +41,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
 
             // Extract branch scope
             int? callerBranchId = null;
-            if (userRole == RoleNames.ComplianceManager || userRole == RoleNames.Admin)
+            if (userRole == RoleNames.ComplianceManager || RoleNames.IsAdminRole(userRole))
             {
                 var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
                 if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))

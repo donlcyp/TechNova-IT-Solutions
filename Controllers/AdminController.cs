@@ -27,7 +27,7 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> Dashboard()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             int? branchId = null;
@@ -41,16 +41,30 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> UserManagement()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
-            var users = await _userService.GetAllUsersAsync();
-            return View(users);
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            var allUsers = await _userService.GetAllUsersAsync();
+
+            // Branch Admins only see users in their branch
+            if (userRole != RoleNames.SuperAdmin)
+            {
+                int? callerBranchId = null;
+                var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+                if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var parsedId))
+                    callerBranchId = parsedId;
+
+                if (callerBranchId.HasValue)
+                    allUsers = allUsers.Where(u => u.BranchId == callerBranchId.Value).ToList();
+            }
+
+            return View(allUsers);
         }
 
         public IActionResult PolicyManagement()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             return View();
@@ -58,7 +72,7 @@ namespace TechNova_IT_Solutions.Controllers
 
         public IActionResult SupplierManagement()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             return View();
@@ -66,7 +80,7 @@ namespace TechNova_IT_Solutions.Controllers
 
         public IActionResult ComplianceMonitoring()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             return View();
@@ -74,7 +88,7 @@ namespace TechNova_IT_Solutions.Controllers
 
         public IActionResult AuditLogs()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             return View();
@@ -82,7 +96,7 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> PolicyArchives(string? searchTerm, string? categoryFilter)
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             var archiveData = await _complianceManagerService.GetPolicyArchivesAsync(searchTerm, categoryFilter);
@@ -120,7 +134,7 @@ namespace TechNova_IT_Solutions.Controllers
 
         public IActionResult Reports()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             return View();
@@ -128,7 +142,7 @@ namespace TechNova_IT_Solutions.Controllers
 
         public IActionResult Procurement()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Admin, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             return View();

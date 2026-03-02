@@ -11,6 +11,11 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         Task<bool> ArchivePolicyAsync(int policyId);
         Task<bool> RestorePolicyAsync(int policyId);
         Task<PolicyDetailData?> GetPolicyDetailAsync(int policyId);
+
+        // Policy review workflow (CCM)
+        Task<bool> ApprovePolicyAsync(int policyId, int reviewedByUserId, string? reviewNotes = null);
+        Task<bool> RejectPolicyAsync(int policyId, int reviewedByUserId, string? reviewNotes = null);
+        Task<bool> ApproveUpdateAsync(int policyId, int reviewedByUserId, string? reviewNotes = null);
         
         // Policy assignment
         Task<bool> AssignPolicyToEmployeesAsync(int policyId, List<int> employeeIds);
@@ -92,6 +97,11 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public DateTime? ArchivedDate { get; set; }
         /// <summary>null = company-wide policy; non-null = branch-specific.</summary>
         public int? BranchId { get; set; }
+        public string ReviewStatus { get; set; } = "Approved";
+        /// <summary>UserId of the person creating/updating (used for review workflow).</summary>
+        public int? CallerUserId { get; set; }
+        /// <summary>Role of the person creating/updating (used to decide if review is needed).</summary>
+        public string? CallerRole { get; set; }
     }
 
     public class PolicyDetailData

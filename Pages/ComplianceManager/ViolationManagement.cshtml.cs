@@ -15,7 +15,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
                 return RedirectToPage("/Account/Login");
 
             var role = HttpContext.Session.GetString(SessionKeys.UserRole);
-            if (role != RoleNames.ComplianceManager && role != RoleNames.Admin)
+            if (role != RoleNames.ComplianceManager && !RoleNames.IsAdminRole(role))
                 return RedirectToPage("/Account/Login");
 
             var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);

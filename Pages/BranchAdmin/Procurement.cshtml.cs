@@ -1,0 +1,166 @@
+namespace TechNova_IT_Solutions.Pages.BranchAdmin
+{
+    public class ProcurementModel : PageModel
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly IAdminService _adminService;
+
+        public ProcurementModel(ApplicationDbContext context, IAdminService adminService)
+        {
+            _context = context;
+            _adminService = adminService;
+        }
+
+        public string UserEmail { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+
+        public int TotalProcurements { get; set; }
+        public int PendingApprovals { get; set; }
+        public int ProcurementsThisMonth { get; set; }
+
+        public List<TechNova_IT_Solutions.Pages.ProcurementRecord> ProcurementRecords { get; set; } = new();
+        public List<TechNova_IT_Solutions.Pages.SupplierReference> Suppliers { get; set; } = new();
+        public List<TechNova_IT_Solutions.Pages.PolicyReference> Policies { get; set; } = new();
+        public List<TechNova_IT_Solutions.Pages.SupplierItemReference> SupplierItems { get; set; } = new();
+
+        public async Task<IActionResult> OnGet()
+        {
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (string.IsNullOrEmpty(userIdString))
+                return RedirectToPage("/Account/Login");
+
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (userRole != RoleNames.BranchAdmin && userRole != RoleNames.SuperAdmin)
+            {
+                if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
+                if (userRole == RoleNames.SystemAdmin) return RedirectToPage("/SystemAdmin/Dashboard");
+                if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                return RedirectToPage("/Account/Login");
+            }
+
+            UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? "admin@technova.com";
+            UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
+
+            int? callerBranchId = null;
+            if (userRole == RoleNames.BranchAdmin)
+            {
+                var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+                if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))
+                    callerBranchId = bid;
+            }
+
+            bool scoped = callerBranchId.HasValue;
+
+            await _adminService.SyncLateProcurementsAsync();
+
+            TotalProcurements = await _context.Procurements
+                .Where(p => !scoped || p.BranchId == callerBranchId || p.BranchId == null)
+                .CountAsync();
+
+            PendingApprovals = await _context.Procurements
+                .Where(p => p.Status == ProcurementStatuses.Submitted)
+                .Where(p => !scoped || p.BranchId == callerBranchId || p.BranchId == null)
+                .CountAsync();
+
+            var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+            ProcurementsThisMonth = await _context.Procurements
+                .Where(p => p.PurchaseDate >= firstDayOfMonth)
+                .Where(p => !scoped || p.BranchId == callerBranchId || p.BranchId == null)
+                .CountAsync();
+
+            ProcurementRecords = await _context.Procurements
+                .Include(p => p.Supplier)
+                .Include(p => p.RelatedPolicy)
+                .Where(p => !scoped || p.BranchId == callerBranchId || p.BranchId == null)
+                .OrderByDescending(p => p.PurchaseDate)
+                .Select(p => new TechNova_IT_Solutions.Pages.ProcurementRecord
+                {
+                    ProcurementId = "PROC-" + p.ProcurementId.ToString("D3"),
+                    ItemName = p.ItemName ?? string.Empty,
+                    Category = p.Category ?? string.Empty,
+                    Quantity = p.Quantity ?? 0,
+                    SupplierName = p.Supplier != null ? p.Supplier.SupplierName : "N/A",
+                    LinkedPolicy = p.RelatedPolicy != null ? p.RelatedPolicy.PolicyTitle : "General",
+                    PurchaseDate = p.PurchaseDate ?? DateTime.Now,
+                    CurrencyCode = p.CurrencyCode ?? "PHP",
+                    OriginalAmount = p.OriginalAmount,
+                    ExchangeRate = p.ExchangeRate,
+                    ConvertedAmount = p.ConvertedAmount,
+                    DeliveryBegin = p.SupplierCommitShipDate,
+                    RevisedDeliveryDate = p.RevisedDeliveryDate,
+                    DelayReason = p.DelayReason,
+                    WorkflowStatus = string.IsNullOrWhiteSpace(p.Status) ? ProcurementStatuses.Draft : p.Status,
+                    SupplierResponseDeadline = p.SupplierResponseDeadline
+                })
+                .ToListAsync();
+
+            foreach (var record in ProcurementRecords)
+            {
+                record.PossibleArrival = record.RevisedDeliveryDate ?? (record.DeliveryBegin?.AddDays(6));
+                var today = DateTime.UtcNow.Date;
+
+                record.ApprovalStatus = record.WorkflowStatus switch
+                {
+                    ProcurementStatuses.Draft => ProcurementStatuses.Draft,
+                    ProcurementStatuses.Submitted => ProcurementStatuses.Submitted,
+                    ProcurementStatuses.SupplierRejected => ProcurementStatuses.SupplierRejected,
+                    _ => ProcurementStatuses.SupplierApproved
+                };
+
+                record.DeliveryStatus = record.WorkflowStatus switch
+                {
+                    ProcurementStatuses.Draft => "NotStarted",
+                    ProcurementStatuses.Submitted => "PendingSupplier",
+                    ProcurementStatuses.SupplierRejected => "Rejected",
+                    ProcurementStatuses.Received => "Arrived",
+                    ProcurementStatuses.Closed => ProcurementStatuses.Closed,
+                    _ => record.PossibleArrival.HasValue
+                        ? (today > record.PossibleArrival.Value.Date ? ProcurementStatuses.Late : "OnTheWay")
+                        : "PendingSupplier"
+                };
+
+                record.CanEdit = record.WorkflowStatus == ProcurementStatuses.Draft || record.WorkflowStatus == ProcurementStatuses.Submitted;
+                record.CanMarkDeliveryArrived = record.WorkflowStatus == ProcurementStatuses.SupplierApproved || record.WorkflowStatus == ProcurementStatuses.Late;
+            }
+
+            Suppliers = await _context.Suppliers
+                .Where(s => s.Status == "Active" && (!scoped || s.BranchId == callerBranchId || s.BranchId == null))
+                .OrderBy(s => s.SupplierName)
+                .Select(s => new TechNova_IT_Solutions.Pages.SupplierReference
+                {
+                    Id = s.SupplierId,
+                    Name = s.SupplierName ?? string.Empty
+                })
+                .ToListAsync();
+
+            Policies = await _context.Policies
+                .Where(p => !p.IsArchived && (!scoped || p.BranchId == callerBranchId || p.BranchId == null))
+                .OrderBy(p => p.PolicyTitle)
+                .Select(p => new TechNova_IT_Solutions.Pages.PolicyReference
+                {
+                    Id = p.PolicyId,
+                    Title = p.PolicyTitle ?? string.Empty
+                })
+                .ToListAsync();
+
+            SupplierItems = await _context.SupplierItems
+                .Include(i => i.Supplier)
+                .Where(i => !scoped || i.Supplier == null || i.Supplier.BranchId == callerBranchId || i.Supplier.BranchId == null)
+                .OrderBy(i => i.ItemName)
+                .Select(i => new TechNova_IT_Solutions.Pages.SupplierItemReference
+                {
+                    Id = i.SupplierItemId,
+                    SupplierId = i.SupplierId,
+                    Name = i.ItemName,
+                    Category = i.Category ?? string.Empty,
+                    UnitPrice = i.UnitPrice,
+                    CurrencyCode = i.CurrencyCode,
+                    QuantityAvailable = i.QuantityAvailable,
+                    Status = i.Status
+                })
+                .ToListAsync();
+
+            return Page();
+        }
+    }
+}

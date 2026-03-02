@@ -1,0 +1,980 @@
+@page
+@model TechNova_IT_Solutions.Pages.BranchAdmin.BranchComplianceModel
+@{
+    ViewData["Title"] = "Branch Compliance";
+}
+
+@section Styles {
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; color: #1f2937; display: flex; min-height: 100vh; }
+    .main-content { margin-left: 260px; flex: 1; overflow-y: auto; }
+    .content-wrapper { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+    /* Summary Cards */
+    .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+    .summary-card { background: #fff; padding: 22px 24px; border-radius: 12px; border: 1px solid #e5e7eb; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 4px rgba(0,0,0,.04); }
+    .card-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .card-icon svg { width: 24px; height: 24px; }
+    .card-icon.blue { background: #eff6ff; color: #1e40af; }
+    .card-icon.green { background: #f0fdf4; color: #16a34a; }
+    .card-icon.orange { background: #fff7ed; color: #ea580c; }
+    .card-icon.purple { background: #faf5ff; color: #9333ea; }
+    .card-info h3 { font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 4px; }
+    .card-value { font-size: 28px; font-weight: 700; color: #1f2937; line-height: 1; }
+    .card-sub { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+    /* Tabs */
+    .tab-bar { display: flex; gap: 4px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 4px; margin-bottom: 24px; width: fit-content; }
+    .tab-btn { padding: 10px 24px; border: none; border-radius: 8px; background: transparent; font-size: 14px; font-weight: 600; color: #6b7280; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+    .tab-btn svg { width: 16px; height: 16px; }
+    .tab-btn.active { background: #1e40af; color: #fff; }
+    .tab-btn:not(.active):hover { background: #f3f4f6; color: #1f2937; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Filter bar */
+    .filter-bar { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .search-wrap { flex: 1; min-width: 220px; position: relative; }
+    .search-wrap input { width: 100%; padding: 10px 14px 10px 40px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; color: #1f2937; background: #f8f9fa; }
+    .search-wrap input:focus { outline: none; border-color: #1e40af; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; width: 18px; height: 18px; }
+    .btn-primary { padding: 10px 20px; background: linear-gradient(135deg,#1e40af,#1e3a8a); border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: opacity .2s; }
+    .btn-primary:hover { opacity: .9; }
+    .btn-primary svg { width: 16px; height: 16px; }
+    .btn-secondary { padding: 10px 18px; background: #f8f9fa; border: 1px solid #e5e7eb; border-radius: 8px; color: #374151; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .2s; }
+    .btn-secondary:hover { border-color: #1e40af; color: #1e40af; }
+    .filter-select { padding: 10px 14px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; color: #1f2937; background: #f8f9fa; cursor: pointer; }
+
+    /* Table */
+    .table-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+    .table-scroll { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 800px; }
+    thead { background: #f9fafb; }
+    th { padding: 12px 16px; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #e5e7eb; text-align: left; }
+    td { padding: 14px 16px; font-size: 14px; color: #1f2937; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    tbody tr:hover { background: #fafafa; }
+    tbody tr:last-child td { border-bottom: none; }
+    .empty-row td { text-align: center; padding: 48px 16px; color: #6b7280; }
+
+    /* Status badges */
+    .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+    .badge.compliant { background: #dcfce7; color: #16a34a; }
+    .badge.not-compliant { background: #fee2e2; color: #dc2626; }
+    .badge.no-policies { background: #f3f4f6; color: #6b7280; }
+    .badge.no-contracts { background: #f3f4f6; color: #6b7280; }
+    .badge.pending { background: #fef3c7; color: #d97706; }
+    .badge.active-s { background: #dcfce7; color: #16a34a; }
+    .badge.suspended { background: #fce7f3; color: #be185d; }
+
+    /* Assigned policies pill list */
+    .policy-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .policy-pill { display: inline-flex; align-items: center; gap: 6px; background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; border-radius: 99px; padding: 3px 10px 3px 8px; font-size: 12px; }
+    .pill-remove { background: none; border: none; cursor: pointer; color: #93c5fd; padding: 0; line-height: 1; display: flex; align-items: center; transition: color .2s; }
+    .pill-remove:hover { color: #dc2626; }
+    .pill-remove svg { width: 12px; height: 12px; }
+
+    /* Inline action buttons */
+    .action-wrap { display: flex; gap: 8px; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 6px; border: 1px solid transparent; cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-sm svg { width: 14px; height: 14px; }
+    .btn-sm.assign { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+    .btn-sm.assign:hover { background: #1e40af; color: #fff; }
+    .btn-sm.status { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+    .btn-sm.status:hover { background: #16a34a; color: #fff; }
+    .btn-sm.remove { background: #fff1f2; color: #e11d48; border-color: #fecdd3; }
+    .btn-sm.remove:hover { background: #e11d48; color: #fff; }
+
+    /* Modal */
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-bg.open { display: flex; }
+    .modal-box { background: #fff; border-radius: 12px; width: 90%; max-width: 680px; max-height: 90vh; display: flex; flex-direction: column; }
+    .modal-head { padding: 20px 24px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+    .modal-head h2 { font-size: 18px; font-weight: 700; color: #1f2937; }
+    .modal-close { background: none; border: none; font-size: 22px; color: #9ca3af; cursor: pointer; line-height: 1; }
+    .modal-close:hover { color: #1f2937; }
+    .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+    .modal-foot { padding: 16px 24px; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 10px; }
+
+    /* Form elements in modal */
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #1f2937; }
+    .form-group .hint { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .checklist { border: 1px solid #e5e7eb; border-radius: 8px; max-height: 220px; overflow-y: auto; background: #f9fafb; }
+    .check-item { display: flex; align-items: center; padding: 10px 14px; gap: 10px; border-bottom: 1px solid #f3f4f6; transition: background .15s; cursor: pointer; }
+    .check-item:last-child { border-bottom: none; }
+    .check-item:hover { background: #eff6ff; }
+    .check-item input[type="checkbox"] { width: 16px; height: 16px; accent-color: #1e40af; flex-shrink: 0; cursor: pointer; }
+    .check-item label { font-size: 14px; color: #1f2937; cursor: pointer; flex: 1; }
+    .check-item .item-sub { font-size: 11px; color: #6b7280; }
+    .already-badge { padding: 2px 8px; border-radius: 99px; background: #dbeafe; color: #1e40af; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+    .search-checklist { width: 100%; padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; margin-bottom: 8px; }
+    .search-checklist:focus { outline: none; border-color: #1e40af; }
+    .select-all-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+    .select-all-row label { font-size: 13px; color: #6b7280; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .selected-count { font-size: 13px; color: #1e40af; font-weight: 600; }
+
+    /* Toast */
+    .toast-wrap { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 9999; }
+    .toast { padding: 14px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,.15); animation: slideIn .3s ease; max-width: 380px; }
+    .toast svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+    .toast.info { background: #1e40af; }
+    @@keyframes slideIn { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* Loading overlay */
+    .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(15,23,42,.55); z-index: 9998; align-items: center; justify-content: center; flex-direction: column; gap: 14px; }
+    .loading-overlay.active { display: flex; }
+    .spinner { width: 44px; height: 44px; border: 4px solid rgba(255,255,255,.3); border-top: 4px solid #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    .loading-text { color: #fff; font-size: 14px; font-weight: 600; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @@media(max-width:991px) { .main-content { margin-left: 0; } .summary-cards { grid-template-columns: repeat(2,1fr); } }
+    @@media(max-width:575px) { .summary-cards { grid-template-columns: 1fr; } .tab-bar { width: 100%; } .tab-btn { flex: 1; justify-content: center; padding: 10px; } }
+</style>
+}
+
+@await Html.PartialAsync("_BranchAdminSidebar", "BranchCompliance")
+
+<div class="main-content">
+    @await Html.PartialAsync("_BranchAdminTopBar", (Title: "Branch Compliance", Description: "Assign compliance policies to employees and contracts to suppliers"))
+
+    <div class="content-wrapper">
+
+        <!-- Summary Cards -->
+        <div class="summary-cards" id="summaryCards">
+            <div class="summary-card">
+                <div class="card-icon blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div class="card-info">
+                    <h3>Total Employees</h3>
+                    <div class="card-value" id="totalEmployees">—</div>
+                    <div class="card-sub" id="assignedEmployees">Loading…</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div class="card-info">
+                    <h3>Compliant Employees</h3>
+                    <div class="card-value" id="compliantEmployees">—</div>
+                    <div class="card-sub" id="compliantEmployeesPct">Loading…</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon orange">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div class="card-info">
+                    <h3>Total Suppliers</h3>
+                    <div class="card-value" id="totalSuppliers">—</div>
+                    <div class="card-sub" id="activeContracts">Loading…</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div class="card-info">
+                    <h3>Compliant Suppliers</h3>
+                    <div class="card-value" id="compliantSuppliers">—</div>
+                    <div class="card-sub" id="compliantSuppliersPct">Loading…</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Bar -->
+        <div class="tab-bar">
+            <button class="tab-btn active" id="empTabBtn" onclick="switchTab('employee')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Employee Policy Assignment
+            </button>
+            <button class="tab-btn" id="supTabBtn" onclick="switchTab('supplier')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Supplier Contract Assignment
+            </button>
+        </div>
+
+        <!-- Employee Tab -->
+        <div id="employeeTab" class="tab-panel active">
+            <div class="filter-bar">
+                <div class="search-wrap">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input type="text" id="empSearch" placeholder="Search by name or email…" oninput="filterEmployees()" />
+                </div>
+                <select class="filter-select" id="empStatusFilter" onchange="filterEmployees()">
+                    <option value="">All Status</option>
+                    <option value="Compliant">Compliant</option>
+                    <option value="Not Compliant">Not Compliant</option>
+                    <option value="No Policies">No Policies</option>
+                </select>
+                <button class="btn-secondary" onclick="loadEmployees()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;display:inline"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    Refresh
+                </button>
+                <button class="btn-primary" onclick="openAssignEmpModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Assign Policy
+                </button>
+            </div>
+            <div class="table-card">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Email</th>
+                                <th>Policies Assigned</th>
+                                <th>Compliance Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="empTableBody">
+                            <tr class="empty-row"><td colspan="5">Loading employees…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supplier Tab -->
+        <div id="supplierTab" class="tab-panel">
+            <div class="filter-bar">
+                <div class="search-wrap">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    <input type="text" id="supSearch" placeholder="Search by supplier name or email…" oninput="filterSuppliers()" />
+                </div>
+                <select class="filter-select" id="supStatusFilter" onchange="filterSuppliers()">
+                    <option value="">All Status</option>
+                    <option value="Compliant">Compliant</option>
+                    <option value="Not Compliant">Not Compliant</option>
+                    <option value="No Contracts">No Contracts</option>
+                </select>
+                <button class="btn-secondary" onclick="loadSuppliers()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;display:inline"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    Refresh
+                </button>
+                <button class="btn-primary" onclick="openAssignSupModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Assign Contract
+                </button>
+            </div>
+            <div class="table-card">
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Supplier</th>
+                                <th>Contact</th>
+                                <th>Contracts Assigned</th>
+                                <th>Compliance Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="supTableBody">
+                            <tr class="empty-row"><td colspan="5">Loading suppliers…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /content-wrapper -->
+</div><!-- /main-content -->
+
+<!-- ── Assign Policy to Employee Modal ── -->
+<div class="modal-bg" id="assignEmpModal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h2>Assign Policy to Employees</h2>
+            <button class="modal-close" onclick="closeModal('assignEmpModal')">&#215;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Select Policies <span style="color:#dc2626">*</span></label>
+                <input type="text" class="search-checklist" id="policySearchEmp" placeholder="Search policies…" oninput="filterChecklist('policyListEmp', this.value)" />
+                <div class="select-all-row">
+                    <label><input type="checkbox" id="selectAllPoliciesEmp" onchange="toggleAllChecks('policyListEmp', this.checked)"> Select all</label>
+                    <span class="selected-count" id="empPolicyCount">0 selected</span>
+                </div>
+                <div class="checklist" id="policyListEmp">
+                    <div class="check-item"><label style="color:#6b7280">Loading policies…</label></div>
+                </div>
+                <div class="hint">Select one or more compliance policies to assign.</div>
+            </div>
+            <div class="form-group">
+                <label>Select Employees <span style="color:#dc2626">*</span></label>
+                <input type="text" class="search-checklist" id="empSearchModal" placeholder="Search employees…" oninput="filterChecklist('empListModal', this.value)" />
+                <div class="select-all-row">
+                    <label><input type="checkbox" id="selectAllEmps" onchange="toggleAllChecks('empListModal', this.checked)"> Select all</label>
+                    <span class="selected-count" id="empEmpCount">0 selected</span>
+                </div>
+                <div class="checklist" id="empListModal">
+                    <div class="check-item"><label style="color:#6b7280">Loading employees…</label></div>
+                </div>
+                <div class="hint">Employees who already have a policy assigned are marked.</div>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn-secondary" onclick="closeModal('assignEmpModal')">Cancel</button>
+            <button class="btn-primary" onclick="submitAssignToEmployees()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Assign Policies
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Assign Contract to Supplier Modal ── -->
+<div class="modal-bg" id="assignSupModal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h2>Assign Contract to Suppliers</h2>
+            <button class="modal-close" onclick="closeModal('assignSupModal')">&#215;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Select Contract Policies <span style="color:#dc2626">*</span></label>
+                <input type="text" class="search-checklist" id="policySearchSup" placeholder="Search contract policies…" oninput="filterChecklist('policyListSup', this.value)" />
+                <div class="select-all-row">
+                    <label><input type="checkbox" id="selectAllPoliciesSup" onchange="toggleAllChecks('policyListSup', this.checked)"> Select all</label>
+                    <span class="selected-count" id="supPolicyCount">0 selected</span>
+                </div>
+                <div class="checklist" id="policyListSup">
+                    <div class="check-item"><label style="color:#6b7280">Loading policies…</label></div>
+                </div>
+                <div class="hint">Select one or more policies to assign as contracts.</div>
+            </div>
+            <div class="form-group">
+                <label>Select Suppliers <span style="color:#dc2626">*</span></label>
+                <input type="text" class="search-checklist" id="supSearchModal" placeholder="Search suppliers…" oninput="filterChecklist('supListModal', this.value)" />
+                <div class="select-all-row">
+                    <label><input type="checkbox" id="selectAllSups" onchange="toggleAllChecks('supListModal', this.checked)"> Select all</label>
+                    <span class="selected-count" id="supSupCount">0 selected</span>
+                </div>
+                <div class="checklist" id="supListModal">
+                    <div class="check-item"><label style="color:#6b7280">Loading suppliers…</label></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn-secondary" onclick="closeModal('assignSupModal')">Cancel</button>
+            <button class="btn-primary" onclick="submitAssignToSuppliers()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                Assign Contracts
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Update Supplier Status Modal ── -->
+<div class="modal-bg" id="statusModal">
+    <div class="modal-box" style="max-width:440px">
+        <div class="modal-head">
+            <h2>Update Contract Status</h2>
+            <button class="modal-close" onclick="closeModal('statusModal')">&#215;</button>
+        </div>
+        <div class="modal-body">
+            <p style="margin-bottom:16px;color:#4b5563;font-size:14px;">Supplier: <strong id="statusSupName"></strong></p>
+            <p style="margin-bottom:8px;color:#4b5563;font-size:14px;">Contract: <strong id="statusPolName"></strong></p>
+            <div class="form-group" style="margin-top:18px;">
+                <label>Compliance Status</label>
+                <select id="statusSelect" class="filter-select" style="width:100%">
+                    <option value="Pending">Pending</option>
+                    <option value="Compliant">Compliant</option>
+                    <option value="Non-Compliant">Non-Compliant</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn-secondary" onclick="closeModal('statusModal')">Cancel</button>
+            <button class="btn-primary" onclick="submitStatusUpdate()">Save Status</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Employee Policies Detail Modal ── -->
+<div class="modal-bg" id="empDetailModal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h2 id="empDetailTitle">Employee Policies</h2>
+            <button class="modal-close" onclick="closeModal('empDetailModal')">&#215;</button>
+        </div>
+        <div class="modal-body" id="empDetailBody"></div>
+        <div class="modal-foot">
+            <button class="btn-secondary" onclick="closeModal('empDetailModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Supplier Contracts Detail Modal ── -->
+<div class="modal-bg" id="supDetailModal">
+    <div class="modal-box">
+        <div class="modal-head">
+            <h2 id="supDetailTitle">Supplier Contracts</h2>
+            <button class="modal-close" onclick="closeModal('supDetailModal')">&#215;</button>
+        </div>
+        <div class="modal-body" id="supDetailBody"></div>
+        <div class="modal-foot">
+            <button class="btn-secondary" onclick="closeModal('supDetailModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading + Toast -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Please wait…</div>
+</div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+@section Scripts {
+<script>
+// ───────── State ─────────────────────────────────────────────────
+let allEmployees = [];
+let allSuppliers = [];
+let allPolicies  = [];
+let statusTarget = { supplierPolicyId: null };
+let currentTab   = 'employee';
+
+// ───────── Init ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    loadSummary();
+    loadEmployees();
+    loadPolicies();
+});
+
+// ───────── Tabs ──────────────────────────────────────────────────
+function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('empTabBtn').classList.toggle('active', tab === 'employee');
+    document.getElementById('supTabBtn').classList.toggle('active', tab === 'supplier');
+    document.getElementById('employeeTab').classList.toggle('active', tab === 'employee');
+    document.getElementById('supplierTab').classList.toggle('active', tab === 'supplier');
+    if (tab === 'supplier' && allSuppliers.length === 0) loadSuppliers();
+}
+
+// ───────── Summary ────────────────────────────────────────────────
+async function loadSummary() {
+    try {
+        const res = await fetch('/BranchCompliance/GetSummary');
+        const data = await res.json();
+        if (!data.success) return;
+        document.getElementById('totalEmployees').textContent    = data.totalEmployees;
+        document.getElementById('assignedEmployees').textContent = `${data.assignedEmployees} assigned`;
+        document.getElementById('compliantEmployees').textContent = data.compliantEmployees;
+        const empPct = data.assignedEmployees > 0
+            ? Math.round((data.compliantEmployees / data.assignedEmployees) * 100) : 0;
+        document.getElementById('compliantEmployeesPct').textContent = `${empPct}% compliance rate`;
+        document.getElementById('totalSuppliers').textContent    = data.totalSuppliers;
+        document.getElementById('activeContracts').textContent   = `${data.activeContracts} active contracts`;
+        document.getElementById('compliantSuppliers').textContent = data.compliantSuppliers;
+        const supPct = data.totalSuppliers > 0
+            ? Math.round((data.compliantSuppliers / data.totalSuppliers) * 100) : 0;
+        document.getElementById('compliantSuppliersPct').textContent = `${supPct}% compliance rate`;
+    } catch (e) { console.error('Summary load error', e); }
+}
+
+// ───────── Employees ─────────────────────────────────────────────
+async function loadEmployees() {
+    showLoading('Loading employees…');
+    try {
+        const res = await fetch('/BranchCompliance/GetBranchEmployees');
+        const data = await res.json();
+        if (!data.success) { hideLoading(); showToast('Failed to load employees.', 'error'); return; }
+        allEmployees = data.employees;
+        renderEmployeeTable(allEmployees);
+    } catch (e) { showToast('Error loading employees.', 'error'); }
+    hideLoading();
+}
+
+function filterEmployees() {
+    const q   = document.getElementById('empSearch').value.trim().toLowerCase();
+    const st  = document.getElementById('empStatusFilter').value;
+    const list = allEmployees.filter(e =>
+        (!q || e.fullName.toLowerCase().includes(q) || e.email.toLowerCase().includes(q)) &&
+        (!st || e.overallStatus === st));
+    renderEmployeeTable(list);
+}
+
+function renderEmployeeTable(list) {
+    const tbody = document.getElementById('empTableBody');
+    if (!list.length) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="5">No employees found.</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = list.map(e => `
+        <tr>
+            <td>
+                <div style="font-weight:600">${esc(e.fullName)}</div>
+                <div style="font-size:12px;color:#6b7280">${esc(e.role)}</div>
+            </td>
+            <td style="color:#4b5563">${esc(e.email)}</td>
+            <td>
+                ${e.totalPolicies === 0
+                    ? '<span style="color:#9ca3af;font-size:13px">None assigned</span>'
+                    : `<span style="font-size:13px;color:#374151">${e.compliantCount}/${e.totalPolicies} compliant</span>`}
+            </td>
+            <td>${statusBadge(e.overallStatus)}</td>
+            <td>
+                <div class="action-wrap">
+                    <button class="btn-sm assign" onclick="openAssignEmpSingleModal(${e.userId}, '${esc(e.fullName)}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Assign
+                    </button>
+                    ${e.totalPolicies > 0 ? `<button class="btn-sm status" onclick="viewEmpDetail(${e.userId})">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Details
+                    </button>` : ''}
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+function viewEmpDetail(userId) {
+    const emp = allEmployees.find(e => e.userId === userId);
+    if (!emp) return;
+    document.getElementById('empDetailTitle').textContent = emp.fullName + ' – Policies';
+    const body = document.getElementById('empDetailBody');
+    if (!emp.assignedPolicies.length) {
+        body.innerHTML = '<p style="color:#6b7280">No policies assigned.</p>';
+    } else {
+        body.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:14px">
+            <thead><tr style="background:#f9fafb">
+                <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb">Policy</th>
+                <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb">Date Assigned</th>
+                <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb">Status</th>
+                <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb">Acknowledged</th>
+                <th style="padding:10px 12px;border-bottom:1px solid #e5e7eb"></th>
+            </tr></thead>
+            <tbody>${emp.assignedPolicies.map(p => `<tr>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">${esc(p.policyTitle)}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">${p.assignedDate}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">${statusBadge(p.status)}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">${p.acknowledgedDate}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">
+                    <button class="btn-sm remove" onclick="removeEmpAssignment(${p.assignmentId}, ${userId})">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>Remove
+                    </button>
+                </td>
+            </tr>`).join('')}</tbody>
+        </table>`;
+    }
+    document.getElementById('empDetailModal').classList.add('open');
+}
+
+async function removeEmpAssignment(assignmentId, userId) {
+    if (!confirm('Remove this policy assignment from the employee?')) return;
+    showLoading('Removing assignment…');
+    try {
+        const res = await fetch(`/BranchCompliance/RemoveEmployeeAssignment?assignmentId=${assignmentId}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeModal('empDetailModal');
+            await loadEmployees();
+            loadSummary();
+        } else {
+            showToast(data.message || 'Failed to remove assignment.', 'error');
+        }
+    } catch (e) { showToast('Error removing assignment.', 'error'); }
+    hideLoading();
+}
+
+// ───────── Suppliers ──────────────────────────────────────────────
+async function loadSuppliers() {
+    showLoading('Loading suppliers…');
+    try {
+        const res = await fetch('/BranchCompliance/GetBranchSuppliers');
+        const data = await res.json();
+        if (!data.success) { hideLoading(); showToast('Failed to load suppliers.', 'error'); return; }
+        allSuppliers = data.suppliers;
+        renderSupplierTable(allSuppliers);
+    } catch (e) { showToast('Error loading suppliers.', 'error'); }
+    hideLoading();
+}
+
+function filterSuppliers() {
+    const q  = document.getElementById('supSearch').value.trim().toLowerCase();
+    const st = document.getElementById('supStatusFilter').value;
+    const list = allSuppliers.filter(s =>
+        (!q || s.supplierName.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)) &&
+        (!st || s.overallStatus === st));
+    renderSupplierTable(list);
+}
+
+function renderSupplierTable(list) {
+    const tbody = document.getElementById('supTableBody');
+    if (!list.length) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="5">No suppliers found.</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = list.map(s => `
+        <tr>
+            <td>
+                <div style="font-weight:600">${esc(s.supplierName)}</div>
+                <div style="font-size:12px">${supplierStatusBadge(s.status)}</div>
+            </td>
+            <td>
+                <div style="font-size:13px">${esc(s.contactPerson)}</div>
+                <div style="font-size:12px;color:#6b7280">${esc(s.email)}</div>
+            </td>
+            <td>
+                ${s.totalContracts === 0
+                    ? '<span style="color:#9ca3af;font-size:13px">None assigned</span>'
+                    : `<span style="font-size:13px;color:#374151">${s.compliantCount}/${s.totalContracts} compliant</span>`}
+            </td>
+            <td>${statusBadge(s.overallStatus)}</td>
+            <td>
+                <div class="action-wrap">
+                    <button class="btn-sm assign" onclick="openAssignSupSingleModal(${s.supplierId}, '${esc(s.supplierName)}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Assign
+                    </button>
+                    ${s.totalContracts > 0 ? `<button class="btn-sm status" onclick="viewSupDetail(${s.supplierId})">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Details
+                    </button>` : ''}
+                </div>
+            </td>
+        </tr>`).join('');
+}
+
+function viewSupDetail(supplierId) {
+    const sup = allSuppliers.find(s => s.supplierId === supplierId);
+    if (!sup) return;
+    document.getElementById('supDetailTitle').textContent = sup.supplierName + ' – Contracts';
+    const body = document.getElementById('supDetailBody');
+    if (!sup.assignedPolicies.length) {
+        body.innerHTML = '<p style="color:#6b7280">No contracts assigned.</p>';
+    } else {
+        body.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:14px">
+            <thead><tr style="background:#f9fafb">
+                <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb">Contract Policy</th>
+                <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb">Date Assigned</th>
+                <th style="padding:10px 12px;text-align:left;border-bottom:1px solid #e5e7eb">Status</th>
+                <th style="padding:10px 12px;border-bottom:1px solid #e5e7eb">Actions</th>
+            </tr></thead>
+            <tbody>${sup.assignedPolicies.map(p => `<tr>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">${esc(p.policyTitle)}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6;color:#6b7280">${p.assignedDate}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">${contractBadge(p.status)}</td>
+                <td style="padding:10px 12px;border-bottom:1px solid #f3f4f6">
+                    <div class="action-wrap">
+                        <button class="btn-sm status" onclick="openStatusModal(${p.supplierPolicyId},'${esc(sup.supplierName)}','${esc(p.policyTitle)}','${p.status}')">Update Status</button>
+                        <button class="btn-sm remove" onclick="removeSupAssignment(${p.supplierPolicyId}, ${supplierId})">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>Remove
+                        </button>
+                    </div>
+                </td>
+            </tr>`).join('')}</tbody>
+        </table>`;
+    }
+    document.getElementById('supDetailModal').classList.add('open');
+}
+
+async function removeSupAssignment(supplierPolicyId, supplierId) {
+    if (!confirm('Remove this contract assignment from the supplier?')) return;
+    showLoading('Removing contract…');
+    try {
+        const res = await fetch(`/BranchCompliance/RemoveSupplierAssignment?supplierPolicyId=${supplierPolicyId}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeModal('supDetailModal');
+            await loadSuppliers();
+            loadSummary();
+        } else {
+            showToast(data.message || 'Failed to remove.', 'error');
+        }
+    } catch (e) { showToast('Error removing contract.', 'error'); }
+    hideLoading();
+}
+
+// ───────── Policies ───────────────────────────────────────────────
+async function loadPolicies() {
+    try {
+        const res = await fetch('/BranchCompliance/GetAvailablePolicies');
+        const data = await res.json();
+        if (data.success) allPolicies = data.policies;
+    } catch (e) { console.error(e); }
+}
+
+// ───────── Assign Employee Modal ──────────────────────────────────
+let preselectedEmpId = null;
+
+function openAssignEmpModal() {
+    preselectedEmpId = null;
+    buildPolicyChecklist('policyListEmp', [], 'empPolicyCount');
+    buildEmpChecklist('empListModal', [], 'empEmpCount');
+    document.getElementById('policySearchEmp').value = '';
+    document.getElementById('empSearchModal').value  = '';
+    document.getElementById('selectAllPoliciesEmp').checked = false;
+    document.getElementById('selectAllEmps').checked        = false;
+    document.getElementById('assignEmpModal').classList.add('open');
+}
+
+function openAssignEmpSingleModal(userId, name) {
+    preselectedEmpId = userId;
+    buildPolicyChecklist('policyListEmp', getEmployeePolicyIds(userId), 'empPolicyCount');
+    buildEmpChecklist('empListModal', [userId], 'empEmpCount');
+    document.getElementById('policySearchEmp').value = '';
+    document.getElementById('empSearchModal').value  = '';
+    document.getElementById('selectAllPoliciesEmp').checked = false;
+    document.getElementById('selectAllEmps').checked        = false;
+    document.getElementById('assignEmpModal').classList.add('open');
+}
+
+function getEmployeePolicyIds(userId) {
+    const emp = allEmployees.find(e => e.userId === userId);
+    return emp ? emp.assignedPolicies.map(p => p.policyId) : [];
+}
+
+function buildPolicyChecklist(listId, alreadyIds, countId) {
+    const container = document.getElementById(listId);
+    if (!allPolicies.length) {
+        container.innerHTML = '<div class="check-item"><label style="color:#6b7280">No policies available.</label></div>';
+        return;
+    }
+    container.innerHTML = allPolicies.map(p => {
+        const already = alreadyIds.includes(p.policyId);
+        return `<div class="check-item" data-label="${esc(p.policyTitle).toLowerCase()} ${(p.category||'').toLowerCase()}">
+            <input type="checkbox" id="pc_${listId}_${p.policyId}" value="${p.policyId}" ${already ? 'checked' : ''}
+                onchange="updateCount('${listId}','${countId}')">
+            <label for="pc_${listId}_${p.policyId}">
+                <span>${esc(p.policyTitle)}</span>
+                <span class="item-sub">${esc(p.category||'')} · ${esc(p.scope)}</span>
+                ${already ? '<span class="already-badge">Already Assigned</span>' : ''}
+            </label>
+        </div>`;
+    }).join('');
+    updateCount(listId, countId);
+}
+
+function buildEmpChecklist(listId, preselect, countId) {
+    const container = document.getElementById(listId);
+    if (!allEmployees.length) {
+        container.innerHTML = '<div class="check-item"><label style="color:#6b7280">No employees found.</label></div>';
+        return;
+    }
+    container.innerHTML = allEmployees.map(e => {
+        const checked = preselect.includes(e.userId);
+        return `<div class="check-item" data-label="${esc(e.fullName).toLowerCase()} ${(e.email||'').toLowerCase()}">
+            <input type="checkbox" id="ec_${listId}_${e.userId}" value="${e.userId}" ${checked ? 'checked' : ''}
+                onchange="updateCount('${listId}','${countId}')">
+            <label for="ec_${listId}_${e.userId}">
+                <span>${esc(e.fullName)}</span>
+                <span class="item-sub">${esc(e.email)}</span>
+            </label>
+        </div>`;
+    }).join('');
+    updateCount(listId, countId);
+}
+
+async function submitAssignToEmployees() {
+    const policyIds = getCheckedValues('policyListEmp');
+    const empIds    = getCheckedValues('empListModal');
+    if (!policyIds.length) { showToast('Please select at least one policy.', 'error'); return; }
+    if (!empIds.length)    { showToast('Please select at least one employee.', 'error'); return; }
+
+    showLoading('Assigning policies…');
+    try {
+        const res = await fetch('/BranchCompliance/AssignPoliciesToEmployees', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ policyIds, targetIds: empIds })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeModal('assignEmpModal');
+            await loadEmployees();
+            loadSummary();
+        } else {
+            showToast(data.message || 'Assignment failed.', 'error');
+        }
+    } catch (e) { showToast('Error assigning policies.', 'error'); }
+    hideLoading();
+}
+
+// ───────── Assign Supplier Modal ──────────────────────────────────
+let preselectedSupId = null;
+
+function openAssignSupModal() {
+    preselectedSupId = null;
+    buildPolicyChecklist('policyListSup', [], 'supPolicyCount');
+    buildSupChecklist('supListModal', [], 'supSupCount');
+    document.getElementById('policySearchSup').value = '';
+    document.getElementById('supSearchModal').value  = '';
+    document.getElementById('selectAllPoliciesSup').checked = false;
+    document.getElementById('selectAllSups').checked        = false;
+    document.getElementById('assignSupModal').classList.add('open');
+}
+
+function openAssignSupSingleModal(supplierId, name) {
+    preselectedSupId = supplierId;
+    const sup = allSuppliers.find(s => s.supplierId === supplierId);
+    const already = sup ? sup.assignedPolicies.map(p => p.policyId) : [];
+    buildPolicyChecklist('policyListSup', already, 'supPolicyCount');
+    buildSupChecklist('supListModal', [supplierId], 'supSupCount');
+    document.getElementById('policySearchSup').value = '';
+    document.getElementById('supSearchModal').value  = '';
+    document.getElementById('selectAllPoliciesSup').checked = false;
+    document.getElementById('selectAllSups').checked        = false;
+    document.getElementById('assignSupModal').classList.add('open');
+}
+
+function buildSupChecklist(listId, preselect, countId) {
+    const container = document.getElementById(listId);
+    if (!allSuppliers.length) {
+        container.innerHTML = '<div class="check-item"><label style="color:#6b7280">No suppliers found.</label></div>';
+        return;
+    }
+    container.innerHTML = allSuppliers.map(s => {
+        const checked = preselect.includes(s.supplierId);
+        return `<div class="check-item" data-label="${esc(s.supplierName).toLowerCase()} ${(s.email||'').toLowerCase()}">
+            <input type="checkbox" id="sc_${listId}_${s.supplierId}" value="${s.supplierId}" ${checked ? 'checked' : ''}
+                onchange="updateCount('${listId}','${countId}')">
+            <label for="sc_${listId}_${s.supplierId}">
+                <span>${esc(s.supplierName)}</span>
+                <span class="item-sub">${esc(s.contactPerson)} · ${esc(s.email)}</span>
+            </label>
+        </div>`;
+    }).join('');
+    updateCount(listId, countId);
+}
+
+async function submitAssignToSuppliers() {
+    const policyIds  = getCheckedValues('policyListSup');
+    const supplierIds = getCheckedValues('supListModal');
+    if (!policyIds.length)   { showToast('Please select at least one contract policy.', 'error'); return; }
+    if (!supplierIds.length) { showToast('Please select at least one supplier.', 'error'); return; }
+
+    showLoading('Assigning contracts…');
+    try {
+        const res = await fetch('/BranchCompliance/AssignPoliciesToSuppliers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ policyIds, targetIds: supplierIds })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeModal('assignSupModal');
+            await loadSuppliers();
+            loadSummary();
+        } else {
+            showToast(data.message || 'Assignment failed.', 'error');
+        }
+    } catch (e) { showToast('Error assigning contracts.', 'error'); }
+    hideLoading();
+}
+
+// ───────── Status Modal ───────────────────────────────────────────
+function openStatusModal(supplierPolicyId, supplierName, policyTitle, currentStatus) {
+    statusTarget.supplierPolicyId = supplierPolicyId;
+    document.getElementById('statusSupName').textContent = supplierName;
+    document.getElementById('statusPolName').textContent = policyTitle;
+    document.getElementById('statusSelect').value = currentStatus === 'Compliant' ? 'Compliant'
+        : currentStatus === 'Non-Compliant' ? 'Non-Compliant' : 'Pending';
+    document.getElementById('statusModal').classList.add('open');
+}
+
+async function submitStatusUpdate() {
+    const newStatus = document.getElementById('statusSelect').value;
+    showLoading('Updating status…');
+    try {
+        const res = await fetch(`/BranchCompliance/UpdateSupplierComplianceStatus?supplierPolicyId=${statusTarget.supplierPolicyId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            closeModal('statusModal');
+            closeModal('supDetailModal');
+            await loadSuppliers();
+            loadSummary();
+        } else {
+            showToast(data.message || 'Update failed.', 'error');
+        }
+    } catch (e) { showToast('Error updating status.', 'error'); }
+    hideLoading();
+}
+
+// ───────── Helpers ────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function getCheckedValues(listId) {
+    return [...document.querySelectorAll(`#${listId} input[type="checkbox"]:checked`)].map(c => +c.value);
+}
+
+function updateCount(listId, countId) {
+    const n = getCheckedValues(listId).length;
+    document.getElementById(countId).textContent = n + ' selected';
+}
+
+function toggleAllChecks(listId, checked) {
+    document.querySelectorAll(`#${listId} input[type="checkbox"]`).forEach(c => c.checked = checked);
+    // find the countId from aria or just scan
+    const countIds = { policyListEmp: 'empPolicyCount', empListModal: 'empEmpCount', policyListSup: 'supPolicyCount', supListModal: 'supSupCount' };
+    if (countIds[listId]) updateCount(listId, countIds[listId]);
+}
+
+function filterChecklist(listId, query) {
+    const q = query.trim().toLowerCase();
+    document.querySelectorAll(`#${listId} .check-item`).forEach(item => {
+        const label = item.dataset.label || item.textContent.toLowerCase();
+        item.style.display = !q || label.includes(q) ? '' : 'none';
+    });
+}
+
+function statusBadge(status) {
+    const map = {
+        'Compliant': 'compliant', 'Not Compliant': 'not-compliant',
+        'No Policies': 'no-policies', 'No Contracts': 'no-contracts'
+    };
+    return `<span class="badge ${map[status] || 'no-policies'}">${esc(status)}</span>`;
+}
+
+function contractBadge(status) {
+    if (status === 'Compliant') return `<span class="badge compliant">Compliant</span>`;
+    if (status === 'Non-Compliant') return `<span class="badge not-compliant">Non-Compliant</span>`;
+    return `<span class="badge pending">Pending</span>`;
+}
+
+function supplierStatusBadge(status) {
+    if (status === 'Active') return `<span class="badge active-s">Active</span>`;
+    if (status === 'Suspended') return `<span class="badge suspended">Suspended</span>`;
+    return `<span class="badge no-policies">${esc(status)}</span>`;
+}
+
+function esc(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function showLoading(msg) {
+    document.getElementById('loadingText').textContent = msg || 'Please wait…';
+    document.getElementById('loadingOverlay').classList.add('active');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
+function showToast(msg, type = 'info') {
+    const wrap = document.getElementById('toastWrap');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    const icons = {
+        success: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`,
+        error:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+        info:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+    };
+    toast.innerHTML = (icons[type] || icons.info) + `<span>${esc(msg)}</span>`;
+    wrap.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(120%)'; setTimeout(() => toast.remove(), 300); }, 4000);
+}
+
+// Close modals on backdrop click
+document.querySelectorAll('.modal-bg').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+</script>
+}

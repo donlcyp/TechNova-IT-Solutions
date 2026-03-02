@@ -19,7 +19,7 @@ namespace TechNova_IT_Solutions.Controllers
         private bool IsAdmin()
         {
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            return userRole == RoleNames.Admin || userRole == RoleNames.SuperAdmin;
+            return RoleNames.IsAdminRole(userRole) || userRole == RoleNames.SuperAdmin;
         }
 
         private bool IsSuperAdmin()
@@ -45,6 +45,22 @@ namespace TechNova_IT_Solutions.Controllers
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
             if (supplierId <= 0) return BadRequest(new { success = false, message = "Invalid supplier id" });
 
+            // Branch Admin can only view supplier items for suppliers in their branch or global suppliers
+            if (!IsSuperAdmin())
+            {
+                var callerBranchId = GetCallerBranchId();
+                if (callerBranchId.HasValue)
+                {
+                    var supplierBranchId = await _context.Suppliers
+                        .Where(s => s.SupplierId == supplierId)
+                        .Select(s => (int?)s.BranchId)
+                        .FirstOrDefaultAsync();
+
+                    if (supplierBranchId.HasValue && supplierBranchId != callerBranchId)
+                        return Unauthorized(new { success = false, message = "You can only view supplier items within your branch." });
+                }
+            }
+
             var items = await _adminService.GetSupplierItemsAsync(supplierId);
             return Ok(new { success = true, items });
         }
@@ -54,6 +70,22 @@ namespace TechNova_IT_Solutions.Controllers
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
             if (supplierId <= 0) return BadRequest(new { success = false, message = "Invalid supplier id" });
+
+            // Branch Admin can only view compliant policies for suppliers in their branch or global suppliers
+            if (!IsSuperAdmin())
+            {
+                var callerBranchId = GetCallerBranchId();
+                if (callerBranchId.HasValue)
+                {
+                    var supplierBranchId = await _context.Suppliers
+                        .Where(s => s.SupplierId == supplierId)
+                        .Select(s => (int?)s.BranchId)
+                        .FirstOrDefaultAsync();
+
+                    if (supplierBranchId.HasValue && supplierBranchId != callerBranchId)
+                        return Unauthorized(new { success = false, message = "You can only view supplier data within your branch." });
+                }
+            }
 
             var policies = await _context.SupplierPolicies
                 .Where(sp => sp.SupplierId == supplierId && sp.ComplianceStatus == "Compliant")
@@ -75,7 +107,7 @@ namespace TechNova_IT_Solutions.Controllers
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
 
             var policies = await _context.Policies
-                .Where(p => !p.IsArchived)
+                .Where(p => !p.IsArchived && p.ReviewStatus == "Approved")
                 .Select(p => new
                 {
                     Id = p.PolicyId,

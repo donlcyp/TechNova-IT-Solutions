@@ -27,7 +27,7 @@ namespace TechNova_IT_Solutions.Controllers
         private bool IsAdmin()
         {
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            return userRole == RoleNames.Admin || userRole == RoleNames.SuperAdmin;
+            return RoleNames.IsAdminRole(userRole) || userRole == RoleNames.SuperAdmin;
         }
 
         private bool IsSuperAdmin()

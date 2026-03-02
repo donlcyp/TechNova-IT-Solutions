@@ -546,7 +546,9 @@
         @await Html.PartialAsync("_EmployeeTopBar", (Title: "Compliance Status", Description: "Track your personal compliance progress and requirements"))
 
         <div class="content-wrapper">
-            <!-- Action Required Alert -->
+            <!-- Action Required Alert (only shown when there are pending acknowledgements) -->
+            @if (Model.PendingPolicies > 0)
+            {
             <div class="action-alert">
                 <div class="alert-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -557,10 +559,11 @@
                 </div>
                 <div class="alert-text">
                     <div class="alert-title">Action Required</div>
-                    <div class="alert-desc">You have @Model.PendingPolicies pending policy acknowledgments. Please review by February 14, 2026.</div>
+                    <div class="alert-desc">You have @Model.PendingPolicies pending policy acknowledgment@(Model.PendingPolicies == 1 ? "" : "s"). Please review and acknowledge them.</div>
                 </div>
                 <a href="/Employee/AssignedPolicies" class="alert-btn">Review Policies</a>
             </div>
+            }
 
             <!-- Summary Cards -->
             <div class="summary-cards">

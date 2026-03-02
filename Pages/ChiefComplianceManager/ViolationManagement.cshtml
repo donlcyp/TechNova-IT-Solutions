@@ -59,14 +59,23 @@
         td { padding: 14px 16px; border-bottom: 1px solid #e5e7eb; font-size: 14px; color: #1f2937; }
         tbody tr { transition: background .2s; }
         tbody tr:hover { background: #f3f4f6; }
-        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
-        .status-badge.open { color: #d97706; background: #fffbeb; }
-        .status-badge.underreview { color: #2563eb; background: #eff6ff; }
-        .status-badge.escalated { color: #dc2626; background: #fef2f2; }
-        .status-badge.resolved { color: #16a34a; background: #f0fdf4; }
+        .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1.5px solid; background: transparent; white-space: nowrap; }
+        .status-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+        .status-badge.open, .status-badge.pending { color: #d97706; border-color: #d97706; }
+        .status-badge.underreview { color: #2563eb; border-color: #2563eb; }
+        .status-badge.escalated, .status-badge.overdue, .status-badge.suspended { color: #dc2626; border-color: #dc2626; }
+        .status-badge.resolved, .status-badge.acknowledged, .status-badge.active { color: #16a34a; border-color: #16a34a; }
+        .status-badge.none { color: #9ca3af; border-color: #d1d5db; }
         .empty-state { text-align: center; padding: 60px 20px; color: #6b7280; }
         .empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: .5; }
-        .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .btn-icon { width: 32px; height: 32px; border: 1px solid #e5e7eb; border-radius: 6px; background: #f8f9fa; color: #6b7280; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all .2s; padding: 0; flex-shrink: 0; }
+        .btn-icon svg { width: 15px; height: 15px; }
+        .btn-icon:hover { border-color: #1e40af; color: #1e40af; background: #eff6ff; }
+        .btn-icon.danger { color: #dc2626; border-color: #fca5a5; background: #fff5f5; }
+        .btn-icon.danger:hover { border-color: #dc2626; background: #fef2f2; }
+        .btn-icon.success { color: #16a34a; border-color: #86efac; background: #f0fdf4; }
+        .btn-icon.success:hover { border-color: #16a34a; background: #dcfce7; }
 
         /* Modal */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,.7); z-index: 1000; align-items: center; justify-content: center; }
@@ -306,28 +315,31 @@
         </div>
         <div class="modal-body">
             <div class="detail-grid" id="violationDetailGrid"></div>
+            <div id="violationTimeline" style="display:none;"></div>
             <div id="violationNotesHistory" class="notes-history" style="display:none;"></div>
-            <div class="form-group">
-                <label for="uvStatus">Update Status</label>
-                <select id="uvStatus">
-                    <option value="Open">Open</option>
-                    <option value="UnderReview">Under Review</option>
-                    <option value="Escalated">Escalated</option>
-                    <option value="Resolved">Resolved</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="uvNotes">Add Notes</label>
-                <textarea id="uvNotes" placeholder="Add a note about this status change..." style="min-height:60px;"></textarea>
-            </div>
-            <div class="form-group" id="uvResolutionGroup" style="display:none;">
-                <label for="uvResolution">Resolution</label>
-                <textarea id="uvResolution" placeholder="Describe how the violation was resolved..." style="min-height:60px;"></textarea>
+            <div id="uvUpdateSection">
+                <div class="form-group">
+                    <label for="uvStatus">Update Status</label>
+                    <select id="uvStatus">
+                        <option value="Open">Open</option>
+                        <option value="UnderReview">Under Review</option>
+                        <option value="Escalated">Escalated</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="uvNotes">Add Notes</label>
+                    <textarea id="uvNotes" placeholder="Add a note about this status change..." style="min-height:60px;"></textarea>
+                </div>
+                <div class="form-group" id="uvResolutionGroup" style="display:none;">
+                    <label for="uvResolution">Resolution</label>
+                    <textarea id="uvResolution" placeholder="Describe how the violation was resolved..." style="min-height:60px;"></textarea>
+                </div>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeUpdateViolation()">Cancel</button>
-            <button class="btn-primary" onclick="submitUpdateViolation()">Update</button>
+            <button class="btn-secondary" onclick="closeUpdateViolation()">Close</button>
+            <button class="btn-primary" id="uvUpdateBtn" onclick="submitUpdateViolation()">Update</button>
         </div>
     </div>
 </div>
@@ -370,7 +382,7 @@
                     <td>${v.raisedDate}</td>
                     <td>${v.raisedBy}</td>
                     <td><div class="actions">
-                        <button class="btn-action" onclick='openUpdateViolation(${JSON.stringify(v)})'>Manage</button>
+                        <button class="btn-icon" title="Manage Violation" onclick='openUpdateViolation(${JSON.stringify(v)})'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                     </div></td>
                 </tr>`;
             });
@@ -402,19 +414,26 @@
             }
             let html = '';
             res.employees.forEach(e => {
+                const compClass = e.status === 'Acknowledged' ? 'acknowledged' : e.status === 'Overdue' ? 'overdue' : 'pending';
+                const statusBadge = e.userStatus === 'Suspended'
+                    ? '<span class="status-badge suspended">Suspended</span>'
+                    : `<span class="status-badge ${compClass}">${e.status}</span>`;
                 const violBadge = e.hasViolation
                     ? '<span class="status-badge escalated">Active Violation</span>'
-                    : '<span style="color:#6b7280;font-size:12px;">None</span>';
+                    : '<span class="status-badge none">None</span>';
+                const raiseBtn = !e.hasViolation
+                    ? `<button class="btn-icon danger" title="Raise Violation" onclick="raiseViolationFor('Employee', ${e.assignmentId}, null, '${escJs(e.employeeName)}', '${escJs(e.policyTitle)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>` : '';
+                const suspendBtn = e.userStatus !== 'Suspended'
+                    ? `<button class="btn-icon danger" title="Suspend Employee" onclick="suspendEmployee(${e.userId}, '${escJs(e.employeeName)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg></button>`
+                    : `<button class="btn-icon success" title="Reactivate Employee" onclick="unsuspendEmployee(${e.userId}, '${escJs(e.employeeName)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></button>`;
                 html += `<tr>
                     <td>${e.employeeName}</td>
                     <td>${e.email}</td>
                     <td>${e.policyTitle}</td>
                     <td>${e.assignedDate}</td>
-                    <td><span class="status-badge open">${e.status}</span></td>
+                    <td>${statusBadge}</td>
                     <td>${violBadge}</td>
-                    <td><div class="actions">
-                        ${!e.hasViolation ? `<button class="btn-action danger" onclick="raiseViolationFor('Employee', ${e.assignmentId}, null, '${escJs(e.employeeName)}', '${escJs(e.policyTitle)}')">Raise Violation</button>` : ''}
-                    </div></td>
+                    <td><div class="actions">${raiseBtn}${suspendBtn}</div></td>
                 </tr>`;
             });
             document.getElementById('empBody').innerHTML = html;
@@ -438,23 +457,26 @@
             }
             let html = '';
             res.suppliers.forEach(s => {
+                const acctBadge = s.supplierStatus === 'Suspended'
+                    ? '<span class="status-badge suspended">Suspended</span>'
+                    : `<span class="status-badge active">${s.supplierStatus}</span>`;
+                const compClass = s.complianceStatus === 'Compliant' ? 'acknowledged' : s.complianceStatus === 'Overdue' ? 'overdue' : 'pending';
                 const violBadge = s.hasViolation
                     ? '<span class="status-badge escalated">Active Violation</span>'
-                    : '<span style="color:#6b7280;font-size:12px;">None</span>';
-                const acctBadge = s.supplierStatus === 'Suspended'
-                    ? '<span class="status-badge escalated">Suspended</span>'
-                    : `<span class="status-badge resolved">${s.supplierStatus}</span>`;
+                    : '<span class="status-badge none">None</span>';
+                const raiseBtn = !s.hasViolation
+                    ? `<button class="btn-icon danger" title="Raise Violation" onclick="raiseViolationFor('Supplier', null, ${s.supplierPolicyId}, '${escJs(s.supplierName)}', '${escJs(s.policyTitle)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>` : '';
+                const suspendBtn = s.supplierStatus !== 'Suspended'
+                    ? `<button class="btn-icon danger" title="Suspend Supplier" onclick="suspendSupplier(${s.supplierId}, '${escJs(s.supplierName)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>`
+                    : `<button class="btn-icon success" title="Reactivate Supplier" onclick="unsuspendSupplier(${s.supplierId}, '${escJs(s.supplierName)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></button>`;
                 html += `<tr>
                     <td>${s.supplierName}</td>
                     <td>${acctBadge}</td>
                     <td>${s.policyTitle}</td>
                     <td>${s.assignedDate}</td>
-                    <td><span class="status-badge open">${s.complianceStatus}</span></td>
+                    <td><span class="status-badge ${compClass}">${s.complianceStatus}</span></td>
                     <td>${violBadge}</td>
-                    <td><div class="actions">
-                        ${!s.hasViolation ? `<button class="btn-action danger" onclick="raiseViolationFor('Supplier', null, ${s.supplierPolicyId}, '${escJs(s.supplierName)}', '${escJs(s.policyTitle)}')">Raise Violation</button>` : ''}
-                        ${s.supplierStatus !== 'Suspended' ? `<button class="btn-action danger" onclick="suspendSupplier(${s.supplierId}, '${escJs(s.supplierName)}')">Suspend</button>` : `<button class="btn-action success" onclick="unsuspendSupplier(${s.supplierId}, '${escJs(s.supplierName)}')">Unsuspend</button>`}
-                    </div></td>
+                    <td><div class="actions">${raiseBtn}${suspendBtn}</div></td>
                 </tr>`;
             });
             document.getElementById('supBody').innerHTML = html;
@@ -520,6 +542,36 @@
             }).catch(async () => await window.showAppMessage('Error creating violation', 'Error'));
     }
 
+    /* ── Timeline helpers ─────────────────────────── */
+    const statusColors = { Open: '#d97706', UnderReview: '#2563eb', Escalated: '#dc2626', Resolved: '#16a34a' };
+    function parseTimeline(notes) {
+        if (!notes) return [];
+        const items = [], re = /^\[TIMELINE:([^:]+):([^\]]+)\] (.+)$/;
+        notes.split('\n').forEach(line => { const m = line.trim().match(re); if (m) items.push({ status: m[1], date: m[2], event: m[3] }); });
+        return items;
+    }
+    function parseNotes(notes) {
+        if (!notes) return '';
+        return notes.split('\n').filter(l => !l.trim().match(/^\[TIMELINE:/)).join('\n').trim();
+    }
+    function renderTimeline(items) {
+        if (!items.length) return '';
+        let html = '<div style="margin-bottom:18px;"><div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Timeline</div>';
+        items.forEach((item, i) => {
+            const color = statusColors[item.status] || '#6b7280';
+            const isLast = i === items.length - 1;
+            html += '<div style="display:flex;gap:12px;">'
+                + '<div style="display:flex;flex-direction:column;align-items:center;">'
+                + '<div style="width:12px;height:12px;border-radius:50%;background:' + color + ';flex-shrink:0;margin-top:3px;"></div>'
+                + (!isLast ? '<div style="width:2px;flex:1;background:#e5e7eb;min-height:22px;margin:3px 0;"></div>' : '')
+                + '</div>'
+                + '<div style="padding-bottom:' + (isLast ? '0' : '14px') + ';"><div style="font-size:13px;font-weight:600;color:#1f2937;">' + item.event + '</div><div style="font-size:11px;color:#9ca3af;margin-top:1px;">' + item.date + ' UTC</div></div>'
+                + '</div>';
+        });
+        html += '</div>';
+        return html;
+    }
+
     /* ── Update Violation Status ───────────────────── */
     function openUpdateViolation(v) {
         currentViolationId = v.violationId;
@@ -534,13 +586,25 @@
             ${v.resolvedDate ? `<div class="detail-item"><div class="label">Resolved</div><div class="value">${v.resolvedDate}</div></div>` : ''}
             ${v.resolution ? `<div class="detail-item"><div class="label">Resolution</div><div class="value">${v.resolution}</div></div>` : ''}
         `;
+        // Timeline
+        const timelineItems = parseTimeline(v.notes);
+        const timelineEl = document.getElementById('violationTimeline');
+        if (timelineItems.length) { timelineEl.innerHTML = renderTimeline(timelineItems); timelineEl.style.display = ''; }
+        else { timelineEl.style.display = 'none'; }
+        // Notes (strip internal TIMELINE marker lines)
+        const cleanNotes = parseNotes(v.notes);
         const notesEl = document.getElementById('violationNotesHistory');
-        if (v.notes) { notesEl.textContent = v.notes; notesEl.style.display = ''; }
+        if (cleanNotes) { notesEl.textContent = cleanNotes; notesEl.style.display = ''; }
         else { notesEl.style.display = 'none'; }
-        document.getElementById('uvStatus').value = v.status;
-        document.getElementById('uvNotes').value = '';
-        document.getElementById('uvResolution').value = '';
-        checkResolutionVisibility();
+        const isResolved = v.status === 'Resolved';
+        document.getElementById('uvUpdateSection').style.display = isResolved ? 'none' : '';
+        document.getElementById('uvUpdateBtn').style.display = isResolved ? 'none' : '';
+        if (!isResolved) {
+            document.getElementById('uvStatus').value = v.status;
+            document.getElementById('uvNotes').value = '';
+            document.getElementById('uvResolution').value = '';
+            checkResolutionVisibility();
+        }
         document.getElementById('updateViolationModal').classList.add('active');
     }
     function closeUpdateViolation() { document.getElementById('updateViolationModal').classList.remove('active'); currentViolationId = null; }
@@ -566,7 +630,26 @@
             }).catch(async () => await window.showAppMessage('Error updating violation', 'Error'));
     }
 
-    /* ── Suspend / Unsuspend ───────────────────────── */
+    /* ── Suspend / Unsuspend Employee ──────────────── */
+    async function suspendEmployee(id, name) {
+        const ok = await window.showAppConfirm(`Suspend employee "${name}" for non-compliance?`);
+        if (!ok) return;
+        fetch(`${API}/SuspendEmployee?userId=${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'Suspended for non-compliance' }) })
+            .then(r => r.json())
+            .then(async res => { if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantEmployees(); } else { await window.showAppMessage(res.message, 'Error'); } })
+            .catch(async () => await window.showAppMessage('Error suspending employee', 'Error'));
+    }
+
+    async function unsuspendEmployee(id, name) {
+        const ok = await window.showAppConfirm(`Reactivate employee "${name}"?`);
+        if (!ok) return;
+        fetch(`${API}/UnsuspendEmployee?userId=${id}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(async res => { if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantEmployees(); } else { await window.showAppMessage(res.message, 'Error'); } })
+            .catch(async () => await window.showAppMessage('Error reactivating employee', 'Error'));
+    }
+
+    /* ── Suspend / Unsuspend Supplier ──────────────── */
     async function suspendSupplier(id, name) {
         const ok = await window.showAppConfirm(`Suspend supplier "${name}" for non-compliance?`);
         if (!ok) return;

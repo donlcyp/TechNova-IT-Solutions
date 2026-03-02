@@ -50,7 +50,7 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
             // System-wide aggregates
             TotalBranches = await _context.Branches.CountAsync();
             TotalUsers = await _context.Users.CountAsync();
-            TotalAdmins = await _context.Users.CountAsync(u => u.Role == RoleNames.Admin);
+            TotalAdmins = await _context.Users.CountAsync(u => u.Role == RoleNames.SystemAdmin || u.Role == RoleNames.BranchAdmin);
             TotalEmployees = await _context.Users.CountAsync(u => u.Role == RoleNames.Employee);
             TotalSuppliers = await _context.Suppliers.CountAsync();
             TotalPolicies = await _context.Policies.CountAsync();

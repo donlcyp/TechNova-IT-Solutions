@@ -144,5 +144,25 @@ namespace TechNova_IT_Solutions.Services
                 return false;
             }
         }
+
+        public async Task<int> GetPendingPoliciesCountAsync(int userId)
+        {
+            return await _context.PolicyAssignments
+                .Include(pa => pa.ComplianceStatus)
+                .Where(pa => pa.UserId == userId &&
+                             (pa.ComplianceStatus == null || pa.ComplianceStatus.Status == "Pending"))
+                .CountAsync();
+        }
+
+        public async Task<int> GetActiveViolationsCountAsync(int userId)
+        {
+            return await _context.ComplianceViolations
+                .Include(v => v.PolicyAssignment)
+                .Where(v => v.ViolationType == "Employee" &&
+                            v.Status != "Resolved" &&
+                            v.PolicyAssignment != null &&
+                            v.PolicyAssignment.UserId == userId)
+                .CountAsync();
+        }
     }
 }

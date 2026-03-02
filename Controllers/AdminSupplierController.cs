@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TechNova_IT_Solutions.Constants;
 using TechNova_IT_Solutions.Data;
+using TechNova_IT_Solutions.Services;
 using TechNova_IT_Solutions.Services.Interfaces;
 
 namespace TechNova_IT_Solutions.Controllers
@@ -10,17 +11,19 @@ namespace TechNova_IT_Solutions.Controllers
     {
         private readonly IAdminService _adminService;
         private readonly ApplicationDbContext _context;
+        private readonly IEmailService _emailService;
 
-        public AdminSupplierController(IAdminService adminService, ApplicationDbContext context)
+        public AdminSupplierController(IAdminService adminService, ApplicationDbContext context, IEmailService emailService)
         {
             _adminService = adminService;
             _context = context;
+            _emailService = emailService;
         }
 
         private bool IsAdmin()
         {
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            return userRole == RoleNames.Admin || userRole == RoleNames.SuperAdmin;
+            return RoleNames.IsAdminRole(userRole) || userRole == RoleNames.SuperAdmin;
         }
 
         private bool IsSuperAdmin()
@@ -53,20 +56,22 @@ namespace TechNova_IT_Solutions.Controllers
             return callerBranchId.HasValue && supplierBranchId == callerBranchId;
         }
 
+        private bool IsSystemAdminOrHigher()
+        {
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            return userRole == RoleNames.SystemAdmin || userRole == RoleNames.SuperAdmin;
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateSupplier([FromBody] SupplierData supplierData)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            // Only SystemAdmin or SuperAdmin can create suppliers (global entities)
+            if (!IsSystemAdminOrHigher())
+                return Unauthorized(new { success = false, message = "Only System Admin or Super Admin can create suppliers." });
             if (supplierData == null) return BadRequest(new { success = false, message = "Invalid supplier data" });
 
-            // Branch Admins automatically stamp their branch; SuperAdmin can supply an explicit BranchId or null (global)
-            if (!IsSuperAdmin())
-            {
-                var callerBranchId = GetCallerBranchId();
-                if (!callerBranchId.HasValue)
-                    return BadRequest(new { success = false, message = "You have no branch assigned. A Super Admin must assign you to a branch first." });
-                supplierData.BranchId = callerBranchId;
-            }
+            // Suppliers are global entities — BranchId is always null
+            supplierData.BranchId = null;
 
             var normalizedEmail = (supplierData.Email ?? string.Empty).Trim().ToLowerInvariant();
             if (string.IsNullOrWhiteSpace(normalizedEmail))
@@ -86,11 +91,37 @@ namespace TechNova_IT_Solutions.Controllers
                 return BadRequest(new { success = false, message = "A user account with this email already exists." });
             }
 
+            // Always use default password for new suppliers
+            const string defaultPassword = "Supplier@123";
+            supplierData.Password = defaultPassword;
+
             var result = await _adminService.CreateSupplierAsync(supplierData);
             if (result.Success)
             {
                 await _adminService.LogActivityAsync(GetCurrentUserId(), $"Created supplier: {supplierData.SupplierName}", "Supplier");
-                return Ok(new { success = true, message = string.IsNullOrWhiteSpace(result.Message) ? "Supplier created successfully" : result.Message });
+
+                // Send welcome email with account credentials
+                var subject = "Welcome to TechNova IT Solutions - Supplier Account Created";
+                var body = $@"
+<div style='font-family:Segoe UI,Arial,sans-serif;max-width:600px;margin:0 auto;'>
+    <div style='background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:24px 32px;border-radius:12px 12px 0 0;'>
+        <h1 style='color:#fff;margin:0;font-size:22px;'>Welcome to TechNova IT Solutions</h1>
+    </div>
+    <div style='background:#fff;padding:28px 32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;'>
+        <p style='color:#1f2937;font-size:15px;line-height:1.6;'>Hello <strong>{supplierData.ContactPersonFirstName} {supplierData.ContactPersonLastName}</strong>,</p>
+        <p style='color:#1f2937;font-size:15px;line-height:1.6;'>Your supplier account for <strong>{supplierData.SupplierName}</strong> has been created. Here are your login credentials:</p>
+        <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;margin:16px 0;'>
+            <p style='margin:4px 0;font-size:14px;color:#334155;'><strong>Email:</strong> {supplierData.Email}</p>
+            <p style='margin:4px 0;font-size:14px;color:#334155;'><strong>Password:</strong> {defaultPassword}</p>
+        </div>
+        <p style='color:#dc2626;font-size:13px;font-weight:600;'>⚠ For security, you will be required to change your password on first login.</p>
+        <p style='color:#6b7280;font-size:13px;margin-top:20px;'>If you have any questions, please contact your TechNova administrator.</p>
+    </div>
+</div>";
+                if (!string.IsNullOrWhiteSpace(supplierData.Email))
+                    _ = _emailService.SendEmailAsync(supplierData.Email, subject, body);
+
+                return Ok(new { success = true, message = string.IsNullOrWhiteSpace(result.Message) ? "Supplier created successfully. Notification email sent." : result.Message });
             }
 
             return BadRequest(new { success = false, message = string.IsNullOrWhiteSpace(result.Message) ? "Failed to create supplier" : result.Message });
@@ -236,6 +267,56 @@ namespace TechNova_IT_Solutions.Controllers
             return Ok(new { success = true, message = "Supplier restored successfully." });
         }
 
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (request == null || request.SupplierId <= 0)
+                return BadRequest(new { success = false, message = "Invalid request." });
+
+            var supplier = await _context.Suppliers.FindAsync(request.SupplierId);
+            if (supplier == null) return NotFound(new { success = false, message = "Supplier not found." });
+
+            if (!CanModifySupplier(supplier.BranchId))
+                return Forbid();
+
+            var normalizedEmail = (supplier.Email ?? string.Empty).Trim().ToLowerInvariant();
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                u.Email != null && u.Email.Trim().ToLower() == normalizedEmail && u.Role == "Supplier");
+
+            if (user == null)
+                return BadRequest(new { success = false, message = "No login account found for this supplier." });
+
+            const string defaultPassword = "Supplier@123";
+            user.Password = PasswordHasher.HashPassword(defaultPassword);
+            user.MustChangePassword = true;
+            await _context.SaveChangesAsync();
+
+            await _adminService.LogActivityAsync(GetCurrentUserId(), $"Reset password for supplier: {supplier.SupplierName} (ID: {supplier.SupplierId})", "Supplier");
+
+            // Send notification email
+            var subject = "TechNova IT Solutions - Password Reset";
+            var body = $@"
+<div style='font-family:Segoe UI,Arial,sans-serif;max-width:600px;margin:0 auto;'>
+    <div style='background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:24px 32px;border-radius:12px 12px 0 0;'>
+        <h1 style='color:#fff;margin:0;font-size:22px;'>Password Reset Notification</h1>
+    </div>
+    <div style='background:#fff;padding:28px 32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;'>
+        <p style='color:#1f2937;font-size:15px;line-height:1.6;'>Hello <strong>{supplier.ContactPersonFirstName} {supplier.ContactPersonLastName}</strong>,</p>
+        <p style='color:#1f2937;font-size:15px;line-height:1.6;'>Your password for the TechNova IT Solutions supplier portal has been reset by an administrator.</p>
+        <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;margin:16px 0;'>
+            <p style='margin:4px 0;font-size:14px;color:#334155;'><strong>Email:</strong> {supplier.Email}</p>
+            <p style='margin:4px 0;font-size:14px;color:#334155;'><strong>New Password:</strong> {defaultPassword}</p>
+        </div>
+        <p style='color:#dc2626;font-size:13px;font-weight:600;'>⚠ For security, you will be required to change your password on your next login.</p>
+        <p style='color:#6b7280;font-size:13px;margin-top:20px;'>If you did not expect this reset, please contact your TechNova administrator immediately.</p>
+    </div>
+</div>";
+            _ = _emailService.SendEmailAsync(supplier.Email!, subject, body);
+
+            return Ok(new { success = true, message = "Password reset to default. The supplier has been notified via email." });
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetSupplier(int supplierId)
         {
@@ -249,5 +330,10 @@ namespace TechNova_IT_Solutions.Controllers
 
             return NotFound(new { success = false, message = "Supplier not found" });
         }
+    }
+
+    public class ResetPasswordRequest
+    {
+        public int SupplierId { get; set; }
     }
 }

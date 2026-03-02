@@ -24,6 +24,7 @@ namespace TechNova_IT_Solutions.Data
         public DbSet<ExternalPolicyImport> ExternalPolicyImports { get; set; }
         public DbSet<Branch> Branches { get; set; }
         public DbSet<ComplianceViolation> ComplianceViolations { get; set; }
+        public DbSet<SupplierContract> SupplierContracts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -138,6 +139,12 @@ namespace TechNova_IT_Solutions.Data
                 .HasForeignKey(p => p.BranchId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            modelBuilder.Entity<Policy>()
+                .HasOne(p => p.ReviewedByUser)
+                .WithMany()
+                .HasForeignKey(p => p.ReviewedBy)
+                .OnDelete(DeleteBehavior.NoAction);
+
             modelBuilder.Entity<Procurement>()
                 .HasOne(p => p.Branch)
                 .WithMany(b => b.Procurements)
@@ -188,6 +195,25 @@ namespace TechNova_IT_Solutions.Data
                 .HasOne(v => v.RaisedByUser)
                 .WithMany()
                 .HasForeignKey(v => v.RaisedByUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // ── SupplierContract FKs ──
+            modelBuilder.Entity<SupplierContract>()
+                .HasOne(sc => sc.Supplier)
+                .WithMany(s => s.SupplierContracts)
+                .HasForeignKey(sc => sc.SupplierId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SupplierContract>()
+                .HasOne(sc => sc.LinkedPolicy)
+                .WithMany()
+                .HasForeignKey(sc => sc.LinkedPolicyId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<SupplierContract>()
+                .HasOne(sc => sc.ApprovedByUser)
+                .WithMany()
+                .HasForeignKey(sc => sc.ApprovedBy)
                 .OnDelete(DeleteBehavior.NoAction);
 
 

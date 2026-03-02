@@ -30,6 +30,12 @@ namespace TechNova_IT_Solutions.Models
         [StringLength(30)]
         public string Status { get; set; } = "Open";
 
+        /// <summary>Low | Medium | High | Critical</summary>
+        [Required]
+        [Column("severity_level")]
+        [StringLength(20)]
+        public string SeverityLevel { get; set; } = "Medium";
+
         /// <summary>Short description of the violation.</summary>
         [Column("description")]
         [StringLength(500)]

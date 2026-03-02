@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TechNova_IT_Solutions.Constants;
 using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Models;
 using TechNova_IT_Solutions.Services.Interfaces;
@@ -22,7 +23,7 @@ namespace TechNova_IT_Solutions.Services
 
             // Find which admin (if any) is assigned to each branch
             var admins = await _db.Users
-                .Where(u => u.Role == "Admin" && u.BranchId != null)
+                .Where(u => u.Role == RoleNames.BranchAdmin && u.BranchId != null)
                 .ToListAsync();
 
             return branches.Select(b =>
@@ -38,7 +39,7 @@ namespace TechNova_IT_Solutions.Services
             if (branch == null) return null;
 
             var admin = await _db.Users
-                .FirstOrDefaultAsync(u => u.Role == "Admin" && u.BranchId == branchId);
+                .FirstOrDefaultAsync(u => u.Role == RoleNames.BranchAdmin && u.BranchId == branchId);
 
             return MapToData(branch, admin);
         }
@@ -110,7 +111,7 @@ namespace TechNova_IT_Solutions.Services
         {
             // Unassign any admin attached to this branch first
             var assignedAdmins = await _db.Users
-                .Where(u => u.Role == "Admin" && u.BranchId == branchId)
+                .Where(u => u.Role == RoleNames.BranchAdmin && u.BranchId == branchId)
                 .ToListAsync();
             foreach (var a in assignedAdmins) a.BranchId = null;
 
@@ -126,7 +127,7 @@ namespace TechNova_IT_Solutions.Services
         public async Task<List<UserData>> GetAvailableAdminsAsync()
         {
             return await _db.Users
-                .Where(u => u.Role == "Admin" && u.Status == "Active" && u.BranchId == null)
+                .Where(u => u.Role == RoleNames.BranchAdmin && u.Status == "Active" && u.BranchId == null)
                 .OrderBy(u => u.FirstName)
                 .Select(u => new UserData
                 {
@@ -148,11 +149,11 @@ namespace TechNova_IT_Solutions.Services
 
             // Verify admin exists and has Admin role
             var newAdmin = await _db.Users.FindAsync(adminUserId);
-            if (newAdmin == null || newAdmin.Role != "Admin") return false;
+            if (newAdmin == null || newAdmin.Role != RoleNames.BranchAdmin) return false;
 
             // Unassign any previously assigned admin from this branch
             var previousAdmins = await _db.Users
-                .Where(u => u.Role == "Admin" && u.BranchId == branchId && u.UserId != adminUserId)
+                .Where(u => u.Role == RoleNames.BranchAdmin && u.BranchId == branchId && u.UserId != adminUserId)
                 .ToListAsync();
             foreach (var prev in previousAdmins) prev.BranchId = null;
 
@@ -165,7 +166,7 @@ namespace TechNova_IT_Solutions.Services
         public async Task<bool> UnassignAdminFromBranchAsync(int branchId)
         {
             var admins = await _db.Users
-                .Where(u => u.Role == "Admin" && u.BranchId == branchId)
+                .Where(u => u.Role == RoleNames.BranchAdmin && u.BranchId == branchId)
                 .ToListAsync();
 
             if (!admins.Any()) return false;

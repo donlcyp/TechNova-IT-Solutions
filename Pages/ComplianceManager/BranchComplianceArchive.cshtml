@@ -1,0 +1,403 @@
+@page
+@model TechNova_IT_Solutions.Pages.ComplianceManager.BranchComplianceArchiveModel
+@{
+    ViewData["Title"] = "Compliance Archive";
+}
+
+@section Styles {
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; color: #1f2937; display: flex; min-height: 100vh; }
+    .main-content { margin-left: 260px; flex: 1; overflow-y: auto; min-width: 0; }
+    .content-wrapper { padding: 32px; }
+    .table-scroll { overflow-x: auto; }
+
+    /* Summary cards */
+    .summary-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+    .summary-card { background: #fff; padding: 22px 24px; border-radius: 12px; border: 1px solid #e5e7eb; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 4px rgba(0,0,0,.04); }
+    .card-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .card-icon svg { width: 24px; height: 24px; }
+    .card-icon.green  { background: #f0fdf4; color: #16a34a; }
+    .card-icon.blue   { background: #eff6ff; color: #1e40af; }
+    .card-icon.purple { background: #faf5ff; color: #9333ea; }
+    .card-icon.orange { background: #fff7ed; color: #ea580c; }
+    .card-info h3 { font-size: 13px; color: #6b7280; font-weight: 500; margin-bottom: 4px; }
+    .card-value { font-size: 32px; font-weight: 700; color: #1f2937; line-height: 1; }
+
+    /* Tabs */
+    .tab-bar { display: flex; gap: 4px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 4px; margin-bottom: 20px; width: fit-content; }
+    .tab-btn { padding: 10px 24px; border: none; border-radius: 8px; background: transparent; font-size: 14px; font-weight: 600; color: #6b7280; cursor: pointer; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+    .tab-btn svg { width: 16px; height: 16px; }
+    .tab-btn.active { background: #1e40af; color: #fff; }
+    .tab-btn:not(.active):hover { background: #f3f4f6; color: #1f2937; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Filter bar */
+    .filter-bar { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .search-wrap { flex: 1; min-width: 200px; position: relative; }
+    .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; width: 16px; height: 16px; }
+    .search-wrap input { width: 100%; padding: 10px 14px 10px 38px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; color: #1f2937; background: #f8f9fa; }
+    .search-wrap input:focus { outline: none; border-color: #1e40af; }
+    .filter-bar label { font-size: 13px; color: #6b7280; font-weight: 500; white-space: nowrap; }
+    .filter-bar input[type="date"] { padding: 9px 12px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; color: #1f2937; background: #f8f9fa; cursor: pointer; }
+    .filter-bar input[type="date"]:focus { outline: none; border-color: #1e40af; }
+    .btn-primary { padding: 10px 20px; background: linear-gradient(135deg,#1e40af,#1e3a8a); border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: opacity .2s; }
+    .btn-primary:hover { opacity: .9; }
+    .btn-primary svg { width: 16px; height: 16px; }
+
+    /* Table */
+    .table-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+    .table-card table { width: 100%; border-collapse: collapse; min-width: 900px; }
+    .table-card thead th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; background: #f9fafb; border-bottom: 1px solid #e5e7eb; white-space: nowrap; }
+    .table-card tbody td { padding: 14px 16px; font-size: 14px; color: #374151; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+    .table-card tbody tr:last-child td { border-bottom: none; }
+    .table-card tbody tr:hover { background: #f9fafb; }
+    .empty-state { text-align: center; color: #9ca3af; padding: 48px 16px; font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .empty-state svg { width: 48px; height: 48px; color: #d1d5db; }
+
+    /* Badges */
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1.5px solid; background: transparent; white-space: nowrap; }
+    .badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .badge.resolved     { color: #16a34a; border-color: #16a34a; }
+    .badge.acknowledged { color: #16a34a; border-color: #16a34a; }
+    .badge.employee     { color: #1e40af; border-color: #1e40af; }
+    .badge.supplier     { color: #9333ea; border-color: #9333ea; }
+    .badge.archived     { color: #ea580c; border-color: #ea580c; }
+
+    /* Restore button */
+    .btn-restore { width: 32px; height: 32px; border: 1px solid #fcd34d; border-radius: 6px; background: #fffbeb; color: #d97706; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all .2s; padding: 0; flex-shrink: 0; }
+    .btn-restore svg { width: 15px; height: 15px; }
+    .btn-restore:hover { border-color: #d97706; background: #fef3c7; color: #b45309; }
+
+    /* Loading */
+    .loading { text-align: center; padding: 48px; color: #6b7280; }
+
+    .td-truncate { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    @@media (max-width: 991px) { .main-content { margin-left: 0; } }
+    @@media (max-width: 1100px) { .summary-cards { grid-template-columns: repeat(2, 1fr); } }
+    @@media (max-width: 768px) { .summary-cards { grid-template-columns: 1fr; } .content-wrapper { padding: 20px; } }
+</style>
+}
+
+@await Html.PartialAsync("_ComplianceManagerSidebar", "BranchComplianceArchive")
+
+<main class="main-content">
+    @await Html.PartialAsync("_ComplianceManagerTopBar", ("Compliance Archive", "Archived resolved violations and acknowledged policies for " + (string.IsNullOrEmpty(Model.BranchName) ? "your branch" : Model.BranchName)))
+
+    <div class="content-wrapper">
+
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="card-icon green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div class="card-info">
+                    <h3>Resolved Violations</h3>
+                    <div class="card-value" id="resolvedCount">—</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon blue">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div class="card-info">
+                    <h3>Acknowledged Policies</h3>
+                    <div class="card-value" id="acknowledgedCount">—</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <div class="card-info">
+                    <h3>Branch</h3>
+                    <div class="card-value" style="font-size:18px;font-weight:600;color:#9333ea;">@(string.IsNullOrEmpty(Model.BranchName) ? "All" : Model.BranchName)</div>
+                </div>
+            </div>
+            <div class="summary-card">
+                <div class="card-icon orange">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                </div>
+                <div class="card-info">
+                    <h3>Archived Policies</h3>
+                    <div class="card-value" id="archivedPolicyCount">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="search-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="archiveSearch" placeholder="Search by name, policy, description…" oninput="applyFilters()" />
+            </div>
+            <label>From</label>
+            <input type="date" id="fromDate" onchange="applyFilters()" />
+            <label>To</label>
+            <input type="date" id="toDate" onchange="applyFilters()" />
+            <button class="btn-primary" onclick="loadArchive()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                Refresh
+            </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tab-bar">
+            <button class="tab-btn active" id="tabViol" onclick="switchTab('violations')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Resolved Violations
+            </button>
+            <button class="tab-btn" id="tabAck" onclick="switchTab('acknowledgements')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Acknowledged Policies
+            </button>
+            <button class="tab-btn" id="tabPol" onclick="switchTab('policies')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+                Archived Policies
+            </button>
+        </div>
+
+        <!-- Violations Tab -->
+        <div class="tab-panel active" id="panelViolations">
+            <div class="table-scroll">
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Type</th>
+                            <th>Subject</th>
+                            <th>Policy</th>
+                            <th>Description</th>
+                            <th>Resolution</th>
+                            <th>Raised</th>
+                            <th>Resolved</th>
+                            <th>Raised By</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="violBody">
+                        <tr><td colspan="10"><div class="loading">Loading archive…</div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+
+        <!-- Acknowledgements Tab -->
+        <div class="tab-panel" id="panelAcknowledgements">
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Policy</th>
+                            <th>Assigned Date</th>
+                            <th>Acknowledged Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ackBody">
+                        <tr><td colspan="5"><div class="loading">Loading archive…</div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Archived Policies Tab -->
+        <div class="tab-panel" id="panelPolicies">
+            <div class="table-scroll">
+            <div class="table-card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Policy Title</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Uploaded</th>
+                            <th>Archived</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="polBody">
+                        <tr><td colspan="8"><div class="loading">Loading…</div></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+@section Scripts {
+<script>
+    const API = '/ComplianceManagerPolicy';
+    let allViolations = [];
+    let allAcknowledgements = [];
+    let allArchivedPolicies = [];
+
+    async function loadArchive() {
+        const from   = document.getElementById('fromDate').value;
+        const to     = document.getElementById('toDate').value;
+        const search = document.getElementById('archiveSearch').value;
+
+        let url = `${API}/GetBranchArchive?`;
+        if (from)   url += `from=${encodeURIComponent(from)}&`;
+        if (to)     url += `to=${encodeURIComponent(to)}&`;
+        if (search) url += `search=${encodeURIComponent(search)}`;
+
+        document.getElementById('violBody').innerHTML = '<tr><td colspan="10"><div class="loading">Loading…</div></td></tr>';
+        document.getElementById('ackBody').innerHTML  = '<tr><td colspan="5"><div class="loading">Loading…</div></td></tr>';
+        document.getElementById('polBody').innerHTML  = '<tr><td colspan="8"><div class="loading">Loading…</div></td></tr>';
+
+        try {
+            const res = await fetch(url).then(r => r.json());
+            if (!res.success) throw new Error(res.message);
+
+            allViolations      = res.violations      || [];
+            allAcknowledgements = res.acknowledgements || [];
+
+            document.getElementById('resolvedCount').textContent    = res.resolvedCount;
+            document.getElementById('acknowledgedCount').textContent = res.acknowledgedCount;
+
+            renderViolations(allViolations);
+            renderAcknowledgements(allAcknowledgements);
+        } catch (e) {
+            document.getElementById('violBody').innerHTML = '<tr><td colspan="10"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div>Error loading archive data</div></div></td></tr>';
+            document.getElementById('ackBody').innerHTML  = '<tr><td colspan="5"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div>Error loading archive data</div></div></td></tr>';
+        }
+    }
+
+    async function loadArchivedPolicies(search) {
+        let url = `${API}/GetArchivedPolicies`;
+        if (search) url += `?search=${encodeURIComponent(search)}`;
+        document.getElementById('polBody').innerHTML = '<tr><td colspan="8"><div class="loading">Loading…</div></td></tr>';
+        try {
+            const res = await fetch(url).then(r => r.json());
+            if (!res.success) throw new Error(res.message);
+            allArchivedPolicies = res.policies || [];
+            document.getElementById('archivedPolicyCount').textContent = res.count;
+            renderArchivedPolicies(allArchivedPolicies);
+        } catch {
+            document.getElementById('polBody').innerHTML = '<tr><td colspan="8"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div>Error loading archived policies</div></div></td></tr>';
+        }
+    }
+
+    function renderViolations(list) {
+        if (!list.length) {
+            document.getElementById('violBody').innerHTML = '<tr><td colspan="10"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg><div>No resolved violations found</div></div></td></tr>';
+            return;
+        }
+        document.getElementById('violBody').innerHTML = list.map(v => `
+            <tr>
+                <td>#${v.violationId}</td>
+                <td><span class="badge ${v.violationType.toLowerCase()}">${v.violationType}</span></td>
+                <td>${v.subjectName}</td>
+                <td class="td-truncate" title="${esc(v.policyName)}">${v.policyName}</td>
+                <td class="td-truncate" title="${esc(v.description)}">${v.description || '—'}</td>
+                <td class="td-truncate" title="${esc(v.resolution)}">${v.resolution || '—'}</td>
+                <td style="white-space:nowrap;">${v.raisedDate}</td>
+                <td style="white-space:nowrap;">${v.resolvedDate || '—'}</td>
+                <td style="white-space:nowrap;">${v.raisedBy}</td>
+                <td><span class="badge resolved">Resolved</span></td>
+            </tr>`).join('');
+    }
+
+    function renderAcknowledgements(list) {
+        if (!list.length) {
+            document.getElementById('ackBody').innerHTML = '<tr><td colspan="5"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg><div>No acknowledged policies found</div></div></td></tr>';
+            return;
+        }
+        document.getElementById('ackBody').innerHTML = list.map(a => `
+            <tr>
+                <td>${a.employeeName}</td>
+                <td>${a.policyTitle}</td>
+                <td>${a.assignedDate || '—'}</td>
+                <td>${a.acknowledgedDate}</td>
+                <td><span class="badge acknowledged">Acknowledged</span></td>
+            </tr>`).join('');
+    }
+
+    function renderArchivedPolicies(list) {
+        if (!list.length) {
+            document.getElementById('polBody').innerHTML = '<tr><td colspan="8"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg><div>No archived policies found</div></div></td></tr>';
+            return;
+        }
+        document.getElementById('polBody').innerHTML = list.map(p => `
+            <tr>
+                <td>#${p.policyId}</td>
+                <td>${p.policyTitle}</td>
+                <td>${p.category || '—'}</td>
+                <td class="td-truncate" title="${esc(p.description)}">${p.description || '—'}</td>
+                <td style="white-space:nowrap;">${p.dateUploaded || '—'}</td>
+                <td style="white-space:nowrap;">${p.archivedDate || '—'}</td>
+                <td><span class="badge archived">Archived</span></td>
+                <td>
+                    <button class="btn-restore" title="Restore Policy" onclick="restorePolicy(${p.policyId}, '${esc(p.policyTitle)}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+                    </button>
+                </td>
+            </tr>`).join('');
+    }
+
+    async function restorePolicy(id, title) {
+        const ok = await window.showAppConfirm(`Restore policy "${title}" back to active?`);
+        if (!ok) return;
+        try {
+            const res = await fetch(`${API}/RestorePolicy?policyId=${id}`, { method: 'POST' }).then(r => r.json());
+            if (res.success) {
+                await window.showAppMessage(res.message || 'Policy restored successfully', 'Success');
+                loadArchivedPolicies();
+                document.getElementById('archivedPolicyCount').textContent = Math.max(0, (parseInt(document.getElementById('archivedPolicyCount').textContent) || 1) - 1);
+            } else {
+                await window.showAppMessage(res.message || 'Failed to restore policy', 'Error');
+            }
+        } catch {
+            await window.showAppMessage('Error restoring policy', 'Error');
+        }
+    }
+
+    function applyFilters() {
+        const q = document.getElementById('archiveSearch').value.toLowerCase().trim();
+        if (!q) {
+            renderViolations(allViolations);
+            renderAcknowledgements(allAcknowledgements);
+            renderArchivedPolicies(allArchivedPolicies);
+            return;
+        }
+        renderViolations(allViolations.filter(v =>
+            v.subjectName.toLowerCase().includes(q) ||
+            v.policyName.toLowerCase().includes(q) ||
+            (v.description || '').toLowerCase().includes(q) ||
+            (v.resolution  || '').toLowerCase().includes(q) ||
+            v.raisedBy.toLowerCase().includes(q)));
+        renderAcknowledgements(allAcknowledgements.filter(a =>
+            a.employeeName.toLowerCase().includes(q) ||
+            a.policyTitle.toLowerCase().includes(q)));
+        renderArchivedPolicies(allArchivedPolicies.filter(p =>
+            p.policyTitle.toLowerCase().includes(q) ||
+            (p.category    || '').toLowerCase().includes(q) ||
+            (p.description || '').toLowerCase().includes(q)));
+    }
+
+    function switchTab(tab) {
+        ['violations','acknowledgements','policies'].forEach(t => {
+            document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+        });
+        document.getElementById('tabViol').classList.toggle('active', tab === 'violations');
+        document.getElementById('tabAck').classList.toggle('active',  tab === 'acknowledgements');
+        document.getElementById('tabPol').classList.toggle('active',  tab === 'policies');
+        if (tab === 'policies' && allArchivedPolicies.length === 0) loadArchivedPolicies();
+    }
+
+    function esc(s) { return (s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+    document.addEventListener('DOMContentLoaded', () => { loadArchive(); loadArchivedPolicies(); });
+</script>
+}

@@ -23,9 +23,11 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
 
         // Summary
         public int TotalPolicies { get; set; }
-        public int ActivePolicies { get; set; }
+        public int ApprovedPolicies { get; set; }
+        public int PendingReviewPolicies { get; set; }
+        public int PendingUpdatePolicies { get; set; }
+        public int RejectedPolicies { get; set; }
         public int ArchivedPolicies { get; set; }
-        public int RecentlyUploaded { get; set; }
 
         // Lists
         public List<CMPolicyItem> Policies { get; set; } = new();
@@ -39,7 +41,7 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
                 return RedirectToPage("/Account/Login");
 
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            if (userRole != RoleNames.ComplianceManager && userRole != RoleNames.Admin)
+            if (userRole != RoleNames.ComplianceManager && !RoleNames.IsAdminRole(userRole))
             {
                 if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
                 return RedirectToPage("/Account/Login");
@@ -56,17 +58,20 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
                 BranchDisplayName = HttpContext.Session.GetString(SessionKeys.BranchName) ?? string.Empty;
             }
 
-            // Summary stats
-            TotalPolicies = await _context.Policies.CountAsync();
-            ActivePolicies = await _context.Policies.Where(p => !p.IsArchived).CountAsync();
-            ArchivedPolicies = await _context.Policies.Where(p => p.IsArchived).CountAsync();
+            // Only show branch-scoped + company-wide policies
+            var policyQuery = _context.Policies
+                .Where(p => p.BranchId == null || p.BranchId == CallerBranchId);
 
-            var thirtyDaysAgo = DateTime.Now.AddDays(-30);
-            RecentlyUploaded = await _context.Policies
-                .Where(p => p.DateUploaded >= thirtyDaysAgo)
-                .CountAsync();
+            var allPolicies = await policyQuery.ToListAsync();
+            TotalPolicies = allPolicies.Count;
+            ApprovedPolicies = allPolicies.Count(p => p.ReviewStatus == "Approved" && !p.IsArchived);
+            PendingReviewPolicies = allPolicies.Count(p => p.ReviewStatus == "PendingReview");
+            PendingUpdatePolicies = allPolicies.Count(p => p.ReviewStatus == "PendingUpdate");
+            RejectedPolicies = allPolicies.Count(p => p.ReviewStatus == "Rejected");
+            ArchivedPolicies = allPolicies.Count(p => p.ReviewStatus == "Archived" || p.IsArchived);
 
             Policies = await _context.Policies
+                .Where(p => p.BranchId == null || p.BranchId == CallerBranchId)
                 .Include(p => p.UploadedByUser)
                 .OrderByDescending(p => p.DateUploaded)
                 .Select(p => new CMPolicyItem
@@ -77,7 +82,9 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
                     Category = p.Category ?? string.Empty,
                     Description = p.Description ?? string.Empty,
                     Status = p.IsArchived ? "Archived" : "Active",
+                    ReviewStatus = p.ReviewStatus ?? "Approved",
                     IsArchived = p.IsArchived,
+                    IsBranchPolicy = p.BranchId != null,
                     DateUploaded = p.DateUploaded ?? DateTime.Now,
                     UploadedBy = p.UploadedByUser != null
                         ? $"{p.UploadedByUser.FirstName} {p.UploadedByUser.LastName}"
@@ -119,7 +126,9 @@ namespace TechNova_IT_Solutions.Pages.ComplianceManager
         public string Category { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+        public string ReviewStatus { get; set; } = "Approved";
         public bool IsArchived { get; set; }
+        public bool IsBranchPolicy { get; set; }
         public DateTime DateUploaded { get; set; }
         public string UploadedBy { get; set; } = string.Empty;
         public string? FilePath { get; set; }

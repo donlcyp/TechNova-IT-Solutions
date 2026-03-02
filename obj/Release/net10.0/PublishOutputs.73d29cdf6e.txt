@@ -1,10 +1,5 @@
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.exe
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\appsettings.json
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\artifacts\verify-build\appsettings.json
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\artifacts\verify-build\TechNova IT Solutions.deps.json
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\artifacts\verify-build\TechNova IT Solutions.runtimeconfig.json
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\artifacts\verify-build\TechNova IT Solutions.staticwebassets.endpoints.json
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\artifacts\verify-build\TechNova IT Solutions.staticwebassets.runtime.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.runtimeconfig.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.pdb

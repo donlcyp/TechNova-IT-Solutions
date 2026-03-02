@@ -31,10 +31,29 @@ namespace TechNova_IT_Solutions.Controllers
 
         // ── Auth helpers ────────────────────────────────────────
 
-        private bool HasPolicyAuthority()
+        /// <summary>
+        /// Full policy lifecycle authority: create, update, delete, archive, restore.
+        /// Only ChiefComplianceManager and SuperAdmin.
+        /// </summary>
+        /// <summary>
+        /// Policy lifecycle (create/update/delete/archive/restore): all compliance and admin roles.
+        /// Branch roles (Admin, ComplianceManager) create policies that go through CCM review.
+        /// SuperAdmin and ChiefComplianceManager policies are auto-approved.
+        /// </summary>
+        private bool HasPolicyLifecycleAuthority()
         {
             var role = HttpContext.Session.GetString(SessionKeys.UserRole);
-            return role == RoleNames.ChiefComplianceManager || role == RoleNames.ComplianceManager || role == RoleNames.Admin || role == RoleNames.SuperAdmin;
+            return role == RoleNames.ChiefComplianceManager || role == RoleNames.SuperAdmin
+                || RoleNames.IsAdminRole(role) || role == RoleNames.ComplianceManager;
+        }
+
+        /// <summary>
+        /// Policy assignment + view authority: all compliance and admin roles.
+        /// </summary>
+        private bool HasPolicyAssignmentAuthority()
+        {
+            var role = HttpContext.Session.GetString(SessionKeys.UserRole);
+            return role == RoleNames.ChiefComplianceManager || role == RoleNames.ComplianceManager || RoleNames.IsAdminRole(role) || role == RoleNames.SuperAdmin;
         }
 
         private int? GetCurrentUserId()
@@ -62,6 +81,11 @@ namespace TechNova_IT_Solutions.Controllers
         {
             var role = HttpContext.Session.GetString(SessionKeys.UserRole);
             return role == RoleNames.SuperAdmin;
+        }
+
+        private string? GetCallerRole()
+        {
+            return HttpContext.Session.GetString(SessionKeys.UserRole);
         }
 
         // ── Email helpers ───────────────────────────────────────
@@ -144,10 +168,12 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> CreatePolicy([FromBody] PolicyData policyData)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyLifecycleAuthority()) return Unauthorized(new { success = false, message = "Access denied. Only Chief Compliance Manager or Super Admin can create policies." });
             if (policyData == null) return BadRequest(new { success = false, message = "Invalid policy data" });
 
             policyData.UploadedDate ??= DateTime.Now;
+            policyData.CallerUserId = GetCurrentUserId();
+            policyData.CallerRole = GetCallerRole();
 
             // Branch Admins/CMs automatically stamp their branch; SuperAdmin/CCM keeps null (company-wide)
             if (!HasGlobalScope())
@@ -159,7 +185,10 @@ namespace TechNova_IT_Solutions.Controllers
             if (result)
             {
                 await _adminService.LogActivityAsync(GetCurrentUserId(), $"Created policy: {policyData.PolicyTitle}", "Policy");
-                return Ok(new { success = true, message = "Policy created successfully" });
+                var msg = policyData.CallerRole is RoleNames.BranchAdmin or RoleNames.ComplianceManager
+                    ? "Policy created and submitted for CCM review."
+                    : "Policy created successfully.";
+                return Ok(new { success = true, message = msg });
             }
 
             return BadRequest(new { success = false, message = "Failed to create policy" });
@@ -168,21 +197,32 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdatePolicy([FromBody] PolicyData policyData)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyLifecycleAuthority()) return Unauthorized(new { success = false, message = "Access denied. Only Chief Compliance Manager or Super Admin can update policies." });
             if (policyData == null) return BadRequest(new { success = false, message = "Invalid policy data" });
+
+            policyData.CallerUserId = GetCurrentUserId();
+            policyData.CallerRole = GetCallerRole();
 
             var result = await _adminService.UpdatePolicyAsync(policyData);
             if (result)
             {
                 await _adminService.LogActivityAsync(GetCurrentUserId(), $"Updated policy: {policyData.PolicyTitle}", "Policy");
+
+                // Only notify employees directly when updated by SuperAdmin/CCM (no review needed).
+                // For branch roles, the AdminService stages the update, no employee notif yet.
                 var emailSummary = new EmailNotificationSummary();
-                if (policyData.PolicyId > 0)
+                bool directUpdate = policyData.CallerRole is not (RoleNames.BranchAdmin or RoleNames.ComplianceManager);
+                if (directUpdate && policyData.PolicyId > 0)
                     emailSummary = await NotifyEmployeesPolicyUpdatedAsync(policyData.PolicyId, policyData.PolicyTitle);
+
+                var msg = directUpdate
+                    ? $"Policy updated. Email sent: {emailSummary.SentCount}, failed: {emailSummary.FailedCount}."
+                    : "Policy update submitted for CCM review.";
 
                 return Ok(new
                 {
                     success = true,
-                    message = $"Policy updated. Email sent: {emailSummary.SentCount}, failed: {emailSummary.FailedCount}.",
+                    message = msg,
                     emailRecipients = emailSummary.Recipients,
                     emailSent = emailSummary.SentCount,
                     emailFailed = emailSummary.FailedCount,
@@ -202,7 +242,7 @@ namespace TechNova_IT_Solutions.Controllers
             [FromForm] string status,
             [FromForm] int? policyId)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyLifecycleAuthority()) return Unauthorized(new { success = false, message = "Access denied. Only Chief Compliance Manager or Super Admin can upload policies." });
             if (string.IsNullOrWhiteSpace(policyTitle)) return BadRequest(new { success = false, message = "Policy title is required" });
 
             string filePath = string.Empty;
@@ -225,7 +265,9 @@ namespace TechNova_IT_Solutions.Controllers
                 Category = category,
                 Description = description,
                 FilePath = filePath,
-                UploadedDate = DateTime.Now
+                UploadedDate = DateTime.Now,
+                CallerUserId = GetCurrentUserId(),
+                CallerRole = GetCallerRole()
             };
 
             // Branch Admins/CMs stamp their branch; SuperAdmin/CCM keeps null (company-wide)
@@ -271,7 +313,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> DeletePolicy(int policyId)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyLifecycleAuthority()) return Unauthorized(new { success = false, message = "Access denied. Only Chief Compliance Manager or Super Admin can delete policies." });
             var result = await _adminService.DeletePolicyAsync(policyId);
             if (result)
             {
@@ -285,7 +327,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> ArchivePolicy(int policyId)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyLifecycleAuthority()) return Unauthorized(new { success = false, message = "Access denied. Only Chief Compliance Manager or Super Admin can archive policies." });
             var result = await _adminService.ArchivePolicyAsync(policyId);
             if (result)
             {
@@ -299,7 +341,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> RestorePolicy(int policyId)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyLifecycleAuthority()) return Unauthorized(new { success = false, message = "Access denied. Only Chief Compliance Manager or Super Admin can restore policies." });
             var result = await _adminService.RestorePolicyAsync(policyId);
             if (result)
             {
@@ -344,7 +386,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> AssignPolicy([FromBody] PolicyAssignmentRequest request)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
             if (request == null) return BadRequest(new { success = false, message = "Invalid request" });
 
             var policyIds = request.PolicyIds?.Where(id => id > 0).Distinct().ToList() ?? new List<int>();
@@ -409,7 +451,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpGet]
         public async Task<IActionResult> GetPolicyAssignmentStatus(int policyId)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
             if (policyId <= 0) return BadRequest(new { success = false, message = "Invalid policy id" });
 
             var status = await _adminService.GetPolicyAssignmentStatusAsync(policyId);
@@ -426,7 +468,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> SuspendSupplier(int supplierId, [FromBody] SupplierSuspendRequest? request)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
 
             var supplier = await _context.Suppliers.FindAsync(supplierId);
             if (supplier == null) return NotFound(new { success = false, message = "Supplier not found" });
@@ -438,13 +480,26 @@ namespace TechNova_IT_Solutions.Controllers
             await _context.SaveChangesAsync();
 
             await _adminService.LogActivityAsync(GetCurrentUserId(), $"Suspended supplier: {supplier.SupplierName} — {supplier.TerminationReason}", "Compliance");
+
+            // ── Email notification ────────────────────────────────────
+            if (!string.IsNullOrWhiteSpace(supplier.Email))
+            {
+                var contact = !string.IsNullOrWhiteSpace(supplier.ContactPersonFirstName)
+                    ? $"{supplier.ContactPersonFirstName} {supplier.ContactPersonLastName}".Trim()
+                    : supplier.SupplierName;
+                var reason = supplier.TerminationReason;
+                var nowStr = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
+                var body = $"Dear {contact},\n\nYour supplier account for {supplier.SupplierName} has been suspended due to non-compliance with TechNova IT Solutions policies.\n\nReason: {reason}\nSuspended On: {nowStr} UTC\n\nTo resolve this suspension, please contact the TechNova compliance team as soon as possible.\n\n— TechNova IT Solutions Compliance Team";
+                try { await _emailService.SendEmailAsync(supplier.Email!, $"[TechNova] Supplier Account Suspended – {supplier.SupplierName}", body); } catch { }
+            }
+
             return Ok(new { success = true, message = $"Supplier '{supplier.SupplierName}' has been suspended." });
         }
 
         [HttpPost]
         public async Task<IActionResult> UnsuspendSupplier(int supplierId)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
 
             var supplier = await _context.Suppliers.FindAsync(supplierId);
             if (supplier == null) return NotFound(new { success = false, message = "Supplier not found" });
@@ -456,15 +511,80 @@ namespace TechNova_IT_Solutions.Controllers
             await _context.SaveChangesAsync();
 
             await _adminService.LogActivityAsync(GetCurrentUserId(), $"Re-activated supplier: {supplier.SupplierName}", "Compliance");
+
+            // ── Email notification ────────────────────────────────────
+            if (!string.IsNullOrWhiteSpace(supplier.Email))
+            {
+                var contact = !string.IsNullOrWhiteSpace(supplier.ContactPersonFirstName)
+                    ? $"{supplier.ContactPersonFirstName} {supplier.ContactPersonLastName}".Trim()
+                    : supplier.SupplierName;
+                var nowStr = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
+                var body = $"Dear {contact},\n\nYour supplier account for {supplier.SupplierName} has been reactivated. You now have full access to the TechNova IT Solutions supplier portal.\n\nReactivated On: {nowStr} UTC\n\nIf you have any questions, please contact the TechNova compliance team.\n\n— TechNova IT Solutions Compliance Team";
+                try { await _emailService.SendEmailAsync(supplier.Email!, $"[TechNova] Supplier Account Reactivated – {supplier.SupplierName}", body); } catch { }
+            }
+
             return Ok(new { success = true, message = $"Supplier '{supplier.SupplierName}' has been re-activated." });
         }
 
         // ── Violation management endpoints ──────────────────────
 
+        // ── Employee compliance actions ──────────────────────────
+
+        [HttpPost]
+        public async Task<IActionResult> SuspendEmployee(int userId, [FromBody] EmployeeSuspendRequest? request)
+        {
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound(new { success = false, message = "Employee not found" });
+
+            user.Status = "Suspended";
+            await _context.SaveChangesAsync();
+
+            await _adminService.LogActivityAsync(GetCurrentUserId(),
+                $"Suspended employee: {user.FirstName} {user.LastName} — {request?.Reason ?? "Non-compliance"}", "Compliance");
+
+            if (!string.IsNullOrWhiteSpace(user.Email))
+            {
+                var name = $"{user.FirstName} {user.LastName}";
+                var reason = request?.Reason ?? "Non-compliance with company policies";
+                var nowStr = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
+                var body = $"Dear {name},\n\nYour TechNova IT Solutions employee account has been suspended.\n\nReason: {reason}\nSuspended On: {nowStr} UTC\n\nPlease contact your Compliance Manager or HR department to resolve this matter.\n\n— TechNova IT Solutions Compliance Team";
+                try { await _emailService.SendEmailAsync(user.Email, "[TechNova] Your Account Has Been Suspended", body); } catch { }
+            }
+
+            return Ok(new { success = true, message = $"Employee '{user.FirstName} {user.LastName}' has been suspended." });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UnsuspendEmployee(int userId)
+        {
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound(new { success = false, message = "Employee not found" });
+
+            user.Status = "Active";
+            await _context.SaveChangesAsync();
+
+            await _adminService.LogActivityAsync(GetCurrentUserId(),
+                $"Re-activated employee: {user.FirstName} {user.LastName}", "Compliance");
+
+            if (!string.IsNullOrWhiteSpace(user.Email))
+            {
+                var name = $"{user.FirstName} {user.LastName}";
+                var nowStr = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
+                var body = $"Dear {name},\n\nYour TechNova IT Solutions employee account has been reactivated. You now have full access to the portal.\n\nReactivated On: {nowStr} UTC\n\nIf you have any questions, please contact the compliance team.\n\n— TechNova IT Solutions Compliance Team";
+                try { await _emailService.SendEmailAsync(user.Email, "[TechNova] Your Account Has Been Reactivated", body); } catch { }
+            }
+
+            return Ok(new { success = true, message = $"Employee '{user.FirstName} {user.LastName}' has been reactivated." });
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetViolations(string? type, string? status)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
 
             var callerBranchId = HasGlobalScope() ? (int?)null : GetCallerBranchId();
             bool scoped = callerBranchId.HasValue;
@@ -522,11 +642,151 @@ namespace TechNova_IT_Solutions.Controllers
             return Ok(new { success = true, violations });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetArchivedPolicies(string? search)
+        {
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var callerBranchId = HasGlobalScope() ? (int?)null : GetCallerBranchId();
+            bool scoped = callerBranchId.HasValue;
+
+            var query = _context.Policies
+                .Where(p => p.IsArchived)
+                .AsNoTracking().AsQueryable();
+
+            if (scoped)
+                query = query.Where(p => p.BranchId == callerBranchId);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                query = query.Where(p =>
+                    p.PolicyTitle.ToLower().Contains(s) ||
+                    (p.Description != null && p.Description.ToLower().Contains(s)) ||
+                    (p.Category    != null && p.Category.ToLower().Contains(s)));
+            }
+
+            var policies = await query.OrderByDescending(p => p.ArchivedDate)
+                .Select(p => new {
+                    p.PolicyId,
+                    p.PolicyTitle,
+                    p.Category,
+                    p.Description,
+                    ArchivedDate = p.ArchivedDate.HasValue ? p.ArchivedDate.Value.ToString("yyyy-MM-dd") : null,
+                    DateUploaded = p.DateUploaded.HasValue ? p.DateUploaded.Value.ToString("yyyy-MM-dd") : null
+                }).ToListAsync();
+
+            return Ok(new { success = true, count = policies.Count, policies });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetBranchArchive(string? from, string? to, string? search)
+        {
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var callerBranchId = HasGlobalScope() ? (int?)null : GetCallerBranchId();
+            bool scoped = callerBranchId.HasValue;
+
+            DateTime? fromDate = DateTime.TryParse(from, out var fd) ? fd.Date : null;
+            DateTime? toDate   = DateTime.TryParse(to,   out var td) ? td.Date.AddDays(1).AddTicks(-1) : null;
+
+            // ── Resolved Violations ───────────────────────────────────
+            var violQuery = _context.ComplianceViolations
+                .Include(v => v.PolicyAssignment).ThenInclude(pa => pa!.User)
+                .Include(v => v.PolicyAssignment).ThenInclude(pa => pa!.Policy)
+                .Include(v => v.SupplierPolicy).ThenInclude(sp => sp!.Supplier)
+                .Include(v => v.SupplierPolicy).ThenInclude(sp => sp!.Policy)
+                .Include(v => v.RaisedByUser)
+                .Where(v => v.Status == "Resolved")
+                .AsNoTracking().AsQueryable();
+
+            if (scoped)
+                violQuery = violQuery.Where(v =>
+                    (v.PolicyAssignment != null && v.PolicyAssignment.User != null && v.PolicyAssignment.User.BranchId == callerBranchId) ||
+                    (v.SupplierPolicy != null && v.SupplierPolicy.Supplier != null && (v.SupplierPolicy.Supplier.BranchId == callerBranchId || v.SupplierPolicy.Supplier.BranchId == null)));
+
+            if (fromDate.HasValue) violQuery = violQuery.Where(v => v.ResolvedDate >= fromDate);
+            if (toDate.HasValue)   violQuery = violQuery.Where(v => v.ResolvedDate <= toDate);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                violQuery = violQuery.Where(v =>
+                    (v.Description != null && v.Description.ToLower().Contains(s)) ||
+                    (v.Resolution  != null && v.Resolution.ToLower().Contains(s)) ||
+                    (v.PolicyAssignment != null && v.PolicyAssignment.User != null &&
+                        (v.PolicyAssignment.User.FirstName + " " + v.PolicyAssignment.User.LastName).ToLower().Contains(s)) ||
+                    (v.SupplierPolicy != null && v.SupplierPolicy.Supplier != null &&
+                        v.SupplierPolicy.Supplier.SupplierName.ToLower().Contains(s)));
+            }
+
+            var violations = await violQuery.OrderByDescending(v => v.ResolvedDate).Take(300)
+                .Select(v => new {
+                    v.ViolationId, v.ViolationType, v.Description, v.Resolution,
+                    RaisedDate    = v.RaisedDate.ToString("yyyy-MM-dd"),
+                    ResolvedDate  = v.ResolvedDate.HasValue ? v.ResolvedDate.Value.ToString("yyyy-MM-dd") : null,
+                    RaisedBy      = v.RaisedByUser != null ? v.RaisedByUser.FirstName + " " + v.RaisedByUser.LastName : "System",
+                    SubjectName   = v.ViolationType == "Employee"
+                        ? (v.PolicyAssignment != null && v.PolicyAssignment.User != null ? v.PolicyAssignment.User.FirstName + " " + v.PolicyAssignment.User.LastName : "Unknown")
+                        : (v.SupplierPolicy  != null && v.SupplierPolicy.Supplier != null ? v.SupplierPolicy.Supplier.SupplierName : "Unknown"),
+                    PolicyName    = v.ViolationType == "Employee"
+                        ? (v.PolicyAssignment != null && v.PolicyAssignment.Policy != null ? v.PolicyAssignment.Policy.PolicyTitle : "Unknown")
+                        : (v.SupplierPolicy  != null && v.SupplierPolicy.Policy   != null ? v.SupplierPolicy.Policy.PolicyTitle   : "Unknown")
+                }).ToListAsync();
+
+            // ── Acknowledged Policy Assignments (Employees) ───────────
+            var ackQuery = _context.ComplianceStatuses
+                .Include(cs => cs.PolicyAssignment).ThenInclude(pa => pa.User)
+                .Include(cs => cs.PolicyAssignment).ThenInclude(pa => pa.Policy)
+                .Where(cs => cs.Status == "Acknowledged" && cs.AcknowledgedDate != null)
+                .AsNoTracking().AsQueryable();
+
+            if (scoped)
+                ackQuery = ackQuery.Where(cs => cs.PolicyAssignment.User.BranchId == callerBranchId);
+
+            if (fromDate.HasValue) ackQuery = ackQuery.Where(cs => cs.AcknowledgedDate >= fromDate);
+            if (toDate.HasValue)   ackQuery = ackQuery.Where(cs => cs.AcknowledgedDate <= toDate);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                ackQuery = ackQuery.Where(cs =>
+                    (cs.PolicyAssignment.User.FirstName + " " + cs.PolicyAssignment.User.LastName).ToLower().Contains(s) ||
+                    cs.PolicyAssignment.Policy.PolicyTitle.ToLower().Contains(s));
+            }
+
+            var acknowledgements = await ackQuery.OrderByDescending(cs => cs.AcknowledgedDate).Take(300)
+                .Select(cs => new {
+                    cs.PolicyAssignment.AssignmentId,
+                    EmployeeName     = cs.PolicyAssignment.User.FirstName + " " + cs.PolicyAssignment.User.LastName,
+                    PolicyTitle      = cs.PolicyAssignment.Policy.PolicyTitle,
+                    AssignedDate     = cs.PolicyAssignment.AssignedDate.HasValue ? cs.PolicyAssignment.AssignedDate.Value.ToString("yyyy-MM-dd") : null,
+                    AcknowledgedDate = cs.AcknowledgedDate!.Value.ToString("yyyy-MM-dd")
+                }).ToListAsync();
+
+            return Ok(new {
+                success = true,
+                resolvedCount      = violations.Count,
+                acknowledgedCount  = acknowledgements.Count,
+                violations,
+                acknowledgements
+            });
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateViolation([FromBody] CreateViolationRequest request)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
             if (request == null) return BadRequest(new { success = false, message = "Invalid request" });
+
+            var now = DateTime.UtcNow;
+            var nowStr = now.ToString("yyyy-MM-dd HH:mm");
+
+            // Initial timeline entry always written to Notes
+            var timelineEntry = $"[TIMELINE:Open:{nowStr}] Violation raised";
+            var initialNotes = timelineEntry;
+            if (!string.IsNullOrWhiteSpace(request.Notes))
+                initialNotes += $"\n[{nowStr}] {request.Notes}";
 
             var violation = new Models.ComplianceViolation
             {
@@ -534,9 +794,9 @@ namespace TechNova_IT_Solutions.Controllers
                 PolicyAssignmentId = request.PolicyAssignmentId,
                 SupplierPolicyId = request.SupplierPolicyId,
                 Description = request.Description,
-                Notes = request.Notes,
+                Notes = initialNotes,
                 Status = "Open",
-                RaisedDate = DateTime.UtcNow,
+                RaisedDate = now,
                 RaisedByUserId = GetCurrentUserId()
             };
 
@@ -546,29 +806,116 @@ namespace TechNova_IT_Solutions.Controllers
             await _adminService.LogActivityAsync(GetCurrentUserId(),
                 $"Raised compliance violation #{violation.ViolationId}: {request.Description}", "Compliance");
 
+            // ── Email notification ────────────────────────────────────
+            try
+            {
+                if (violation.ViolationType == "Employee" && violation.PolicyAssignmentId.HasValue)
+                {
+                    var pa = await _context.PolicyAssignments
+                        .Include(x => x.User)
+                        .Include(x => x.Policy)
+                        .FirstOrDefaultAsync(x => x.AssignmentId == violation.PolicyAssignmentId.Value);
+                    if (pa?.User != null && !string.IsNullOrWhiteSpace(pa.User.Email))
+                    {
+                        var name = $"{pa.User.FirstName} {pa.User.LastName}";
+                        var policy = pa.Policy?.PolicyTitle ?? "N/A";
+                        var body = $"Dear {name},\n\nA compliance violation has been raised against one of your assigned policies.\n\nViolation #: {violation.ViolationId}\nPolicy: {policy}\nDescription: {request.Description ?? "N/A"}\nRaised On: {nowStr} UTC\n\nPlease contact your Compliance Manager immediately for further information and corrective action.\n\n— TechNova IT Solutions Compliance Team";
+                        await _emailService.SendEmailAsync(pa.User.Email,
+                            $"[TechNova] Compliance Violation #{violation.ViolationId} Raised – Action Required", body);
+                    }
+                }
+                else if (violation.ViolationType == "Supplier" && violation.SupplierPolicyId.HasValue)
+                {
+                    var sp = await _context.SupplierPolicies
+                        .Include(x => x.Supplier)
+                        .Include(x => x.Policy)
+                        .FirstOrDefaultAsync(x => x.SupplierPolicyId == violation.SupplierPolicyId.Value);
+                    if (sp?.Supplier != null && !string.IsNullOrWhiteSpace(sp.Supplier.Email))
+                    {
+                        var contact = !string.IsNullOrWhiteSpace(sp.Supplier.ContactPersonFirstName)
+                            ? $"{sp.Supplier.ContactPersonFirstName} {sp.Supplier.ContactPersonLastName}".Trim()
+                            : sp.Supplier.SupplierName;
+                        var policy = sp.Policy?.PolicyTitle ?? "N/A";
+                        var body = $"Dear {contact},\n\nA compliance violation has been recorded for {sp.Supplier.SupplierName} against a TechNova IT Solutions policy.\n\nViolation #: {violation.ViolationId}\nPolicy: {policy}\nDescription: {request.Description ?? "N/A"}\nRaised On: {nowStr} UTC\n\nPlease contact your assigned compliance officer to address this matter promptly.\n\n— TechNova IT Solutions Compliance Team";
+                        await _emailService.SendEmailAsync(sp.Supplier.Email,
+                            $"[TechNova] Compliance Violation #{violation.ViolationId} Notice – {sp.Supplier.SupplierName}", body);
+                    }
+                }
+            }
+            catch { /* email failure is non-blocking */ }
+
             return Ok(new { success = true, message = "Violation created successfully", violationId = violation.ViolationId });
         }
 
         [HttpPost]
         public async Task<IActionResult> UpdateViolationStatus(int violationId, [FromBody] UpdateViolationStatusRequest request)
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
 
-            var violation = await _context.ComplianceViolations.FindAsync(violationId);
+            var violation = await _context.ComplianceViolations
+                .Include(v => v.PolicyAssignment).ThenInclude(pa => pa!.User)
+                .Include(v => v.PolicyAssignment).ThenInclude(pa => pa!.Policy)
+                .Include(v => v.SupplierPolicy).ThenInclude(sp => sp!.Supplier)
+                .Include(v => v.SupplierPolicy).ThenInclude(sp => sp!.Policy)
+                .FirstOrDefaultAsync(v => v.ViolationId == violationId);
             if (violation == null) return NotFound(new { success = false, message = "Violation not found" });
 
-            violation.Status = request.Status ?? violation.Status;
-            if (!string.IsNullOrWhiteSpace(request.Notes))
-                violation.Notes = (violation.Notes ?? "") + $"\n[{DateTime.UtcNow:yyyy-MM-dd HH:mm}] {request.Notes}";
+            var oldStatus = violation.Status;
+            var newStatus = request.Status ?? violation.Status;
+            var now = DateTime.UtcNow;
+            var nowStr = now.ToString("yyyy-MM-dd HH:mm");
+
+            violation.Status = newStatus;
             if (!string.IsNullOrWhiteSpace(request.Resolution))
                 violation.Resolution = request.Resolution;
             if (request.Status == "Resolved")
-                violation.ResolvedDate = DateTime.UtcNow;
+                violation.ResolvedDate = now;
+
+            // Always write a timeline entry for the status change
+            var statusLabel = newStatus == "UnderReview" ? "Under Review" : newStatus;
+            var timelineEntry = $"[TIMELINE:{newStatus}:{nowStr}] Status updated to {statusLabel}";
+            var notesBuffer = (violation.Notes ?? "").TrimEnd();
+            notesBuffer += (notesBuffer.Length > 0 ? "\n" : "") + timelineEntry;
+            if (!string.IsNullOrWhiteSpace(request.Notes))
+                notesBuffer += $"\n[{nowStr}] {request.Notes}";
+            violation.Notes = notesBuffer;
 
             await _context.SaveChangesAsync();
 
             await _adminService.LogActivityAsync(GetCurrentUserId(),
                 $"Updated violation #{violationId} → {violation.Status}", "Compliance");
+
+            // ── Email notification ────────────────────────────────────
+            try
+            {
+                string? recipientEmail = null, recipientName = null, policyTitle = null;
+                if (violation.ViolationType == "Employee" && violation.PolicyAssignment?.User != null)
+                {
+                    recipientEmail = violation.PolicyAssignment.User.Email;
+                    recipientName = $"{violation.PolicyAssignment.User.FirstName} {violation.PolicyAssignment.User.LastName}";
+                    policyTitle = violation.PolicyAssignment.Policy?.PolicyTitle ?? "N/A";
+                }
+                else if (violation.ViolationType == "Supplier" && violation.SupplierPolicy?.Supplier != null)
+                {
+                    recipientEmail = violation.SupplierPolicy.Supplier.Email;
+                    var s = violation.SupplierPolicy.Supplier;
+                    recipientName = !string.IsNullOrWhiteSpace(s.ContactPersonFirstName)
+                        ? $"{s.ContactPersonFirstName} {s.ContactPersonLastName}".Trim() : s.SupplierName;
+                    policyTitle = violation.SupplierPolicy.Policy?.PolicyTitle ?? "N/A";
+                }
+
+                if (!string.IsNullOrWhiteSpace(recipientEmail))
+                {
+                    var oldLabel = oldStatus == "UnderReview" ? "Under Review" : oldStatus;
+                    var extra = "";
+                    if (!string.IsNullOrWhiteSpace(request.Notes)) extra += $"\nNote: {request.Notes}";
+                    if (newStatus == "Resolved" && !string.IsNullOrWhiteSpace(request.Resolution)) extra += $"\nResolution: {request.Resolution}";
+                    var body = $"Dear {recipientName},\n\nYour compliance violation (#{violationId}) status has been updated.\n\nPolicy: {policyTitle}\nPrevious Status: {oldLabel}\nNew Status: {statusLabel}\nUpdated On: {nowStr} UTC{extra}\n\nPlease contact your compliance officer if you have any questions.\n\n— TechNova IT Solutions Compliance Team";
+                    await _emailService.SendEmailAsync(recipientEmail,
+                        $"[TechNova] Compliance Violation #{violationId} – Status Updated to {statusLabel}", body);
+                }
+            }
+            catch { /* email failure is non-blocking */ }
 
             return Ok(new { success = true, message = "Violation updated" });
         }
@@ -578,7 +925,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpGet]
         public async Task<IActionResult> GetNonCompliantEmployees()
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
 
             var callerBranchId = HasGlobalScope() ? (int?)null : GetCallerBranchId();
             bool scoped = callerBranchId.HasValue;
@@ -593,8 +940,10 @@ namespace TechNova_IT_Solutions.Controllers
                 .Select(pa => new
                 {
                     pa.AssignmentId,
+                    UserId = pa.User != null ? pa.User.UserId : 0,
                     EmployeeName = pa.User != null ? $"{pa.User.FirstName} {pa.User.LastName}" : "Unknown",
                     Email = pa.User != null ? pa.User.Email : "",
+                    UserStatus = pa.User != null ? pa.User.Status : "Active",
                     PolicyTitle = pa.Policy != null ? pa.Policy.PolicyTitle : "Unknown",
                     AssignedDate = pa.AssignedDate.HasValue ? pa.AssignedDate.Value.ToString("yyyy-MM-dd") : "N/A",
                     Status = pa.ComplianceStatus != null ? pa.ComplianceStatus.Status : "Pending",
@@ -608,7 +957,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpGet]
         public async Task<IActionResult> GetNonCompliantSuppliers()
         {
-            if (!HasPolicyAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
 
             var callerBranchId = HasGlobalScope() ? (int?)null : GetCallerBranchId();
             bool scoped = callerBranchId.HasValue;
@@ -637,6 +986,11 @@ namespace TechNova_IT_Solutions.Controllers
     }
 
     // ── Request DTOs ────────────────────────────────────────────
+
+    public class EmployeeSuspendRequest
+    {
+        public string? Reason { get; set; }
+    }
 
     public class SupplierSuspendRequest
     {

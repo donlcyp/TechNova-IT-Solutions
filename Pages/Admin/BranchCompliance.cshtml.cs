@@ -20,7 +20,7 @@ namespace TechNova_IT_Solutions.Pages.Admin
 
             var allowed = new[]
             {
-                RoleNames.Admin, RoleNames.SuperAdmin,
+                RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin,
                 RoleNames.ComplianceManager, RoleNames.ChiefComplianceManager
             };
 

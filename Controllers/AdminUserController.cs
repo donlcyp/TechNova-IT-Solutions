@@ -18,7 +18,7 @@ namespace TechNova_IT_Solutions.Controllers
         private bool IsAdmin()
         {
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            return userRole == RoleNames.Admin || userRole == RoleNames.SuperAdmin;
+            return RoleNames.IsAdminRole(userRole) || userRole == RoleNames.SuperAdmin;
         }
 
         private bool IsCurrentUserSuperAdmin()
@@ -29,8 +29,37 @@ namespace TechNova_IT_Solutions.Controllers
 
         private static bool IsPrivilegedAdminRole(string? role)
         {
-            return string.Equals(role, RoleNames.Admin, StringComparison.OrdinalIgnoreCase) ||
+            return RoleNames.IsAdminRole(role) ||
                    string.Equals(role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private int? GetCallerBranchId()
+        {
+            var s = HttpContext.Session.GetString(SessionKeys.BranchId);
+            return int.TryParse(s, out var id) ? id : null;
+        }
+
+        /// <summary>
+        /// Branch Admins can only manage users in their own branch.
+        /// SuperAdmin can manage any user.
+        /// Returns null if access is allowed, or an IActionResult to return if denied.
+        /// </summary>
+        private async Task<IActionResult?> EnforceBranchScopeAsync(int targetUserId)
+        {
+            if (IsCurrentUserSuperAdmin()) return null;
+
+            var callerBranchId = GetCallerBranchId();
+            if (!callerBranchId.HasValue)
+                return BadRequest(new { success = false, message = "You have no branch assigned." });
+
+            var targetUser = await _userService.GetUserByIdAsync(targetUserId);
+            if (targetUser == null)
+                return NotFound(new { success = false, message = "User not found" });
+
+            if (targetUser.BranchId != callerBranchId.Value)
+                return Unauthorized(new { success = false, message = "You can only manage users within your branch." });
+
+            return null;
         }
 
         [HttpPost]
@@ -41,13 +70,19 @@ namespace TechNova_IT_Solutions.Controllers
             {
                 return BadRequest(new { success = false, message = "Invalid user data" });
             }
-            if (!IsCurrentUserSuperAdmin() && IsPrivilegedAdminRole(userData.Role))
+            // SuperAdmin can create any role. SystemAdmin can create BranchAdmin but not SystemAdmin/SuperAdmin.
+            if (!IsCurrentUserSuperAdmin())
             {
-                return BadRequest(new { success = false, message = "System Administrator cannot create Admin or Super Admin accounts." });
+                if (string.Equals(userData.Role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(userData.Role, RoleNames.SystemAdmin, StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(new { success = false, message = "System Administrator cannot create System Admin or Super Admin accounts." });
+                }
             }
 
-            // If the calling user is an Admin (not SuperAdmin), automatically attach their branch
-            if (!IsCurrentUserSuperAdmin())
+            // If the calling user is an Admin (not SuperAdmin) and no branch was explicitly provided,
+            // automatically attach the caller's branch
+            if (!IsCurrentUserSuperAdmin() && !userData.BranchId.HasValue)
             {
                 var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
                 if (int.TryParse(branchIdStr, out int callerBranchId))
@@ -83,6 +118,11 @@ namespace TechNova_IT_Solutions.Controllers
         public async Task<IActionResult> GetUser(int userId)
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            // Branch Admin can only view users in their branch
+            var branchDenied = await EnforceBranchScopeAsync(userId);
+            if (branchDenied != null) return branchDenied;
+
             var user = await _userService.GetUserByIdAsync(userId);
 
             if (user != null)
@@ -101,9 +141,20 @@ namespace TechNova_IT_Solutions.Controllers
             {
                 return BadRequest(new { success = false, message = "Invalid user data" });
             }
-            if (!IsCurrentUserSuperAdmin() && IsPrivilegedAdminRole(userData.Role))
+            if (!IsCurrentUserSuperAdmin())
             {
-                return BadRequest(new { success = false, message = "System Administrator cannot assign Admin or Super Admin roles." });
+                if (string.Equals(userData.Role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(userData.Role, RoleNames.SystemAdmin, StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(new { success = false, message = "System Administrator cannot assign System Admin or Super Admin roles." });
+                }
+            }
+
+            // Branch Admin can only update users in their branch
+            if (int.TryParse(userData.UserId, out var uid))
+            {
+                var branchDenied = await EnforceBranchScopeAsync(uid);
+                if (branchDenied != null) return branchDenied;
             }
 
             var result = await _userService.UpdateUserAsync(userData);
@@ -120,6 +171,11 @@ namespace TechNova_IT_Solutions.Controllers
         public async Task<IActionResult> DeleteUser(int userId)
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            // Branch Admin can only delete users in their branch
+            var branchDenied = await EnforceBranchScopeAsync(userId);
+            if (branchDenied != null) return branchDenied;
+
             var result = await _userService.DeleteUserAsync(userId);
 
             if (result)
@@ -134,6 +190,10 @@ namespace TechNova_IT_Solutions.Controllers
         public async Task<IActionResult> ResetUserPassword(int userId)
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            // Branch Admin can only reset passwords for users in their branch
+            var branchDenied = await EnforceBranchScopeAsync(userId);
+            if (branchDenied != null) return branchDenied;
 
             var user = await _userService.GetUserByIdAsync(userId);
             if (user == null) return NotFound(new { success = false, message = "User not found" });
@@ -198,6 +258,10 @@ namespace TechNova_IT_Solutions.Controllers
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
 
+            // Branch Admin can only deactivate users in their branch
+            var branchDenied = await EnforceBranchScopeAsync(userId);
+            if (branchDenied != null) return branchDenied;
+
             var user = await _userService.GetUserByIdAsync(userId);
             if (user == null) return NotFound(new { success = false, message = "User not found" });
             if (string.Equals(user.Role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
@@ -254,6 +318,10 @@ namespace TechNova_IT_Solutions.Controllers
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
 
+            // Branch Admin can only reactivate users in their branch
+            var branchDenied = await EnforceBranchScopeAsync(userId);
+            if (branchDenied != null) return branchDenied;
+
             var user = await _userService.GetUserByIdAsync(userId);
             if (user == null) return NotFound(new { success = false, message = "User not found" });
             if (string.Equals(user.Role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
@@ -309,6 +377,10 @@ namespace TechNova_IT_Solutions.Controllers
         public async Task<IActionResult> SetUserPassword(int userId, [FromBody] SetPasswordRequest request)
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            // Branch Admin can only set passwords for users in their branch
+            var branchDenied = await EnforceBranchScopeAsync(userId);
+            if (branchDenied != null) return branchDenied;
 
             if (string.IsNullOrWhiteSpace(request?.NewPassword) || request.NewPassword.Length < 8)
             {

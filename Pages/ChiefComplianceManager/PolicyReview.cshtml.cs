@@ -5,11 +5,16 @@ namespace TechNova_IT_Solutions.Pages.ChiefComplianceManager
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly IAdminService _adminService;
 
-        public PolicyReviewModel(ApplicationDbContext context, IWebHostEnvironment environment)
+        public PolicyReviewModel(
+            ApplicationDbContext context,
+            IWebHostEnvironment environment,
+            IAdminService adminService)
         {
             _context = context;
             _environment = environment;
+            _adminService = adminService;
         }
 
         [BindProperty(SupportsGet = true)]
@@ -21,160 +26,166 @@ namespace TechNova_IT_Solutions.Pages.ChiefComplianceManager
         [BindProperty(SupportsGet = true)]
         public string? StatusFilter { get; set; }
 
-        public List<PolicyItem> Policies { get; set; } = new();
+        public List<PolicyReviewItem> Policies { get; set; } = new();
         public List<string> AvailableCategories { get; set; } = new();
-        public int TotalDraftPolicies { get; set; }
-        public int TotalApprovedPolicies { get; set; }
-        public int RecentlyUploadedPolicies { get; set; }
+
+        // Summary counts
+        public int PendingReviewCount { get; set; }
+        public int PendingUpdateCount { get; set; }
+        public int ApprovedCount { get; set; }
+        public int RejectedCount { get; set; }
+        public int ArchivedCount { get; set; }
 
         public async Task<IActionResult> OnGet()
         {
-            // Check if user is logged in
             var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
             if (string.IsNullOrEmpty(userIdString))
-            {
                 return RedirectToPage("/Account/Login");
-            }
 
-            // Check user role - only ChiefComplianceManager and SuperAdmin can access
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
             if (userRole != RoleNames.ChiefComplianceManager && userRole != RoleNames.SuperAdmin)
             {
-                // Redirect to appropriate dashboard based on role
-                if (userRole == RoleNames.Employee)
-                {
-                    return RedirectToPage("/Employee/Dashboard");
-                }
+                if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
                 return RedirectToPage("/Account/Login");
             }
 
-            // Chief CM always sees all branches — no branch scoping
-            int? callerBranchId = null;
-            bool scoped = callerBranchId.HasValue;
-
-            // Load policies from database
             var allPolicies = await _context.Policies
                 .Include(p => p.UploadedByUser)
-                .Where(p => !scoped || (p.UploadedByUser != null && p.UploadedByUser.BranchId == callerBranchId))
+                .Include(p => p.Branch)
+                .Include(p => p.ReviewedByUser)
                 .OrderByDescending(p => p.DateUploaded)
-                .Select(p => new PolicyItem
+                .Select(p => new PolicyReviewItem
                 {
                     PolicyId = p.PolicyId,
                     Title = p.PolicyTitle,
                     Category = p.Category ?? "General",
                     Description = p.Description ?? string.Empty,
-                    UploadedBy = p.UploadedByUser != null ? $"{p.UploadedByUser.FirstName} {p.UploadedByUser.LastName}" : "Unknown",
+                    UploadedBy = p.UploadedByUser != null
+                        ? $"{p.UploadedByUser.FirstName} {p.UploadedByUser.LastName}"
+                        : "System",
+                    BranchName = p.Branch != null ? p.Branch.BranchName : "Company-wide",
                     DateUploaded = p.DateUploaded ?? DateTime.Now,
-                    Status = p.IsArchived ? "Archived" : "Active",
-                    FileName = p.FilePath ?? string.Empty
+                    ReviewStatus = p.ReviewStatus ?? "Approved",
+                    FileName = p.FilePath ?? string.Empty,
+                    IsArchived = p.IsArchived,
+                    ReviewedBy = p.ReviewedByUser != null
+                        ? $"{p.ReviewedByUser.FirstName} {p.ReviewedByUser.LastName}"
+                        : null,
+                    ReviewedAt = p.ReviewedAt,
+                    ReviewNotes = p.ReviewNotes,
+                    // Pending-update fields
+                    PendingTitle = p.PendingTitle,
+                    PendingCategory = p.PendingCategory,
+                    PendingDescription = p.PendingDescription,
+                    PendingFilePath = p.PendingFilePath,
+                    PendingUpdatedAt = p.PendingUpdatedAt,
+                    HasPendingUpdate = p.ReviewStatus == "PendingUpdate"
                 })
                 .ToListAsync();
 
-            // Calculate statistics from all policies (before filtering)
-            TotalDraftPolicies = allPolicies.Count(p => p.Status == "Archived");
-            TotalApprovedPolicies = allPolicies.Count(p => p.Status == "Active");
-            RecentlyUploadedPolicies = allPolicies.Count(p => p.DateUploaded >= DateTime.Now.AddDays(-7));
+            // Decode HTML entities stored in legacy data (e.g. "&amp;" → "&")
+            foreach (var item in allPolicies)
+            {
+                item.Category = System.Net.WebUtility.HtmlDecode(item.Category);
+                if (item.PendingCategory != null)
+                    item.PendingCategory = System.Net.WebUtility.HtmlDecode(item.PendingCategory);
+            }
 
-            // Collect all distinct categories before filtering
+            // Summary counts
+            PendingReviewCount = allPolicies.Count(p => p.ReviewStatus == "PendingReview");
+            PendingUpdateCount = allPolicies.Count(p => p.ReviewStatus == "PendingUpdate");
+            ApprovedCount = allPolicies.Count(p => p.ReviewStatus == "Approved");
+            RejectedCount = allPolicies.Count(p => p.ReviewStatus == "Rejected");
+            ArchivedCount = allPolicies.Count(p => p.ReviewStatus == "Archived");
+
             AvailableCategories = allPolicies
                 .Select(p => p.Category)
                 .Where(c => !string.IsNullOrWhiteSpace(c))
-                .Distinct()
-                .OrderBy(c => c)
-                .ToList();
+                .Distinct().OrderBy(c => c).ToList();
 
             // Apply filters
-            var filteredPolicies = allPolicies.AsEnumerable();
+            var filtered = allPolicies.AsEnumerable();
 
             if (!string.IsNullOrEmpty(SearchQuery))
-            {
-                filteredPolicies = filteredPolicies.Where(p => 
-                    p.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
-            }
+                filtered = filtered.Where(p => p.Title.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase));
 
             if (!string.IsNullOrEmpty(CategoryFilter) && CategoryFilter != "All")
-            {
-                filteredPolicies = filteredPolicies.Where(p => p.Category == CategoryFilter);
-            }
+                filtered = filtered.Where(p => p.Category == CategoryFilter);
 
             if (!string.IsNullOrEmpty(StatusFilter) && StatusFilter != "All")
-            {
-                filteredPolicies = filteredPolicies.Where(p => p.Status == StatusFilter);
-            }
+                filtered = filtered.Where(p => p.ReviewStatus == StatusFilter);
 
-            Policies = filteredPolicies.ToList();
-
+            Policies = filtered.ToList();
             return Page();
         }
 
-        public async Task<IActionResult> OnPostApprove(int policyId)
+        // ── Approve a PendingReview policy ──────────────────────
+        public async Task<IActionResult> OnPostApprove(int policyId, string? reviewNotes)
         {
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue) return RedirectToPage("/Account/Login");
+
             var policy = await _context.Policies.FindAsync(policyId);
-            if (policy != null)
+            if (policy == null) { TempData["ErrorMessage"] = "Policy not found."; return RedirectToPage(); }
+
+            bool ok;
+            if (policy.ReviewStatus == "PendingUpdate")
             {
-                // Un-archive / re-activate the policy if it was archived
-                if (policy.IsArchived)
-                {
-                    policy.IsArchived = false;
-                    policy.ArchivedDate = null;
-                    await _context.SaveChangesAsync();
-                    TempData["SuccessMessage"] = "Policy has been re-activated successfully!";
-                }
-                else
-                {
-                    TempData["SuccessMessage"] = "Policy is already active.";
-                }
+                ok = await _adminService.ApproveUpdateAsync(policyId, userId.Value, reviewNotes);
+                TempData["SuccessMessage"] = ok ? "Policy update approved. Employees must re-acknowledge compliance." : "Failed to approve update.";
             }
             else
             {
-                TempData["ErrorMessage"] = "Policy not found.";
+                ok = await _adminService.ApprovePolicyAsync(policyId, userId.Value, reviewNotes);
+                TempData["SuccessMessage"] = ok ? "Policy approved successfully! It is now available for assignment." : "Failed to approve policy.";
             }
 
+            if (!ok) TempData["ErrorMessage"] = TempData["SuccessMessage"]?.ToString()?.Contains("Failed") == true ? TempData["SuccessMessage"]?.ToString() : null;
             return RedirectToPage();
         }
 
-        public async Task<IActionResult> OnPostEdit(PolicyItem policy, IFormFile? policyFile)
+        // ── Reject a PendingReview or PendingUpdate policy ──────
+        public async Task<IActionResult> OnPostReject(int policyId, string? reviewNotes)
         {
-            var existing = await _context.Policies.FindAsync(policy.PolicyId);
-            if (existing == null)
-            {
-                TempData["ErrorMessage"] = "Policy not found.";
-                return RedirectToPage();
-            }
+            var userId = GetCurrentUserId();
+            if (!userId.HasValue) return RedirectToPage("/Account/Login");
 
-            existing.PolicyTitle = policy.Title;
-            existing.Category = policy.Category;
-            existing.Description = policy.Description;
-
-            if (policyFile != null && policyFile.Length > 0)
-            {
-                var uploadsDir = Path.Combine(_environment.WebRootPath, "uploads", "policies");
-                Directory.CreateDirectory(uploadsDir);
-                var safeFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{Path.GetFileName(policyFile.FileName)}";
-                var fullPath = Path.Combine(uploadsDir, safeFileName);
-                await using (var stream = new FileStream(fullPath, FileMode.Create))
-                {
-                    await policyFile.CopyToAsync(stream);
-                }
-                existing.FilePath = $"/uploads/policies/{safeFileName}";
-            }
-
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Policy updated successfully!";
+            var ok = await _adminService.RejectPolicyAsync(policyId, userId.Value, reviewNotes);
+            TempData[ok ? "SuccessMessage" : "ErrorMessage"] = ok
+                ? "Policy has been rejected. The branch has been notified."
+                : "Failed to reject policy.";
             return RedirectToPage();
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var s = HttpContext.Session.GetString(SessionKeys.UserId);
+            return int.TryParse(s, out var id) ? id : null;
         }
     }
 
-    public class PolicyItem
+    public class PolicyReviewItem
     {
         public int PolicyId { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string UploadedBy { get; set; } = string.Empty;
+        public string BranchName { get; set; } = string.Empty;
         public DateTime DateUploaded { get; set; }
-        public string Status { get; set; } = string.Empty;
+        public string ReviewStatus { get; set; } = string.Empty;
         public string FileName { get; set; } = string.Empty;
+        public bool IsArchived { get; set; }
+        public string? ReviewedBy { get; set; }
+        public DateTime? ReviewedAt { get; set; }
+        public string? ReviewNotes { get; set; }
+        // Pending update
+        public string? PendingTitle { get; set; }
+        public string? PendingCategory { get; set; }
+        public string? PendingDescription { get; set; }
+        public string? PendingFilePath { get; set; }
+        public DateTime? PendingUpdatedAt { get; set; }
+        public bool HasPendingUpdate { get; set; }
     }
 }
 

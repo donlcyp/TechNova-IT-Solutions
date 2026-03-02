@@ -27,7 +27,8 @@ namespace TechNova_IT_Solutions.Controllers
         public async Task<IActionResult> ExternalPolicyReferences(string category = "all")
         {
             // External Policy API is Chief-level only — Branch CM cannot access
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ChiefComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            // External Policy API is Chief Compliance Manager + Super Admin only — Branch Admin and Branch CM cannot access
+            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.ChiefComplianceManager, RoleNames.SuperAdmin);
             if (denied != null) return denied;
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole) ?? string.Empty;
             var branchId = GetCallerBranchId();
@@ -88,7 +89,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> GetExternalPolicyJson(string policyId)
         {
-            var unauthorized = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.ChiefComplianceManager, RoleNames.Admin, RoleNames.SuperAdmin);
+            var unauthorized = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.ChiefComplianceManager, RoleNames.SuperAdmin);
             if (unauthorized != null) return unauthorized;
 
             // API endpoint for AJAX calls to get specific policy details

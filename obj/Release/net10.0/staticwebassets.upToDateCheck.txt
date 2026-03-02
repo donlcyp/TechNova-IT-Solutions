@@ -71,6 +71,10 @@ wwwroot\uploads\policies\20260221124952_20260217154418_3rd_Deliverables_CRUD_ADM
 wwwroot\uploads\policies\20260221124953_20260217154418_3rd_Deliverables_CRUD_ADMIN_CLIENT.pdf
 wwwroot\uploads\policies\20260221125306_IT15_ERD_DATADICTIONARY-V3-BASIO (1).pdf
 wwwroot\uploads\policies\20260221125311_IT15_ERD_DATADICTIONARY-V3-BASIO (1).pdf
+wwwroot\uploads\policies\20260228172203_Scanned Document.pdf
+wwwroot\uploads\policies\20260228172707_Scanned Document.pdf
+wwwroot\uploads\policies\20260301124655_Scanned Document.pdf
+wwwroot\uploads\policies\20260302074055_Scanned Document.pdf
 D:\C#\repos\TechNova IT Solutions\wwwroot\css\site.css
 D:\C#\repos\TechNova IT Solutions\wwwroot\favicon.ico
 D:\C#\repos\TechNova IT Solutions\wwwroot\images\README.md

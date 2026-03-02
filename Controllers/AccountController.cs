@@ -87,8 +87,11 @@ namespace TechNova_IT_Solutions.Controllers
             if (role.Equals(RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
                 return RedirectToPage("/SuperAdmin/Dashboard");
 
-            if (role.Equals(RoleNames.Admin, StringComparison.OrdinalIgnoreCase))
-                return RedirectToAction("Dashboard", "Admin");
+            if (role.Equals(RoleNames.SystemAdmin, StringComparison.OrdinalIgnoreCase))
+                return RedirectToPage("/SystemAdmin/Dashboard");
+
+            if (role.Equals(RoleNames.BranchAdmin, StringComparison.OrdinalIgnoreCase))
+                return RedirectToPage("/BranchAdmin/Dashboard");
 
             if (role.Equals(RoleNames.ChiefComplianceManager, StringComparison.OrdinalIgnoreCase))
                 return RedirectToPage("/ChiefComplianceManager/ComplianceDashboard");
