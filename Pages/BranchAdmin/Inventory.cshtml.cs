@@ -1,0 +1,103 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using TechNova_IT_Solutions.Constants;
+using TechNova_IT_Solutions.Data;
+
+namespace TechNova_IT_Solutions.Pages.BranchAdmin
+{
+    public class InventoryModel : PageModel
+    {
+        private readonly ApplicationDbContext _context;
+
+        public InventoryModel(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        public string UserName { get; set; } = string.Empty;
+        public string UserEmail { get; set; } = string.Empty;
+
+        // Summary stats
+        public int TotalItems { get; set; }
+        public int LowStockCount { get; set; }
+        public int OutOfStockCount { get; set; }
+        public int TotalProcurements { get; set; }
+
+        // Procurement items used as inventory records
+        public List<InventoryItem> InventoryItems { get; set; } = new();
+
+        public async Task<IActionResult> OnGet()
+        {
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (string.IsNullOrEmpty(userIdString))
+                return RedirectToPage("/Account/Login");
+
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (userRole != RoleNames.BranchAdmin && userRole != RoleNames.SuperAdmin)
+            {
+                if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
+                if (userRole == RoleNames.SystemAdmin) return RedirectToPage("/SystemAdmin/Dashboard");
+                if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager)
+                    return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                return RedirectToPage("/Account/Login");
+            }
+
+            UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? string.Empty;
+            UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
+
+            int? branchId = null;
+            if (userRole == RoleNames.BranchAdmin)
+            {
+                var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);
+                if (!string.IsNullOrEmpty(branchIdStr) && int.TryParse(branchIdStr, out var bid))
+                    branchId = bid;
+            }
+
+            // Pull procurement records as inventory items
+            var query = _context.Procurements
+                .Include(p => p.Supplier)
+                .Include(p => p.RelatedPolicy)
+                .AsQueryable();
+
+            if (branchId.HasValue)
+                query = query.Where(p => p.BranchId == branchId || p.BranchId == null);
+
+            var procurements = await query.OrderByDescending(p => p.PurchaseDate).ToListAsync();
+
+            TotalProcurements = procurements.Count;
+
+            InventoryItems = procurements.Select(p => new InventoryItem
+            {
+                Id = p.ProcurementId,
+                ItemName = p.ItemName ?? "—",
+                SupplierName = p.Supplier?.SupplierName ?? "—",
+                Quantity = p.Quantity ?? 0,
+                UnitPrice = p.OriginalAmount,
+                TotalCost = p.ConvertedAmount,
+                Status = p.Status ?? "Unknown",
+                ProcurementDate = p.PurchaseDate,
+                LinkedPolicy = p.RelatedPolicy?.PolicyTitle ?? "—"
+            }).ToList();
+
+            TotalItems = InventoryItems.Select(i => i.ItemName).Distinct().Count();
+            LowStockCount = InventoryItems.Count(i => i.Quantity > 0 && i.Quantity <= 5);
+            OutOfStockCount = InventoryItems.Count(i => i.Quantity == 0);
+
+            return Page();
+        }
+    }
+
+    public class InventoryItem
+    {
+        public int Id { get; set; }
+        public string ItemName { get; set; } = string.Empty;
+        public string SupplierName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal TotalCost { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public DateTime? ProcurementDate { get; set; }
+        public string LinkedPolicy { get; set; } = string.Empty;
+    }
+}

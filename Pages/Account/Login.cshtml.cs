@@ -93,6 +93,14 @@ namespace TechNova_IT_Solutions.Pages.Account
                 {
                     return RedirectToPage("/SuperAdmin/Dashboard");
                 }
+                else if (result.User.Role == RoleNames.SystemAdmin)
+                {
+                    return RedirectToPage("/SystemAdmin/Dashboard");
+                }
+                else if (result.User.Role == RoleNames.BranchAdmin)
+                {
+                    return RedirectToPage("/BranchAdmin/Dashboard");
+                }
                 else if (result.User.Role == RoleNames.ChiefComplianceManager)
                 {
                     return RedirectToPage("/ChiefComplianceManager/ComplianceDashboard");
@@ -107,7 +115,7 @@ namespace TechNova_IT_Solutions.Pages.Account
                 }
                 else
                 {
-                    return RedirectToPage("/Admin/AdminDashboard");
+                    return RedirectToPage("/Account/Login");
                 }
             }
             catch (Exception ex)

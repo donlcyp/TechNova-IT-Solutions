@@ -51,7 +51,7 @@ namespace TechNova_IT_Solutions.Controllers
         /// </summary>
         private bool CanModifySupplier(int? supplierBranchId)
         {
-            if (IsSuperAdmin()) return true;
+            if (IsSystemAdminOrHigher()) return true;
             var callerBranchId = GetCallerBranchId();
             return callerBranchId.HasValue && supplierBranchId == callerBranchId;
         }
@@ -130,7 +130,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> UpdateSupplier([FromBody] SupplierData supplierData)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsSystemAdminOrHigher()) return Unauthorized(new { success = false, message = "Access denied" });
             if (supplierData == null) return BadRequest(new { success = false, message = "Invalid supplier data" });
             if (supplierData.SupplierId <= 0) return BadRequest(new { success = false, message = "Invalid supplier id." });
 
@@ -188,7 +188,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteSupplier(int supplierId)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsSystemAdminOrHigher()) return Unauthorized(new { success = false, message = "Access denied" });
 
             var supplierBranchId = await _context.Suppliers
                 .Where(s => s.SupplierId == supplierId)
@@ -211,7 +211,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> TerminateSupplier([FromBody] SupplierTerminationData terminationData)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsSystemAdminOrHigher()) return Unauthorized(new { success = false, message = "Access denied" });
             if (terminationData == null || terminationData.SupplierId <= 0)
             {
                 return BadRequest(new { success = false, message = "Invalid termination request." });
@@ -246,7 +246,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> RestoreSupplier(int supplierId)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsSystemAdminOrHigher()) return Unauthorized(new { success = false, message = "Access denied" });
             if (supplierId <= 0) return BadRequest(new { success = false, message = "Invalid supplier id." });
 
             var supplierBranchId = await _context.Suppliers
@@ -270,7 +270,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsSystemAdminOrHigher()) return Unauthorized(new { success = false, message = "Access denied" });
             if (request == null || request.SupplierId <= 0)
                 return BadRequest(new { success = false, message = "Invalid request." });
 
@@ -320,7 +320,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpGet]
         public async Task<IActionResult> GetSupplier(int supplierId)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsSystemAdminOrHigher()) return Unauthorized(new { success = false, message = "Access denied" });
 
             var supplier = await _adminService.GetSupplierByIdAsync(supplierId);
             if (supplier != null)

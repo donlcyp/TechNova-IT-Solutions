@@ -56,6 +56,19 @@ namespace TechNova_IT_Solutions.Data
                 });
             }
 
+            if (!await context.Users.AnyAsync(u => u.Email == "sysadmin@technova.com").ConfigureAwait(false))
+            {
+                context.Users.Add(new User
+                {
+                    FirstName = "System",
+                    LastName = "Administrator",
+                    Email = "sysadmin@technova.com",
+                    Password = hashedPassword,
+                    Role = "SystemAdmin",
+                    Status = "Active"
+                });
+            }
+
             if (hasSeedUsers)
                 return;
 

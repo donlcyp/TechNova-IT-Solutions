@@ -40,15 +40,8 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
 
             var allUsers = await _userService.GetAllUsersAsync();
 
-            if (IsSuperAdmin)
-            {
-                Users = allUsers;
-            }
-            else
-            {
-                // System Admin sees all users system-wide
-                Users = allUsers;
-            }
+            // This page is exclusively for managing Branch Admin accounts
+            Users = allUsers.Where(u => u.Role == RoleNames.BranchAdmin).ToList();
 
             // Load branches for BranchAdmin assignment
             Branches = await _branchService.GetAllBranchesAsync();

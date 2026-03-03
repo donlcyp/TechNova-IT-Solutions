@@ -106,7 +106,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> Deactivate(int branchId)
         {
-            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin, RoleNames.SystemAdmin);
             if (denied != null) return denied;
 
             var result = await _branchService.DeactivateBranchAsync(branchId);
@@ -120,7 +120,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> Reactivate(int branchId)
         {
-            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin, RoleNames.SystemAdmin);
             if (denied != null) return denied;
 
             var result = await _branchService.ReactivateBranchAsync(branchId);
@@ -155,7 +155,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAvailableAdmins()
         {
-            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin, RoleNames.SystemAdmin);
             if (denied != null) return denied;
 
             var admins = await _branchService.GetAvailableAdminsAsync();
@@ -166,7 +166,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> AssignAdmin([FromBody] AssignAdminRequest req)
         {
-            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin, RoleNames.SystemAdmin);
             if (denied != null) return denied;
 
             if (req == null || req.BranchId <= 0 || req.AdminUserId <= 0)
@@ -196,7 +196,7 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> UnassignAdmin(int branchId)
         {
-            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin);
+            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin, RoleNames.SystemAdmin);
             if (denied != null) return denied;
 
             var result = await _branchService.UnassignAdminFromBranchAsync(branchId);

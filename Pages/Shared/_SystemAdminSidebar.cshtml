@@ -36,14 +36,23 @@
                 <rect x="14" y="14" width="7" height="7"></rect>
                 <rect x="3" y="14" width="7" height="7"></rect>
             </svg>
-            <span class="nav-text">System Dashboard</span>
+            <span class="nav-text">Dashboard</span>
         </a>
-        <a href="/SystemAdmin/UserManagement" class="nav-item @(Model == "UserManagement" ? "active" : "")" title="User Management">
+        <a href="/SystemAdmin/UserManagement" class="nav-item @(Model == "UserManagement" ? "active" : "")" title="Create Branch Admin">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <line x1="19" y1="8" x2="19" y2="14"></line>
+                <line x1="22" y1="11" x2="16" y2="11"></line>
             </svg>
-            <span class="nav-text">User Management</span>
+            <span class="nav-text">Create Branch Admin</span>
+        </a>
+        <a href="/SystemAdmin/BranchManagement" class="nav-item @(Model == "BranchManagement" ? "active" : "")" title="Branch Management">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+                <path d="M9 21V12h6v9"/>
+            </svg>
+            <span class="nav-text">Branch Management</span>
         </a>
         <a href="/SystemAdmin/SupplierManagement" class="nav-item @(Model == "SupplierManagement" ? "active" : "")" title="Supplier Management">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
