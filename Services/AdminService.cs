@@ -58,7 +58,9 @@ namespace TechNova_IT_Solutions.Services
             var thirtyDaysAgo = DateTime.Now.AddDays(-30);
             var procQuery = _context.Procurements.Where(p => p.PurchaseDate >= thirtyDaysAgo);
             if (scoped)
-                procQuery = procQuery.Where(p => p.BranchId == branchId || p.BranchId == null);
+                procQuery = procQuery.Where(p => p.BranchId == branchId);
+            else
+                procQuery = procQuery.Where(p => p.BranchId == null);
             data.RecentProcurements = await procQuery.CountAsync();
 
             // Audit logs today
@@ -104,9 +106,11 @@ namespace TechNova_IT_Solutions.Services
                 .Include(p => p.RelatedPolicy)
                 .OrderByDescending(p => p.PurchaseDate);
 
-            data.RecentProcurementsData = await (scoped
-                ? recentProcQuery.Where(p => p.BranchId == branchId || p.BranchId == null)
-                : recentProcQuery)
+            IQueryable<Models.Procurement> scopedProcQuery = scoped
+                ? recentProcQuery.Where(p => p.BranchId == branchId)
+                : recentProcQuery.Where(p => p.BranchId == null);
+
+            data.RecentProcurementsData = await scopedProcQuery
                 .Take(5)
                 .Select(p => new ProcurementItem
                 {
