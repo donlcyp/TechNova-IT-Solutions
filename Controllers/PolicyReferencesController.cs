@@ -203,7 +203,7 @@ namespace TechNova_IT_Solutions.Controllers
 
             var stagedData = externalData.Data;
 
-            var existingImport = await FindExistingImportAsync(stagedData.SourceApi, stagedData.DocumentNumber, stagedData.ExternalUrl);
+            var existingImport = await FindExistingImportAsync(stagedData.SourceApi, stagedData.DocumentNumber, stagedData.ExternalUrl, stagedData.PolicyTitle);
             if (existingImport != null)
             {
                 return Ok(new
@@ -640,17 +640,19 @@ namespace TechNova_IT_Solutions.Controllers
             };
         }
 
-        private async Task<ExternalPolicyImport?> FindExistingImportAsync(string sourceApi, string? documentNumber, string? externalUrl)
+        private async Task<ExternalPolicyImport?> FindExistingImportAsync(string sourceApi, string? documentNumber, string? externalUrl, string? policyTitle = null)
         {
             var normalizedSource = sourceApi.Trim();
             var normalizedDoc = string.IsNullOrWhiteSpace(documentNumber) ? null : documentNumber.Trim();
             var normalizedUrl = string.IsNullOrWhiteSpace(externalUrl) ? null : externalUrl.Trim();
+            var normalizedTitle = string.IsNullOrWhiteSpace(policyTitle) ? null : policyTitle.Trim();
 
             return await _context.ExternalPolicyImports
                 .FirstOrDefaultAsync(i =>
                     i.SourceApi == normalizedSource &&
                     ((normalizedDoc != null && i.DocumentNumber == normalizedDoc) ||
-                     (normalizedUrl != null && i.ExternalUrl == normalizedUrl)));
+                     (normalizedUrl != null && i.ExternalUrl == normalizedUrl) ||
+                     (normalizedDoc == null && normalizedUrl == null && normalizedTitle != null && i.PolicyTitle == normalizedTitle)));
         }
 
         private bool TryGetCurrentUserId(out int userId)

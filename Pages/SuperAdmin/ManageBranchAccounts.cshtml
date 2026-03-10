@@ -1,0 +1,631 @@
+@page
+@model TechNova_IT_Solutions.Pages.SuperAdmin.ManageBranchAccountsModel
+@{
+    ViewData["Title"] = "Manage Branch Accounts";
+}
+
+@section Styles {
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #1f2937;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+
+        .content-wrapper {
+            padding: 24px;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .actions-bar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 8px 12px;
+            flex: 1;
+            min-width: 200px;
+            max-width: 320px;
+        }
+
+        .search-box svg { flex-shrink: 0; color: #9ca3af; }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            font-size: 14px;
+            color: #1f2937;
+            width: 100%;
+            background: transparent;
+        }
+
+        .btn {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            background: #fff;
+            color: #1f2937;
+        }
+
+        .btn:hover { background: #f3f4f6; }
+
+        .btn-primary {
+            background: #1e40af;
+            border-color: #1e40af;
+            color: #fff;
+        }
+
+        .btn-primary:hover { background: #1d4ed8; }
+
+        .table-container {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+        }
+
+        th {
+            text-align: center;
+            padding: 14px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        td:first-child { text-align: left; }
+
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #f9fafb; }
+
+        .role-badge { font-size: 14px; font-weight: 600; color: #1f2937; }
+
+        .branch-tag {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 2px 8px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1.5px solid;
+            background: transparent;
+        }
+
+        .status-badge::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            flex-shrink: 0;
+        }
+
+        .status-badge.active  { color: #16a34a; border-color: #16a34a; }
+        .status-badge.inactive { color: #dc2626; border-color: #dc2626; }
+
+        .actions-cell {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-icon {
+            width: 34px; height: 34px;
+            border-radius: 6px;
+            border: 1px solid;
+            background: transparent;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            padding: 0;
+        }
+
+        .btn-icon svg { width: 15px; height: 15px; }
+
+        .btn-icon.reset  { color: #2563eb; border-color: #93c5fd; }
+        .btn-icon.reset:hover  { background: #eff6ff; border-color: #2563eb; }
+        .btn-icon.danger { color: #ef4444; border-color: #fca5a5; }
+        .btn-icon.danger:hover { background: #fee2e2; border-color: #ef4444; }
+        .btn-icon.success{ color: #059669; border-color: #86efac; }
+        .btn-icon.success:hover{ background: #d1fae5; border-color: #059669; }
+
+        /* Pagination */
+        .pagination-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-top: 1px solid #e5e7eb;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pagination-info { font-size: 13px; color: #6b7280; }
+        .pagination-controls { display: flex; gap: 4px; align-items: center; }
+
+        .page-btn {
+            min-width: 32px; height: 32px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: #fff;
+            color: #374151;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
+            transition: all 0.15s;
+        }
+
+        .page-btn:hover:not(:disabled) { border-color: #1e40af; color: #1e40af; }
+        .page-btn.active { background: #1e40af; border-color: #1e40af; color: #fff; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .page-size-select {
+            padding: 5px 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #374151;
+            background: #fff;
+        }
+
+        .filter-btn {
+            padding: 6px 14px;
+            font-size: 13px;
+            border-radius: 20px;
+            transition: all .15s;
+        }
+
+        .filter-btn.active {
+            background: #1e40af;
+            border-color: #1e40af;
+            color: #fff;
+        }
+
+        .app-dialog {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.55);
+            z-index: 1300;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .app-dialog.active { display: flex; }
+
+        .app-dialog-card {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+        }
+
+        .app-dialog-header {
+            padding: 16px 18px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .app-dialog-body {
+            padding: 14px 18px;
+            font-size: 14px;
+            color: #374151;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .app-dialog-footer {
+            padding: 14px 18px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        @@media (max-width: 991px) {
+            .main-content { margin-left: 0; }
+        }
+
+        .loading-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+        .loading-overlay.active { display:flex; }
+        .loading-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,.3); border-top:4px solid #fff; border-radius:50%; animation:spin .8s linear infinite; }
+        .loading-text { color:#fff; font-size:15px; font-weight:600; text-align:center; max-width:280px; line-height:1.4; }
+        @@keyframes spin { to { transform:rotate(360deg); } }
+    </style>
+}
+
+@await Html.PartialAsync("_SuperAdminSidebar", "ManageBranchAccounts")
+
+<div class="main-content">
+    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Manage Branch Accounts", Description: "Activate, deactivate, and reset passwords for branch-level accounts"))
+
+    <div class="content-wrapper">
+        <div class="actions-bar">
+            <div class="search-box">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" id="searchInput" placeholder="Search name or email…" oninput="applySearch()" />
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; margin-left:auto;">
+                <span style="font-size:13px; color:#6b7280; font-weight:600;">Filter:</span>
+                <button class="btn filter-btn active" data-filter="all"                onclick="filterTable('all')">All</button>
+                <button class="btn filter-btn" data-filter="BranchAdmin"           onclick="filterTable('BranchAdmin')">Branch Admin</button>
+                <button class="btn filter-btn" data-filter="ComplianceManager"     onclick="filterTable('ComplianceManager')">Compliance Manager</button>
+                <button class="btn filter-btn" data-filter="Employee"              onclick="filterTable('Employee')">Employee</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Branch</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="accountsTableBody">
+                    @foreach (var user in Model.BranchUsers)
+                    {
+                        <tr data-role="@user.Role"
+                            data-search="@((user.FullName + " " + user.Email).ToLower())">
+                            <td>@user.FullName</td>
+                            <td>@user.Email</td>
+                            <td><span class="role-badge">@user.Role</span></td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(user.BranchName))
+                                {
+                                    <span class="branch-tag">@user.BranchName</span>
+                                }
+                                else
+                                {
+                                    <span style="color:#9ca3af;font-size:13px;">—</span>
+                                }
+                            </td>
+                            <td><span class="status-badge @user.Status.ToLower()">@user.Status</span></td>
+                            <td>
+                                <div class="actions-cell">
+                                    @if (user.Status == "Active")
+                                    {
+                                        <button class="btn-icon reset" title="Reset Password" onclick="resetPassword('@user.UserId')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                                            </svg>
+                                        </button>
+                                        <button class="btn-icon danger" title="Deactivate" onclick="toggleStatus('@user.UserId', 'deactivate')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                                            </svg>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn-icon reset" title="Reset Password" onclick="resetPassword('@user.UserId')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+                                            </svg>
+                                        </button>
+                                        <button class="btn-icon success" title="Activate" onclick="toggleStatus('@user.UserId', 'reactivate')">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/><polyline points="16 5 19 8 22 5"/>
+                                            </svg>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div class="pagination-bar">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="pagination-info" id="paginationInfo"></span>
+                    <select class="page-size-select" id="pageSizeSelect" onchange="changePageSize()">
+                        <option value="10">10 / page</option>
+                        <option value="25">25 / page</option>
+                        <option value="50">50 / page</option>
+                    </select>
+                </div>
+                <div class="pagination-controls" id="paginationControls"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Message Modal -->
+<div class="app-dialog" id="appMessageModal">
+    <div class="app-dialog-card">
+        <div class="app-dialog-header" id="appMessageTitle">Notice</div>
+        <div class="app-dialog-body" id="appMessageBody"></div>
+        <div class="app-dialog-footer">
+            <button class="btn btn-primary" type="button" id="appMessageOkBtn">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="app-dialog" id="appConfirmModal">
+    <div class="app-dialog-card">
+        <div class="app-dialog-header" id="appConfirmTitle">Confirm Action</div>
+        <div class="app-dialog-body" id="appConfirmBody"></div>
+        <div class="app-dialog-footer">
+            <button class="btn" type="button" id="appConfirmCancelBtn">Cancel</button>
+            <button class="btn btn-primary" type="button" id="appConfirmOkBtn">Continue</button>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Processing...</div>
+</div>
+
+@section Scripts {
+    <script>
+        // ── Loading ──────────────────────────────────────────
+        function showLoading(msg = 'Processing...') {
+            document.getElementById('loadingText').textContent = msg;
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
+        function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
+        // ── Message Modal ────────────────────────────────────
+        function showMessageModal(message, title = 'Notice') {
+            return new Promise(resolve => {
+                const modal   = document.getElementById('appMessageModal');
+                const titleEl = document.getElementById('appMessageTitle');
+                const bodyEl  = document.getElementById('appMessageBody');
+                const okBtn   = document.getElementById('appMessageOkBtn');
+                titleEl.textContent = title;
+                bodyEl.textContent  = message || '';
+                modal.classList.add('active');
+                const close = () => {
+                    modal.classList.remove('active');
+                    okBtn.removeEventListener('click', onOk);
+                    modal.removeEventListener('click', onOverlay);
+                    resolve();
+                };
+                const onOk      = () => close();
+                const onOverlay = (e) => { if (e.target === modal) close(); };
+                okBtn.addEventListener('click', onOk);
+                modal.addEventListener('click', onOverlay);
+            });
+        }
+
+        // ── Confirm Modal ────────────────────────────────────
+        function showConfirmModal(message, title = 'Confirm Action') {
+            return new Promise(resolve => {
+                const modal     = document.getElementById('appConfirmModal');
+                const titleEl   = document.getElementById('appConfirmTitle');
+                const bodyEl    = document.getElementById('appConfirmBody');
+                const okBtn     = document.getElementById('appConfirmOkBtn');
+                const cancelBtn = document.getElementById('appConfirmCancelBtn');
+                titleEl.textContent = title;
+                bodyEl.textContent  = message || '';
+                modal.classList.add('active');
+                const close = (result) => {
+                    modal.classList.remove('active');
+                    okBtn.removeEventListener('click', onOk);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    modal.removeEventListener('click', onOverlay);
+                    resolve(result);
+                };
+                const onOk      = () => close(true);
+                const onCancel  = () => close(false);
+                const onOverlay = (e) => { if (e.target === modal) close(false); };
+                okBtn.addEventListener('click', onOk);
+                cancelBtn.addEventListener('click', onCancel);
+                modal.addEventListener('click', onOverlay);
+            });
+        }
+
+        // ── Pagination & Filter state ────────────────────────
+        let currentPage   = 1;
+        let pageSize      = 10;
+        let filteredRows  = [];
+        let activeRole    = 'all';
+        let searchQuery   = '';
+
+        function getAllRows() {
+            return Array.from(document.querySelectorAll('#accountsTableBody tr[data-role]'));
+        }
+
+        function rebuildFiltered() {
+            filteredRows = getAllRows().filter(row => {
+                const roleMatch   = activeRole === 'all' || row.dataset.role === activeRole;
+                const searchMatch = !searchQuery || row.dataset.search.includes(searchQuery);
+                return roleMatch && searchMatch;
+            });
+        }
+
+        function applySearch() {
+            searchQuery = document.getElementById('searchInput').value.trim().toLowerCase();
+            currentPage = 1;
+            rebuildFiltered();
+            renderPage();
+        }
+
+        function filterTable(role) {
+            activeRole = role;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.filter-btn[data-filter="${role}"]`).classList.add('active');
+            currentPage = 1;
+            rebuildFiltered();
+            renderPage();
+        }
+
+        function changePageSize() {
+            pageSize    = parseInt(document.getElementById('pageSizeSelect').value);
+            currentPage = 1;
+            renderPage();
+        }
+
+        function renderPage() {
+            getAllRows().forEach(r => r.style.display = 'none');
+            const start = (currentPage - 1) * pageSize;
+            const end   = start + pageSize;
+            filteredRows.slice(start, end).forEach(r => r.style.display = '');
+
+            const total      = filteredRows.length;
+            const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+            document.getElementById('paginationInfo').textContent =
+                total === 0 ? 'No results' : `Showing ${start + 1}–${Math.min(end, total)} of ${total}`;
+
+            const ctrl = document.getElementById('paginationControls');
+            ctrl.innerHTML = '';
+
+            const prev = Object.assign(document.createElement('button'), {
+                className: 'page-btn', textContent: '‹', disabled: currentPage === 1
+            });
+            prev.onclick = () => { currentPage--; renderPage(); };
+            ctrl.appendChild(prev);
+
+            const maxV = 5;
+            const sp   = Math.max(1, Math.min(currentPage - 2, totalPages - maxV + 1));
+            const ep   = Math.min(totalPages, sp + maxV - 1);
+            for (let p = sp; p <= ep; p++) {
+                const btn = Object.assign(document.createElement('button'), {
+                    className: 'page-btn' + (p === currentPage ? ' active' : ''),
+                    textContent: p
+                });
+                btn.onclick = ((pg) => () => { currentPage = pg; renderPage(); })(p);
+                ctrl.appendChild(btn);
+            }
+
+            const next = Object.assign(document.createElement('button'), {
+                className: 'page-btn', textContent: '›', disabled: currentPage === totalPages
+            });
+            next.onclick = () => { currentPage++; renderPage(); };
+            ctrl.appendChild(next);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            rebuildFiltered();
+            renderPage();
+        });
+
+        // ── Actions ──────────────────────────────────────────
+        async function toggleStatus(userId, action) {
+            const endpoint = action === 'deactivate'
+                ? '/SuperAdmin/DeactivateUser'
+                : '/SuperAdmin/ReactivateUser';
+
+            const label = action === 'deactivate' ? 'deactivate' : 'activate';
+            const confirmed = await showConfirmModal(
+                `Are you sure you want to ${label} this account?`,
+                'Confirm Account Action'
+            );
+            if (!confirmed) return;
+
+            showLoading(`${action === 'deactivate' ? 'Deactivating' : 'Activating'} account & sending notification...`);
+            try {
+                const response = await fetch(`${endpoint}?userId=${userId}`, { method: 'POST' });
+                const result   = await response.json();
+                hideLoading();
+
+                if (response.ok && result.success) {
+                    await showMessageModal(result.message, 'Success');
+                    window.location.reload();
+                    return;
+                }
+                await showMessageModal(result.message || `Failed to ${label} account.`, 'Error');
+            } catch {
+                hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
+            }
+        }
+
+        async function resetPassword(userId) {
+            const confirmed = await showConfirmModal(
+                'Reset this account password to its role default value? The user will be required to change it on next login.',
+                'Confirm Password Reset'
+            );
+            if (!confirmed) return;
+
+            showLoading('Resetting password & sending notification...');
+            try {
+                const response = await fetch(`/SuperAdmin/ResetUserPassword?userId=${userId}`, { method: 'POST' });
+                const result   = await response.json();
+                hideLoading();
+
+                if (response.ok && result.success) {
+                    await showMessageModal(result.message, 'Password Reset');
+                    return;
+                }
+                await showMessageModal(result.message || 'Failed to reset password.', 'Error');
+            } catch {
+                hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
+            }
+        }
+    </script>
+}

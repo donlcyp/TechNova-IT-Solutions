@@ -619,16 +619,21 @@
 
             showLoading(action === 'reactivate' ? 'Reactivating branch...' : 'Deactivating branch...');
             const url = action === 'deactivate' ? `/Branch/Deactivate?branchId=${branchId}` : `/Branch/Reactivate?branchId=${branchId}`;
-            const res = await fetch(url, { method: 'POST' });
-            const result = await res.json();
-            hideLoading();
+            try {
+                const res = await fetch(url, { method: 'POST' });
+                const result = await res.json();
+                hideLoading();
 
-            if (res.ok && result.success) {
-                await showMessageModal(result.message, 'Success');
-                window.location.reload();
-                return;
+                if (res.ok && result.success) {
+                    await showMessageModal(result.message, 'Success');
+                    window.location.reload();
+                    return;
+                }
+                await showMessageModal(result.message || 'Failed to update status.', 'Error');
+            } catch {
+                hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
             }
-            await showMessageModal(result.message || 'Failed to update status.', 'Error');
         }
 
         /* ── Assign Admin ─────────────── */
@@ -666,20 +671,25 @@
 
             closeAssignModal();
             showLoading('Assigning admin & sending notifications...');
-            const res = await fetch('/Branch/AssignAdmin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ branchId: assigningBranchId, adminUserId })
-            });
-            const result = await res.json();
-            hideLoading();
+            try {
+                const res = await fetch('/Branch/AssignAdmin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ branchId: assigningBranchId, adminUserId })
+                });
+                const result = await res.json();
+                hideLoading();
 
-            if (res.ok && result.success) {
-                await showMessageModal(result.message, 'Success');
-                window.location.reload();
-                return;
+                if (res.ok && result.success) {
+                    await showMessageModal(result.message, 'Success');
+                    window.location.reload();
+                    return;
+                }
+                await showMessageModal(result.message || 'Failed to assign admin.', 'Error');
+            } catch {
+                hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
             }
-            await showMessageModal(result.message || 'Failed to assign admin.', 'Error');
         }
 
         async function unassignAdmin(branchId) {
@@ -687,16 +697,21 @@
             if (!confirmed) return;
 
             showLoading('Removing admin assignment...');
-            const res = await fetch(`/Branch/UnassignAdmin?branchId=${branchId}`, { method: 'POST' });
-            const result = await res.json();
-            hideLoading();
+            try {
+                const res = await fetch(`/Branch/UnassignAdmin?branchId=${branchId}`, { method: 'POST' });
+                const result = await res.json();
+                hideLoading();
 
-            if (res.ok && result.success) {
-                await showMessageModal(result.message, 'Success');
-                window.location.reload();
-                return;
+                if (res.ok && result.success) {
+                    await showMessageModal(result.message, 'Success');
+                    window.location.reload();
+                    return;
+                }
+                await showMessageModal(result.message || 'Failed to unassign admin.', 'Error');
+            } catch {
+                hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
             }
-            await showMessageModal(result.message || 'Failed to unassign admin.', 'Error');
         }
     </script>
 }

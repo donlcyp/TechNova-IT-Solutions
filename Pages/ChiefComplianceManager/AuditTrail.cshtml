@@ -226,17 +226,19 @@
         }
 
         .modal-content {
-            background: #1a1d2e;
+            background: #ffffff;
             border-radius: 16px;
             width: 90%;
             max-width: 600px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            border: 1px solid #2d3548;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            border: 1px solid #e5e7eb;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-header {
             padding: 24px 32px;
-            border-bottom: 1px solid #2d3548;
+            border-bottom: 1px solid #e5e7eb;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -244,13 +246,13 @@
 
         .modal-header h2 {
             font-size: 24px;
-            color: #e5e7eb;
+            color: #111827;
         }
 
         .close-btn {
             background: none;
             border: none;
-            color: #9ca3af;
+            color: #6b7280;
             font-size: 28px;
             cursor: pointer;
             transition: color 0.3s;
@@ -277,14 +279,14 @@
             color: #1e40af;
             margin-bottom: 12px;
             padding-bottom: 8px;
-            border-bottom: 1px solid #2d3548;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .detail-item {
             display: flex;
             justify-content: space-between;
             padding: 12px 0;
-            border-bottom: 1px solid #2d3548;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .detail-item:last-child {
@@ -293,23 +295,23 @@
 
         .detail-label {
             font-size: 13px;
-            color: #9ca3af;
+            color: #6b7280;
             font-weight: 500;
         }
 
         .detail-value {
             font-size: 14px;
-            color: #e5e7eb;
+            color: #1f2937;
             text-align: right;
         }
 
         .description-box {
-            background: #252940;
+            background: #f3f4f6;
             padding: 16px;
             border-radius: 8px;
             border-left: 3px solid #1e40af;
             font-size: 14px;
-            color: #e5e7eb;
+            color: #1f2937;
             line-height: 1.6;
         }
 
@@ -556,8 +558,8 @@
         function filterTable() {
             const searchTerm = document.getElementById('searchAudit').value.toLowerCase();
             const moduleFilter = document.getElementById('moduleFilter').value.toLowerCase();
-            const dateFrom = new Date(document.getElementById('dateFrom').value);
-            const dateTo = new Date(document.getElementById('dateTo').value);
+            const dateFromVal = document.getElementById('dateFrom').value;
+            const dateToVal = document.getElementById('dateTo').value;
             
             const table = document.getElementById('auditTable');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
@@ -570,7 +572,16 @@
 
                 const matchesSearch = userName.includes(searchTerm) || action.includes(searchTerm);
                 const matchesModule = !moduleFilter || module.includes(moduleFilter);
-                const matchesDate = dateTime >= dateFrom && dateTime <= dateTo;
+
+                let matchesDate = true;
+                if (dateFromVal) {
+                    matchesDate = matchesDate && dateTime >= new Date(dateFromVal);
+                }
+                if (dateToVal) {
+                    const to = new Date(dateToVal);
+                    to.setHours(23, 59, 59, 999);
+                    matchesDate = matchesDate && dateTime <= to;
+                }
 
                 row.style.display = (matchesSearch && matchesModule && matchesDate) ? '' : 'none';
             }

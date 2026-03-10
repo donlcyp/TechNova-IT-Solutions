@@ -103,9 +103,13 @@
         @@media (max-width: 991px) { .main-content { margin-left: 0; } .content-wrapper { padding: 20px; } }
         @@media (max-width: 768px) { .filter-section { flex-direction: column; } .search-box { min-width: 100%; } .tab-btn { padding: 10px 16px; font-size: 13px; } }
         @@media (max-width: 576px) { .summary-cards { grid-template-columns: 1fr; } .detail-grid { grid-template-columns: 1fr; } }
+    .loading-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+    .loading-overlay.active { display:flex; }
+    .loading-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,.3); border-top:4px solid #fff; border-radius:50%; animation:spin .8s linear infinite; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
     </style>
 }
-
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div id="loadingText" style="color:#fff;font-size:16px;font-weight:500;">Processing...</div></div>
 @await Html.PartialAsync("_ChiefComplianceManagerSidebar", "ViolationManagement")
 
 <!-- Main Content -->
@@ -346,6 +350,9 @@
 
 @section Scripts {
 <script>
+    function showLoading(msg) { document.getElementById('loadingText').textContent = msg || 'Processing...'; document.getElementById('loadingOverlay').classList.add('active'); }
+    function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
     const API = '/ComplianceManagerPolicy';
     let currentViolationId = null;
 
@@ -534,12 +541,14 @@
             notes: document.getElementById('cvNotes').value.trim() || null
         };
 
+        const _t = setTimeout(() => showLoading('Creating violation...'), 300);
         fetch(API + '/CreateViolation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
             .then(r => r.json())
             .then(async res => {
+                clearTimeout(_t); hideLoading();
                 if (res.success) { await window.showAppMessage(res.message, 'Success'); closeCreateViolation(); location.reload(); }
                 else { await window.showAppMessage(res.message || 'Failed', 'Error'); }
-            }).catch(async () => await window.showAppMessage('Error creating violation', 'Error'));
+            }).catch(async () => { clearTimeout(_t); hideLoading(); await window.showAppMessage('Error creating violation', 'Error'); });
     }
 
     /* ── Timeline helpers ─────────────────────────── */
@@ -622,50 +631,56 @@
             resolution: document.getElementById('uvResolution').value.trim() || null
         };
 
+        const _t = setTimeout(() => showLoading('Updating violation status...'), 300);
         fetch(`${API}/UpdateViolationStatus?violationId=${currentViolationId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
             .then(r => r.json())
             .then(async res => {
+                clearTimeout(_t); hideLoading();
                 if (res.success) { await window.showAppMessage('Violation updated', 'Success'); closeUpdateViolation(); location.reload(); }
                 else { await window.showAppMessage(res.message || 'Failed', 'Error'); }
-            }).catch(async () => await window.showAppMessage('Error updating violation', 'Error'));
+            }).catch(async () => { clearTimeout(_t); hideLoading(); await window.showAppMessage('Error updating violation', 'Error'); });
     }
 
     /* ── Suspend / Unsuspend Employee ──────────────── */
     async function suspendEmployee(id, name) {
         const ok = await window.showAppConfirm(`Suspend employee "${name}" for non-compliance?`);
         if (!ok) return;
+        const _t = setTimeout(() => showLoading('Suspending employee...'), 300);
         fetch(`${API}/SuspendEmployee?userId=${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'Suspended for non-compliance' }) })
             .then(r => r.json())
-            .then(async res => { if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantEmployees(); } else { await window.showAppMessage(res.message, 'Error'); } })
-            .catch(async () => await window.showAppMessage('Error suspending employee', 'Error'));
+            .then(async res => { clearTimeout(_t); hideLoading(); if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantEmployees(); } else { await window.showAppMessage(res.message, 'Error'); } })
+            .catch(async () => { clearTimeout(_t); hideLoading(); await window.showAppMessage('Error suspending employee', 'Error'); });
     }
 
     async function unsuspendEmployee(id, name) {
         const ok = await window.showAppConfirm(`Reactivate employee "${name}"?`);
         if (!ok) return;
+        const _t = setTimeout(() => showLoading('Reactivating employee...'), 300);
         fetch(`${API}/UnsuspendEmployee?userId=${id}`, { method: 'POST' })
             .then(r => r.json())
-            .then(async res => { if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantEmployees(); } else { await window.showAppMessage(res.message, 'Error'); } })
-            .catch(async () => await window.showAppMessage('Error reactivating employee', 'Error'));
+            .then(async res => { clearTimeout(_t); hideLoading(); if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantEmployees(); } else { await window.showAppMessage(res.message, 'Error'); } })
+            .catch(async () => { clearTimeout(_t); hideLoading(); await window.showAppMessage('Error reactivating employee', 'Error'); });
     }
 
     /* ── Suspend / Unsuspend Supplier ──────────────── */
     async function suspendSupplier(id, name) {
         const ok = await window.showAppConfirm(`Suspend supplier "${name}" for non-compliance?`);
         if (!ok) return;
+        const _t = setTimeout(() => showLoading('Suspending supplier...'), 300);
         fetch(`${API}/SuspendSupplier?supplierId=${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'Suspended for non-compliance' }) })
             .then(r => r.json())
-            .then(async res => { if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantSuppliers(); } else { await window.showAppMessage(res.message, 'Error'); } })
-            .catch(async () => await window.showAppMessage('Error suspending supplier', 'Error'));
+            .then(async res => { clearTimeout(_t); hideLoading(); if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantSuppliers(); } else { await window.showAppMessage(res.message, 'Error'); } })
+            .catch(async () => { clearTimeout(_t); hideLoading(); await window.showAppMessage('Error suspending supplier', 'Error'); });
     }
 
     async function unsuspendSupplier(id, name) {
         const ok = await window.showAppConfirm(`Re-activate supplier "${name}"?`);
         if (!ok) return;
+        const _t = setTimeout(() => showLoading('Reactivating supplier...'), 300);
         fetch(`${API}/UnsuspendSupplier?supplierId=${id}`, { method: 'POST' })
             .then(r => r.json())
-            .then(async res => { if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantSuppliers(); } else { await window.showAppMessage(res.message, 'Error'); } })
-            .catch(async () => await window.showAppMessage('Error unsuspending supplier', 'Error'));
+            .then(async res => { clearTimeout(_t); hideLoading(); if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantSuppliers(); } else { await window.showAppMessage(res.message, 'Error'); } })
+            .catch(async () => { clearTimeout(_t); hideLoading(); await window.showAppMessage('Error unsuspending supplier', 'Error'); });
     }
 
     /* ── Close modal on backdrop ───────────────────── */

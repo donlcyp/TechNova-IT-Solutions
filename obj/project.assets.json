@@ -658,10 +658,10 @@
           }
         }
       },
-      "MailKit/4.15.0": {
+      "MailKit/4.15.1": {
         "type": "package",
         "dependencies": {
-          "MimeKit": "4.15.0"
+          "MimeKit": "4.15.1"
         },
         "compile": {
           "lib/net10.0/MailKit.dll": {
@@ -2063,7 +2063,7 @@
           }
         }
       },
-      "MimeKit/4.15.0": {
+      "MimeKit/4.15.1": {
         "type": "package",
         "dependencies": {
           "BouncyCastle.Cryptography": "2.6.2",
@@ -3488,10 +3488,10 @@
         "logo.png"
       ]
     },
-    "MailKit/4.15.0": {
-      "sha512": "PM3bNDLwmK2hdiTx8xkTLRMRf9Y0VuirdyHWsrlSlz9hrME0lFkt/rF/9xlK/AtVML86BlS07pEPqo43Cmptbg==",
+    "MailKit/4.15.1": {
+      "sha512": "4mLbqTbH3ctd0NlukHjVQbU3ZnNDuCtB6ttNZDLPZLWMA2Dr31rh/eCSTqOwDojUX8zfDOVaxstMgJTE9PwZNA==",
       "type": "package",
-      "path": "mailkit/4.15.0",
+      "path": "mailkit/4.15.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3528,7 +3528,7 @@
         "lib/netstandard2.1/MailKit.dll.config",
         "lib/netstandard2.1/MailKit.pdb",
         "lib/netstandard2.1/MailKit.xml",
-        "mailkit.4.15.0.nupkg.sha512",
+        "mailkit.4.15.1.nupkg.sha512",
         "mailkit.nuspec"
       ]
     },
@@ -6150,10 +6150,10 @@
         "microsoft.visualstudio.web.codegenerators.mvc.nuspec"
       ]
     },
-    "MimeKit/4.15.0": {
-      "sha512": "+KVUJwHIp1aVPyVjcadAH1M9QkAwLflLujzySAS4N//AqSYjD+wMo2a3PkYu5XDibSuhlAg5sIh/DVNwVNGiVw==",
+    "MimeKit/4.15.1": {
+      "sha512": "cxCcQhD0zhboFoG136jJuJtQjNRDJ+BxBm3f2vWn+53bff/CRo+K1mAkWjsW4Wuyy5O22F40MdMG2nRzQu1cJw==",
       "type": "package",
-      "path": "mimekit/4.15.0",
+      "path": "mimekit/4.15.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -6185,7 +6185,7 @@
         "lib/netstandard2.1/MimeKit.dll.config",
         "lib/netstandard2.1/MimeKit.pdb",
         "lib/netstandard2.1/MimeKit.xml",
-        "mimekit.4.15.0.nupkg.sha512",
+        "mimekit.4.15.1.nupkg.sha512",
         "mimekit.nuspec"
       ]
     },
@@ -6900,7 +6900,7 @@
   "projectFileDependencyGroups": {
     "net10.0": [
       "BCrypt.Net-Next >= 4.1.0",
-      "MailKit >= 4.15.0",
+      "MailKit >= 4.15.1",
       "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore >= 10.0.3",
       "Microsoft.AspNetCore.Identity.EntityFrameworkCore >= 10.0.3",
       "Microsoft.AspNetCore.Identity.UI >= 10.0.3",
@@ -6920,7 +6920,7 @@
     "version": "1.0.0",
     "restore": {
       "projectUniqueName": "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
-      "projectName": "TechNova IT Solutions",
+      "projectName": "TechNova_IT_Solutions",
       "projectPath": "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
       "packagesPath": "C:\\Users\\donyl\\.nuget\\packages\\",
       "outputPath": "D:\\C#\\repos\\TechNova IT Solutions\\obj\\",
@@ -6968,7 +6968,7 @@
           },
           "MailKit": {
             "target": "Package",
-            "version": "[4.15.0, )"
+            "version": "[4.15.1, )"
           },
           "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore": {
             "target": "Package",

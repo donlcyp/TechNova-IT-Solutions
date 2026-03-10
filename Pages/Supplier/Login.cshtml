@@ -750,18 +750,18 @@
                     </div>
                 }
 
-                <form method="post" novalidate>
+                <form method="post" novalidate autocomplete="off" id="loginForm">
                     <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
                     <div class="form-group">
                         <label asp-for="Email">Supplier Email</label>
-                        <input asp-for="Email" type="email" placeholder="supplier@company.com" />
+                        <input asp-for="Email" type="email" placeholder="supplier@company.com" autocomplete="off" />
                         <span asp-validation-for="Email" class="field-validation-error"></span>
                     </div>
 
                     <div class="form-group">
                         <label asp-for="Password">Password</label>
                         <div class="input-wrapper">
-                            <input asp-for="Password" type="password" id="passwordField" placeholder="Enter your password" />
+                            <input asp-for="Password" type="password" id="passwordField" placeholder="Enter your password" autocomplete="off" />
                             <button type="button" class="toggle-password" onclick="togglePassword()" id="toggleBtn" aria-label="Toggle password visibility">
                                 <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path id="eyePath" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -802,6 +802,17 @@
     </div>
 
     <script>
+        // Clear form on page load/refresh
+        window.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('loginForm');
+            if (form) {
+                form.reset();
+                // Also clear individual fields to ensure they're empty
+                document.getElementById('Email').value = '';
+                document.getElementById('passwordField').value = '';
+            }
+        });
+
         function togglePassword() {
             const passwordInput = document.getElementById('passwordField');
             const eyePath = document.getElementById('eyePath');

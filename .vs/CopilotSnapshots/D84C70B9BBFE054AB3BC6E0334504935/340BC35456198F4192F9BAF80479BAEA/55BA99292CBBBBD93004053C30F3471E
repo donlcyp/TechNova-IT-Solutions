@@ -1,0 +1,35 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace TechNova_IT_Solutions.Migrations
+{
+    /// <inheritdoc />
+    public partial class SeedSuperAdminAccount : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            // Hash password using BCrypt (same algorithm as PasswordHasher.HashPassword)
+            // Password: SuperAdmin@2024
+            var hashedPassword = BCrypt.Net.BCrypt.HashPassword("SuperAdmin@2024");
+
+            migrationBuilder.Sql($@"
+                IF NOT EXISTS (SELECT 1 FROM Users WHERE email = 'superadmin@technova.com')
+                BEGIN
+                    INSERT INTO Users (firstname, lastname, email, password, role, status, mustChangePassword, branchId)
+                    VALUES ('Super', 'Administrator', 'superadmin@technova.com', '{hashedPassword}', 'SuperAdmin', 'Active', 0, NULL)
+                END
+            ");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.Sql(@"
+                DELETE FROM Users 
+                WHERE email = 'superadmin@technova.com' AND role = 'SuperAdmin'
+            ");
+        }
+    }
+}

@@ -409,6 +409,10 @@
         }
 
         .modal-footer {
+            position: sticky;
+            bottom: 0;
+            background: #ffffff;
+            z-index: 1;
             padding: 24px;
             border-top: 1px solid #e5e7eb;
             display: flex;
@@ -714,8 +718,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('supplierModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="saveSupplier()">Save</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('supplierModal')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveSupplier()">Save</button>
             </div>
         </div>
     </div>
@@ -781,22 +785,18 @@
                             @foreach (var policy in Model.ActivePolicies)
                             {
                                 <label class="policy-option" data-policy-title="@policy.Title.ToLower()">
-                                    <input type="checkbox" class="policy-checkbox" value="@policy.PolicyId" />
+                                    <input type="checkbox" class="policy-checkbox" value="@policy.RawPolicyId" />
                                     <span class="policy-option-label">@policy.Title</span>
                                 </label>
                             }
                         </div>
                         <div class="policy-help">Tip: just click policies to mark them. No keyboard shortcut needed.</div>
                     </div>
-                    <div class="form-group">
-                        <label for="assignedDate">Assigned Date *</label>
-                        <input type="date" id="assignedDate" required />
-                    </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('policyModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="savePolicy()">Save</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('policyModal')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="savePolicy()">Save</button>
             </div>
         </div>
     </div>
@@ -817,8 +817,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeModal('terminateModal')">Cancel</button>
-                <button class="btn btn-primary" onclick="confirmTerminateSupplier()">Terminate</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal('terminateModal')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmTerminateSupplier()">Terminate</button>
             </div>
         </div>
     </div>
@@ -988,11 +988,13 @@
 
         function restoreSupplier(id) {
             const supplierId = parseInt(id.toString().replace('SUP-', '')) || parseInt(id);
+            const _t = setTimeout(() => showLoading('Restoring supplier...'), 300);
             fetch(`/AdminSupplier/RestoreSupplier?supplierId=${supplierId}`, {
                 method: 'POST'
             })
             .then(res => res.json())
             .then(result => {
+                clearTimeout(_t); hideLoading();
                 if (result.success) {
                     showToast(result.message || 'Supplier restored', 'success');
                     setTimeout(() => location.reload(), 1200);
@@ -1000,7 +1002,7 @@
                     showToast(result.message || 'Failed to restore supplier', 'error');
                 }
             })
-            .catch(() => showToast('Error restoring supplier', 'error'));
+            .catch(() => { clearTimeout(_t); hideLoading(); showToast('Error restoring supplier', 'error'); });
         }
 
         function saveSupplier() {
@@ -1038,13 +1040,15 @@
             if (isUpdate) data.supplierId = parseInt(id);
 
             const url = isUpdate ? '/AdminSupplier/UpdateSupplier' : '/AdminSupplier/CreateSupplier';
+            const _t = setTimeout(() => showLoading(isUpdate ? 'Updating supplier...' : 'Creating supplier & sending welcome email...'), 300);
             fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
                 .then(res => res.json())
                 .then(result => {
+                    clearTimeout(_t); hideLoading();
                     if (result.success) { closeModal('supplierModal'); showToast(result.message, 'success'); setTimeout(() => location.reload(), 1500); }
                     else { showToast(result.message || 'Failed to save supplier', 'error'); }
                 })
-                .catch(() => showToast('Error saving supplier', 'error'));
+                .catch(() => { clearTimeout(_t); hideLoading(); showToast('Error saving supplier', 'error'); });
         }
 
         function savePolicy() {
@@ -1161,6 +1165,7 @@
 
         function confirmResetPassword() {
             if (!resetPasswordSupplierId) { showToast('Invalid supplier', 'error'); return; }
+            const _t = setTimeout(() => showLoading('Resetting supplier password...'), 300);
             fetch('/AdminSupplier/ResetPassword', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1168,6 +1173,7 @@
             })
             .then(res => res.json())
             .then(result => {
+                clearTimeout(_t); hideLoading();
                 closeModal('resetPasswordModal');
                 if (result.success) {
                     showToast(result.message || 'Password reset successfully', 'success');
@@ -1175,7 +1181,7 @@
                     showToast(result.message || 'Failed to reset password', 'error');
                 }
             })
-            .catch(() => { closeModal('resetPasswordModal'); showToast('Error resetting password', 'error'); });
+            .catch(() => { clearTimeout(_t); hideLoading(); closeModal('resetPasswordModal'); showToast('Error resetting password', 'error'); });
         }
 
         window.onclick = function(event) {

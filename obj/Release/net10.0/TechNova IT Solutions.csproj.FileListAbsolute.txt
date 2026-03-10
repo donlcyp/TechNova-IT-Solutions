@@ -1,11 +1,4 @@
 D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\appsettings.json
-D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova IT Solutions.staticwebassets.runtime.json
-D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova IT Solutions.staticwebassets.endpoints.json
-D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova IT Solutions.exe
-D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova IT Solutions.deps.json
-D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova IT Solutions.runtimeconfig.json
-D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova IT Solutions.dll
-D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova IT Solutions.pdb
 D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\Azure.Core.dll
 D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\Azure.Identity.dll
 D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\BCrypt.Net-Next.dll
@@ -283,8 +276,6 @@ D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.Gene
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.AssemblyInfoInputs.cache
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.AssemblyInfo.cs
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.csproj.CoreCompileInputs.cache
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.MvcApplicationPartsAssemblyInfo.cs
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.MvcApplicationPartsAssemblyInfo.cache
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.RazorAssemblyInfo.cache
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.RazorAssemblyInfo.cs
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.sourcelink.json
@@ -292,8 +283,6 @@ D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\rjimswa.dswa.cache.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\rjsmrazor.dswa.cache.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\rjsmcshtml.dswa.cache.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\scopedcss\bundle\TechNova IT Solutions.styles.css
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\scopedcss\projectbundle\TechNova IT Solutions.bundle.scp.css
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\ofa40bqe71-{0}-b9sayid5wm-b9sayid5wm.gz
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\j9swiz3yzq-{0}-90yqlj465b-90yqlj465b.gz
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\vltxs1u3vm-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
@@ -356,83 +345,94 @@ D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\a3ygkwa5zy-{0}-
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\nezrqnk58p-{0}-muycvpuwrr-muycvpuwrr.gz
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\v0zgfp0y55-{0}-87fc7y1x7t-87fc7y1x7t.gz
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\yfc7ypekbg-{0}-mlv21k5csn-mlv21k5csn.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\5et7b18rxr-{0}-b9sayid5wm-b9sayid5wm.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\1bkm2x9vpg-{0}-61n19gt1b8-61n19gt1b8.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\tnl94md3ix-{0}-f8s7phaekl-f8s7phaekl.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\u6h2c33e0s-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\bce5afr6lq-{0}-bqjiyaj88i-bqjiyaj88i.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\78re8n1abq-{0}-c2jlpeoesf-c2jlpeoesf.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\fo22q2p0jl-{0}-erw9l3u2r3-erw9l3u2r3.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\5dltsnqiur-{0}-aexeepp0ev-aexeepp0ev.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\7sj6vsqaut-{0}-d7shbmvgxk-d7shbmvgxk.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\jo89rre8et-{0}-ausgxo2sd3-ausgxo2sd3.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\c01gnig3w7-{0}-k8d9w2qqmf-k8d9w2qqmf.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\4yjjg1t3pu-{0}-cosvhxvwiu-cosvhxvwiu.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\iz0gngdb0e-{0}-ub07r2b239-ub07r2b239.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\f9z6y75o88-{0}-fvhpjtyr6v-fvhpjtyr6v.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\m1f7prl5sx-{0}-b7pk76d08c-b7pk76d08c.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\cg2o1cc1na-{0}-fsbi9cje9m-fsbi9cje9m.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\hcvtxnblx8-{0}-rzd6atqjts-rzd6atqjts.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\7pkeo6n43p-{0}-ee0r1s7dh0-ee0r1s7dh0.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\vay636uhfj-{0}-dxx9fxp4il-dxx9fxp4il.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\sr7v9konae-{0}-jd9uben2k1-jd9uben2k1.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\10r20r9cao-{0}-khv3u5hwcm-khv3u5hwcm.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\94uhs15mn6-{0}-r4e9w2rdcm-r4e9w2rdcm.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\dih8pkh78m-{0}-lcd1t2u6c8-lcd1t2u6c8.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\ikx3l1lnhy-{0}-c2oey78nd0-c2oey78nd0.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\8f4lou1va3-{0}-tdbxkamptv-tdbxkamptv.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\vcwv3sx5tb-{0}-j5mq2jizvt-j5mq2jizvt.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\zcbii7n9oq-{0}-06098lyss8-06098lyss8.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\n7kn1jd8zg-{0}-nvvlpmu67g-nvvlpmu67g.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\51kvec8wwu-{0}-s35ty4nyc5-s35ty4nyc5.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\4nyahhxv1f-{0}-pj5nd1wqec-pj5nd1wqec.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\lswevwpz55-{0}-46ein0sx1k-46ein0sx1k.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\e9sdxbbpa9-{0}-v0zj4ognzu-v0zj4ognzu.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\v3n99updgg-{0}-37tfw0ft22-37tfw0ft22.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\fqcqx4htnm-{0}-hrwsygsryq-hrwsygsryq.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\i3yf0zkv2w-{0}-pk9g2wxc8p-pk9g2wxc8p.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\6483tdxi3h-{0}-ft3s53vfgj-ft3s53vfgj.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\cyb15i3snw-{0}-6cfz1n2cew-6cfz1n2cew.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\o61fqzn0cn-{0}-6pdc2jztkx-6pdc2jztkx.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\mq7wv5ult0-{0}-493y06b0oq-493y06b0oq.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\iflkpij28w-{0}-iovd86k7lj-iovd86k7lj.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\e9vcjymcwq-{0}-vr1egmr9el-vr1egmr9el.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\b5cfrdvv3z-{0}-kbrnm935zg-kbrnm935zg.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\cwkq7ky6ny-{0}-jj8uyg4cgr-jj8uyg4cgr.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\je176lbrly-{0}-y7v9cxd14o-y7v9cxd14o.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\jo6ksaeaps-{0}-notf2xhcfb-notf2xhcfb.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\075sn3iuxu-{0}-h1s4sie4z3-h1s4sie4z3.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\d43n64tzho-{0}-63fj8s7r0e-63fj8s7r0e.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\7oc0h6xwm9-{0}-0j3bgjxly4-0j3bgjxly4.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\h3cw2qbb01-{0}-47otxtyo56-47otxtyo56.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\o0pdlvhxay-{0}-4v8eqarkd7-4v8eqarkd7.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\rnbc9kqwuk-{0}-356vix0kms-356vix0kms.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\in9cji0x8h-{0}-83jwlth58m-83jwlth58m.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\coehqsfosw-{0}-mrlpezrjn3-mrlpezrjn3.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\nntrndelro-{0}-lzl9nlhx6b-lzl9nlhx6b.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\oa0xa0cwbi-{0}-ag7o75518u-ag7o75518u.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\sa9use8psb-{0}-x0q3zqp4vz-x0q3zqp4vz.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\k1uvohdu09-{0}-0i3buxo5is-0i3buxo5is.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\j1ae2cx4lh-{0}-o1o13a6vjx-o1o13a6vjx.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\huq2y1kyk1-{0}-ttgo8qnofa-ttgo8qnofa.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\12naawkfba-{0}-2z0ns9nrw6-2z0ns9nrw6.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\t3frl285gg-{0}-muycvpuwrr-muycvpuwrr.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\lcobkq745l-{0}-87fc7y1x7t-87fc7y1x7t.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\zqk444es0p-{0}-mlv21k5csn-mlv21k5csn.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\m2obx2zzjn-{0}-ylm5vte2ih-ylm5vte2ih.gz
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\bqe5x3ej5z-{0}-ylm5vte2ih-ylm5vte2ih.gz
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\staticwebassets.build.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\staticwebassets.build.json.cache
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\staticwebassets.development.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\staticwebassets.build.endpoints.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\swae.build.ex.cache
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova.C0149A2D.Up2Date
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.dll
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\refint\TechNova IT Solutions.dll
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.pdb
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova IT Solutions.genruntimeconfig.cache
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\ref\TechNova IT Solutions.dll
 D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\BouncyCastle.Cryptography.dll
 D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\MailKit.dll
 D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\MimeKit.dll
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova_IT_Solutions.staticwebassets.runtime.json
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova_IT_Solutions.staticwebassets.endpoints.json
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova_IT_Solutions.exe
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova_IT_Solutions.deps.json
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova_IT_Solutions.runtimeconfig.json
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova_IT_Solutions.dll
+D:\C#\repos\TechNova IT Solutions\bin\Release\net10.0\TechNova_IT_Solutions.pdb
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova_IT_Solutions.MvcApplicationPartsAssemblyInfo.cs
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova_IT_Solutions.MvcApplicationPartsAssemblyInfo.cache
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\scopedcss\bundle\TechNova_IT_Solutions.styles.css
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\scopedcss\projectbundle\TechNova_IT_Solutions.bundle.scp.css
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\ro5anj2m7i-{0}-b9sayid5wm-b9sayid5wm.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\kl8mbah5iv-{0}-61n19gt1b8-61n19gt1b8.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\78qht5ig9q-{0}-f8s7phaekl-f8s7phaekl.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\yv95l7o9k4-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\3y7s4gel9s-{0}-bqjiyaj88i-bqjiyaj88i.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\rq7g5k7zcj-{0}-c2jlpeoesf-c2jlpeoesf.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\nispwpt67h-{0}-erw9l3u2r3-erw9l3u2r3.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\3xon1mgcfz-{0}-aexeepp0ev-aexeepp0ev.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\qav2bxb1t5-{0}-d7shbmvgxk-d7shbmvgxk.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\b3dg95efq1-{0}-ausgxo2sd3-ausgxo2sd3.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\eyvio49x9k-{0}-k8d9w2qqmf-k8d9w2qqmf.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\74ahv26irg-{0}-cosvhxvwiu-cosvhxvwiu.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\81oj84h8j9-{0}-ub07r2b239-ub07r2b239.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\hq8c6n3w6k-{0}-fvhpjtyr6v-fvhpjtyr6v.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\d9i2yg763l-{0}-b7pk76d08c-b7pk76d08c.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\nq1knv3j0h-{0}-fsbi9cje9m-fsbi9cje9m.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\xy5mxyooxy-{0}-rzd6atqjts-rzd6atqjts.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\1fsyfdi6r0-{0}-ee0r1s7dh0-ee0r1s7dh0.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\e240kn54yf-{0}-dxx9fxp4il-dxx9fxp4il.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\bs48bmwwmm-{0}-jd9uben2k1-jd9uben2k1.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\fv3suavkdm-{0}-khv3u5hwcm-khv3u5hwcm.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\usn0l7doqb-{0}-r4e9w2rdcm-r4e9w2rdcm.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\0r52mve0u3-{0}-lcd1t2u6c8-lcd1t2u6c8.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\0r6fs6syp7-{0}-c2oey78nd0-c2oey78nd0.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\x4yfdxqvvt-{0}-tdbxkamptv-tdbxkamptv.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\95aer6h0qz-{0}-j5mq2jizvt-j5mq2jizvt.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\r8gkd5d1hu-{0}-06098lyss8-06098lyss8.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\97eg9wuvpq-{0}-nvvlpmu67g-nvvlpmu67g.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\gfqojlvt5z-{0}-s35ty4nyc5-s35ty4nyc5.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\hqizh9nlzw-{0}-pj5nd1wqec-pj5nd1wqec.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\ntlgb8gmw4-{0}-46ein0sx1k-46ein0sx1k.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\oy9h6w27bq-{0}-v0zj4ognzu-v0zj4ognzu.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\ltudzlp8od-{0}-37tfw0ft22-37tfw0ft22.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\a2q5kvi7k3-{0}-hrwsygsryq-hrwsygsryq.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\nm76ewgjte-{0}-pk9g2wxc8p-pk9g2wxc8p.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\a4ej9dqji5-{0}-ft3s53vfgj-ft3s53vfgj.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\g1ng09pp0y-{0}-6cfz1n2cew-6cfz1n2cew.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\kek6kplqzz-{0}-6pdc2jztkx-6pdc2jztkx.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\dozxp6azmx-{0}-493y06b0oq-493y06b0oq.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\h0gc7v8nzf-{0}-iovd86k7lj-iovd86k7lj.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\ctgot7u0zp-{0}-vr1egmr9el-vr1egmr9el.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\ju4foddmmc-{0}-kbrnm935zg-kbrnm935zg.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\azcumoqah7-{0}-jj8uyg4cgr-jj8uyg4cgr.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\25t97vuuu1-{0}-y7v9cxd14o-y7v9cxd14o.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\kcredq1zu6-{0}-notf2xhcfb-notf2xhcfb.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\58lylmc1qm-{0}-h1s4sie4z3-h1s4sie4z3.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\zaypvy91hl-{0}-63fj8s7r0e-63fj8s7r0e.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\ll17r91w8b-{0}-0j3bgjxly4-0j3bgjxly4.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\urd5ka41hy-{0}-47otxtyo56-47otxtyo56.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\j5poujyv97-{0}-4v8eqarkd7-4v8eqarkd7.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\5x0nkrlhmh-{0}-356vix0kms-356vix0kms.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\1ad1aq4g49-{0}-83jwlth58m-83jwlth58m.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\yk8vb5em3f-{0}-mrlpezrjn3-mrlpezrjn3.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\n3ajq9s6mc-{0}-lzl9nlhx6b-lzl9nlhx6b.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\be9jsyjpzf-{0}-ag7o75518u-ag7o75518u.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\umncbksi9s-{0}-x0q3zqp4vz-x0q3zqp4vz.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\jvu7xiddhd-{0}-0i3buxo5is-0i3buxo5is.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\obog87xqob-{0}-o1o13a6vjx-o1o13a6vjx.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\h9m9z8gty7-{0}-ttgo8qnofa-ttgo8qnofa.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\0lvhlt5em9-{0}-2z0ns9nrw6-2z0ns9nrw6.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\wktlyef0tn-{0}-muycvpuwrr-muycvpuwrr.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\fl053l0k0j-{0}-87fc7y1x7t-87fc7y1x7t.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\p96qn0dfeo-{0}-mlv21k5csn-mlv21k5csn.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\8kc7cgj8jg-{0}-ylm5vte2ih-ylm5vte2ih.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\compressed\75qeuwjs4m-{0}-ylm5vte2ih-ylm5vte2ih.gz
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova_IT_Solutions.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\refint\TechNova_IT_Solutions.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\TechNova_IT_Solutions.pdb
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\ref\TechNova_IT_Solutions.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\staticwebassets.upToDateCheck.txt

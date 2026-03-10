@@ -31,10 +31,18 @@ namespace TechNova_IT_Solutions.Pages.Supplier
 
         public async Task<IActionResult> OnGet()
         {
-            var denied = RoleAccess.RequireRoleOrRedirect(this, new[] { RoleNames.Supplier }, fallbackPage: "/Supplier/Login");
+            var denied = RoleAccess.RequireRoleOrRedirect(this, new[] { RoleNames.Supplier, RoleNames.SuperAdmin }, fallbackPage: "/Supplier/Login");
             if (denied != null) return denied;
 
             var userEmail = HttpContext.Session.GetString(SessionKeys.UserEmail);
+            var userRole  = HttpContext.Session.GetString(SessionKeys.UserRole);
+
+            // SuperAdmin override: show a generic supplier view without a specific supplier record
+            if (userRole == RoleNames.SuperAdmin)
+            {
+                SupplierName = "Super Admin (Override)";
+                return Page();
+            }
 
             // Find the Supplier record linked to this User (via Email)
             var supplier = await _context.Suppliers

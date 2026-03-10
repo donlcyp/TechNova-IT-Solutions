@@ -153,6 +153,7 @@ namespace TechNova_IT_Solutions.Pages
 
     public class SupplierPolicyItem
     {
+        public int RawPolicyId { get; set; }
         public string PolicyId { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
     }

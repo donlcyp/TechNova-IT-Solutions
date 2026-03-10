@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TechNova_IT_Solutions.Constants;
-using TechNova_IT_Solutions.Infrastructure;
 using TechNova_IT_Solutions.Services.Interfaces;
 
 namespace TechNova_IT_Solutions.Pages.SystemAdmin
@@ -19,19 +18,19 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
 
         public async Task<IActionResult> OnGet()
         {
-            var denied = RoleAccess.RequireRoleOrRedirect(
-                this,
-                new[] { RoleNames.SystemAdmin },
-                new Dictionary<string, string>
-                {
-                    [RoleNames.SuperAdmin]             = "/SuperAdmin/Dashboard",
-                    [RoleNames.BranchAdmin]            = "/BranchAdmin/Dashboard",
-                    [RoleNames.ChiefComplianceManager] = "/ComplianceManager/ComplianceDashboard",
-                    [RoleNames.ComplianceManager]      = "/ComplianceManager/ComplianceDashboard",
-                    [RoleNames.Employee]               = "/Employee/Dashboard",
-                    [RoleNames.Supplier]               = "/Supplier/Dashboard"
-                });
-            if (denied != null) return denied;
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (string.IsNullOrEmpty(userIdString))
+                return RedirectToPage("/Account/Login");
+
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (userRole != RoleNames.SystemAdmin && userRole != RoleNames.SuperAdmin)
+            {
+                if (userRole == RoleNames.BranchAdmin)            return RedirectToPage("/BranchAdmin/Dashboard");
+                if (userRole == RoleNames.Employee)               return RedirectToPage("/Employee/Dashboard");
+                if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager)
+                    return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                return RedirectToPage("/Account/Login");
+            }
 
             Branches = await _branchService.GetAllBranchesAsync();
             return Page();

@@ -36,7 +36,7 @@ namespace TechNova_IT_Solutions.Pages.Supplier
 
         public async Task<IActionResult> OnGetAsync()
         {
-            var denied = RoleAccess.RequireRoleOrRedirect(this, new[] { RoleNames.Supplier }, fallbackPage: "/Supplier/Login");
+            var denied = RoleAccess.RequireRoleOrRedirect(this, new[] { RoleNames.Supplier, RoleNames.SuperAdmin }, fallbackPage: "/Supplier/Login");
             if (denied != null) return denied;
 
             await LoadProfileAsync();
@@ -45,8 +45,16 @@ namespace TechNova_IT_Solutions.Pages.Supplier
 
         public async Task<IActionResult> OnPostAsync()
         {
-            var denied = RoleAccess.RequireRoleOrRedirect(this, new[] { RoleNames.Supplier }, fallbackPage: "/Supplier/Login");
+            var denied = RoleAccess.RequireRoleOrRedirect(this, new[] { RoleNames.Supplier, RoleNames.SuperAdmin }, fallbackPage: "/Supplier/Login");
             if (denied != null) return denied;
+
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (userRole == RoleNames.SuperAdmin)
+            {
+                ErrorMessage = "Password changes are not available in override mode.";
+                await LoadProfileAsync();
+                return Page();
+            }
 
             await LoadProfileAsync();
 

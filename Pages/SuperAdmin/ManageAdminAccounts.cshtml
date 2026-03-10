@@ -434,21 +434,40 @@
     </div>
 </div>
 
-<div class="modal" id="createAdminModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); align-items:center; justify-content:center; z-index:1100;">
-    <div style="background:#fff; width:90%; max-width:560px; border-radius:12px; border:1px solid #e5e7eb; overflow:hidden;">
-        <div style="padding:16px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
-            <h3 style="margin:0; font-size:18px;">Add Global Account</h3>
-            <button class="btn" onclick="closeCreateAdminModal()">Close</button>
+<div class="app-dialog" id="createAdminModal">
+    <div class="app-dialog-card" style="max-width:520px;">
+        <div class="app-dialog-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <span>Add Global Account</span>
+            <button type="button" class="btn" style="padding:6px 12px; font-size:13px;" onclick="closeCreateAdminModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
         </div>
-        <div style="padding:20px; display:grid; gap:12px;">
-            <input id="firstName" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="First name" />
-            <input id="lastName" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="Last name" />
-            <input id="email" class="btn" style="width:100%; text-align:left; font-weight:400;" placeholder="Email" />
-            <select id="role" class="btn" style="width:100%; text-align:left; font-weight:400;">
-                <option value="SystemAdmin">System Admin</option>
-                <option value="ChiefComplianceManager">Global Compliance</option>
-            </select>
-            <button class="btn btn-primary" onclick="createAdmin()">Create Account</button>
+        <div class="app-dialog-body" style="display:grid; gap:16px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px;">First Name</label>
+                    <input id="firstName" type="text" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; color:#1f2937; background:#f9fafb; transition:border-color .2s; box-sizing:border-box;" placeholder="Enter first name" />
+                </div>
+                <div>
+                    <label style="display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px;">Last Name</label>
+                    <input id="lastName" type="text" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; color:#1f2937; background:#f9fafb; transition:border-color .2s; box-sizing:border-box;" placeholder="Enter last name" />
+                </div>
+            </div>
+            <div>
+                <label style="display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px;">Email Address</label>
+                <input id="email" type="email" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; color:#1f2937; background:#f9fafb; transition:border-color .2s; box-sizing:border-box;" placeholder="user@company.com" />
+            </div>
+            <div>
+                <label style="display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px;">Role</label>
+                <select id="role" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; color:#1f2937; background:#f9fafb; cursor:pointer; box-sizing:border-box;">
+                    <option value="SystemAdmin">System Admin</option>
+                    <option value="ChiefComplianceManager">Global Compliance</option>
+                </select>
+            </div>
+        </div>
+        <div class="app-dialog-footer">
+            <button type="button" class="btn" onclick="closeCreateAdminModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="createAdmin()">Create Account</button>
         </div>
     </div>
 </div>
@@ -546,11 +565,15 @@
         }
 
         function openCreateAdminModal() {
-            document.getElementById('createAdminModal').style.display = 'flex';
+            document.getElementById('firstName').value = '';
+            document.getElementById('lastName').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('role').selectedIndex = 0;
+            document.getElementById('createAdminModal').classList.add('active');
         }
 
         function closeCreateAdminModal() {
-            document.getElementById('createAdminModal').style.display = 'none';
+            document.getElementById('createAdminModal').classList.remove('active');
         }
 
         async function createAdmin() {
@@ -580,21 +603,26 @@
             }
 
             showLoading('Creating account & sending welcome email...');
-            const response = await fetch('/SuperAdmin/CreateUser', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(userData)
-            });
+            try {
+                const response = await fetch('/SuperAdmin/CreateUser', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                });
 
-            const result = await response.json();
-            hideLoading();
-            if (response.ok && result.success) {
-                await showMessageModal(result.message, 'Success');
-                window.location.reload();
-                return;
+                const result = await response.json();
+                hideLoading();
+                if (response.ok && result.success) {
+                    await showMessageModal(result.message, 'Success');
+                    window.location.reload();
+                    return;
+                }
+
+                await showMessageModal(result.message || 'Failed to create account.', 'Error');
+            } catch {
+                hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
             }
-
-            await showMessageModal(result.message || 'Failed to create account.', 'Error');
         }
 
         // Pagination state
@@ -657,17 +685,22 @@
             if (!confirmed) return;
 
             showLoading(`${action === 'deactivate' ? 'Deactivating' : 'Reactivating'} account & sending notification...`);
-            const response = await fetch(`${endpoint}?userId=${userId}`, { method: 'POST' });
-            const result = await response.json();
-            hideLoading();
+            try {
+                const response = await fetch(`${endpoint}?userId=${userId}`, { method: 'POST' });
+                const result = await response.json();
+                hideLoading();
 
-            if (response.ok && result.success) {
-                await showMessageModal(result.message, 'Success');
-                window.location.reload();
-                return;
+                if (response.ok && result.success) {
+                    await showMessageModal(result.message, 'Success');
+                    window.location.reload();
+                    return;
+                }
+
+                await showMessageModal(result.message || `Failed to ${action} account.`, 'Error');
+            } catch {
+                hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
             }
-
-            await showMessageModal(result.message || `Failed to ${action} account.`, 'Error');
         }
 
         async function resetAdminPassword(userId) {
@@ -678,16 +711,21 @@
             if (!confirmed) return;
 
             showLoading('Resetting password & sending notification...');
-            const response = await fetch(`/SuperAdmin/ResetUserPassword?userId=${userId}`, { method: 'POST' });
-            const result = await response.json();
-            hideLoading();
+            try {
+                const response = await fetch(`/SuperAdmin/ResetUserPassword?userId=${userId}`, { method: 'POST' });
+                const result = await response.json();
+                hideLoading();
 
-            if (response.ok && result.success) {
-                await showMessageModal(result.message, 'Password Reset');
-                return;
+                if (response.ok && result.success) {
+                    await showMessageModal(result.message, 'Password Reset');
+                    return;
+                }
+
+                await showMessageModal(result.message || 'Failed to reset password.', 'Error');
+            } catch {
+                hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
             }
-
-            await showMessageModal(result.message || 'Failed to reset password.', 'Error');
         }
     </script>
 }

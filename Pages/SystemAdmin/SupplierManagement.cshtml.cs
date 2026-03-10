@@ -85,9 +85,11 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
                 .ToListAsync();
 
             ActivePolicies = await _context.Policies
+                .Where(p => p.ReviewStatus == "Approved")
                 .OrderBy(p => p.PolicyTitle)
                 .Select(p => new TechNova_IT_Solutions.Pages.SupplierPolicyItem
                 {
+                    RawPolicyId = p.PolicyId,
                     PolicyId = "POL-" + p.PolicyId.ToString("D3"),
                     Title = p.PolicyTitle ?? string.Empty
                 })

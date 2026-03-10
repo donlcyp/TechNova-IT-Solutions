@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
 
+using TechNova_IT_Solutions.Constants;
 using TechNova_IT_Solutions.Services.Interfaces;
 
 namespace TechNova_IT_Solutions.Pages.Account
@@ -10,12 +11,20 @@ namespace TechNova_IT_Solutions.Pages.Account
     {
         private readonly IAuthenticationService _authService;
         private readonly ILogger<LoginModel> _logger;
+        private readonly IUserService _userService;
 
-        public LoginModel(IAuthenticationService authService, ILogger<LoginModel> logger)
+        public LoginModel(IAuthenticationService authService, ILogger<LoginModel> logger, IUserService userService)
         {
             _authService = authService;
-            _logger = logger;
+            _logger      = logger;
+            _userService = userService;
         }
+
+        // Admin contacts for the Contact Admin modal
+        public string SuperAdminName  { get; set; } = "Super Administrator";
+        public string SuperAdminEmail { get; set; } = "superadmin@technova.com";
+        public string SysAdminName    { get; set; } = "System Administrator";
+        public string SysAdminEmail   { get; set; } = "sysadmin@technova.com";
 
         [BindProperty]
         [Required(ErrorMessage = "Company email is required.")]
@@ -32,10 +41,31 @@ namespace TechNova_IT_Solutions.Pages.Account
         [TempData]
         public string? ErrorMessage { get; set; }
 
-        public void OnGet()
+        public bool ShowSupplierModal { get; private set; } = false;
+
+        public async Task OnGetAsync()
         {
-            // Clear any previous error messages
             ErrorMessage = null;
+
+            try
+            {
+                var allUsers = await _userService.GetAllUsersAsync();
+
+                var superAdmin = allUsers.FirstOrDefault(u => u.Role == RoleNames.SuperAdmin);
+                if (superAdmin != null)
+                {
+                    SuperAdminName  = superAdmin.FullName;
+                    SuperAdminEmail = superAdmin.Email;
+                }
+
+                var sysAdmin = allUsers.FirstOrDefault(u => u.Role == RoleNames.SystemAdmin);
+                if (sysAdmin != null)
+                {
+                    SysAdminName  = sysAdmin.FullName;
+                    SysAdminEmail = sysAdmin.Email;
+                }
+            }
+            catch { /* fall back to defaults */ }
         }
 
         public async Task<IActionResult> OnPost()
@@ -57,6 +87,13 @@ namespace TechNova_IT_Solutions.Pages.Account
                     ErrorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
                         ? "Invalid email or password."
                         : result.ErrorMessage;
+                    return Page();
+                }
+
+                // Block suppliers from the employee portal before any session is written
+                if (result.User.Role == RoleNames.Supplier)
+                {
+                    ShowSupplierModal = true;
                     return Page();
                 }
 

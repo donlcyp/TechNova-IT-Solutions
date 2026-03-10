@@ -732,6 +732,10 @@
             padding: 7px 10px;
         }
     }
+    .loading-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+    .loading-overlay.active { display:flex; }
+    .loading-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,.3); border-top:4px solid #fff; border-radius:50%; animation:spin .8s linear infinite; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
 @{
@@ -968,7 +972,11 @@ else
     </div>
 </div>
 
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div id="loadingText" style="color:#fff;font-size:16px;font-weight:500;">Processing...</div></div>
 <script>
+    function showLoading(msg) { document.getElementById('loadingText').textContent = msg || 'Processing...'; document.getElementById('loadingOverlay').classList.add('active'); }
+    function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
     let currentImportId = null;
 
     function filterCategory(cat, evt) {
@@ -990,6 +998,7 @@ else
             category: button.dataset.category || null
         };
 
+        const _t = setTimeout(() => showLoading('Queueing policy for review...'), 300);
         try {
             const res = await fetch('/api/policy-references/staging/import', {
                 method: 'POST',
@@ -997,6 +1006,7 @@ else
                 body: JSON.stringify(payload)
             });
             const result = await res.json();
+            clearTimeout(_t); hideLoading();
             if (!res.ok || !result.success) {
                 await window.showAppMessage(result.message || 'Failed to queue policy.', 'Error');
                 return;
@@ -1005,6 +1015,7 @@ else
             await window.showAppMessage(result.message || 'Policy queued for review.', 'Success');
             location.reload();
         } catch {
+            clearTimeout(_t); hideLoading();
             await window.showAppMessage('Error while queueing policy.', 'Error');
         }
     }
@@ -1013,6 +1024,7 @@ else
         const notes = prompt('Approval notes (optional):') || '';
         const payload = { reviewNotes: notes || null };
 
+        const _t = setTimeout(() => showLoading('Approving import...'), 300);
         try {
             const res = await fetch(`/api/policy-references/staging/${importId}/approve`, {
                 method: 'POST',
@@ -1021,6 +1033,7 @@ else
             });
 
             const result = await res.json();
+            clearTimeout(_t); hideLoading();
             if (!res.ok || !result.success) {
                 await window.showAppMessage(result.message || 'Failed to approve import.', 'Error');
                 return;
@@ -1029,6 +1042,7 @@ else
             await window.showAppMessage(result.message || 'Approved successfully.', 'Success');
             location.reload();
         } catch {
+            clearTimeout(_t); hideLoading();
             await window.showAppMessage('Error while approving import.', 'Error');
         }
     }
@@ -1064,6 +1078,7 @@ else
             supplierIds
         };
 
+        const _t = setTimeout(() => showLoading('Assigning policy...'), 300);
         try {
             const res = await fetch(`/api/policy-references/staging/${currentImportId}/assign`, {
                 method: 'POST',
@@ -1072,6 +1087,7 @@ else
             });
 
             const result = await res.json();
+            clearTimeout(_t); hideLoading();
             if (!res.ok || !result.success) {
                 await window.showAppMessage(result.message || 'Failed to assign policy.', 'Error');
                 return;
@@ -1085,6 +1101,7 @@ else
             closeAssignModal();
             location.reload();
         } catch {
+            clearTimeout(_t); hideLoading();
             await window.showAppMessage('Error while assigning policy.', 'Error');
         }
     }
@@ -1092,6 +1109,7 @@ else
     async function rejectImport(importId) {
         const notes = prompt('Reason for rejection (optional):') || '';
 
+        const _t = setTimeout(() => showLoading('Rejecting import...'), 300);
         try {
             const res = await fetch(`/api/policy-references/staging/${importId}/reject`, {
                 method: 'POST',
@@ -1100,6 +1118,7 @@ else
             });
 
             const result = await res.json();
+            clearTimeout(_t); hideLoading();
             if (!res.ok || !result.success) {
                 await window.showAppMessage(result.message || 'Failed to reject import.', 'Error');
                 return;
@@ -1108,6 +1127,7 @@ else
             await window.showAppMessage(result.message || 'Rejected.', 'Success');
             location.reload();
         } catch {
+            clearTimeout(_t); hideLoading();
             await window.showAppMessage('Error while rejecting import.', 'Error');
         }
     }

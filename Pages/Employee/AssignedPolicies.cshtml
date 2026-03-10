@@ -510,9 +510,14 @@
                 width: 100%;
             }
         }
+    .loading-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+    .loading-overlay.active { display:flex; }
+    .loading-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,.3); border-top:4px solid #fff; border-radius:50%; animation:spin .8s linear infinite; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div id="loadingText" style="color:#fff;font-size:16px;font-weight:500;">Processing...</div></div>
     @await Html.PartialAsync("_EmployeeSidebar", "AssignedPolicies")
 
     <div class="main-content">
@@ -791,9 +796,13 @@
             document.getElementById('acknowledgeBtn').disabled = !this.checked;
         });
 
+        function showLoading(msg) { document.getElementById('loadingText').textContent = msg || 'Processing...'; document.getElementById('loadingOverlay').classList.add('active'); }
+        function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
         function acknowledgePolicy() {
             if (!currentPolicyId) return;
 
+            const _t = setTimeout(() => showLoading('Acknowledging policy...'), 300);
             fetch('/Employee/AcknowledgePolicy', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -801,6 +810,7 @@
             })
             .then(res => res.json())
             .then(async result => {
+                clearTimeout(_t); hideLoading();
                 if (result.success) {
                     closeModal();
                     location.reload();
@@ -810,6 +820,7 @@
                 }
             })
             .catch(async () => {
+                clearTimeout(_t); hideLoading();
                 await window.showAppMessage('Error acknowledging policy', 'Error');
                 closeModal();
             });

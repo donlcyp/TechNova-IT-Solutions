@@ -47,6 +47,13 @@
             </svg>
             <span class="nav-text">Create Branch Admin</span>
         </a>
+        <a href="/SystemAdmin/MainBranchUsers" class="nav-item @(Model == "MainBranchUsers" ? "active" : "")" title="Main Branch Users">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span class="nav-text">Main Branch Users</span>
+        </a>
         <a href="/SystemAdmin/BranchManagement" class="nav-item @(Model == "BranchManagement" ? "active" : "")" title="Branch Management">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
@@ -62,6 +69,19 @@
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
             </svg>
             <span class="nav-text">Supplier Management</span>
+        </a>
+        <a href="/SystemAdmin/Procurement" class="nav-item @(Model == "Procurement" ? "active" : "")" title="Procurement">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+            <span class="nav-text">Procurement</span>
+        </a>
+        <a href="/SystemAdmin/Inventory" class="nav-item @(Model == "Inventory" ? "active" : "")" title="Inventory">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            </svg>
+            <span class="nav-text">Inventory</span>
         </a>
         <a href="/SystemAdmin/AuditLogs" class="nav-item @(Model == "AuditLogs" ? "active" : "")" title="Audit Logs">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

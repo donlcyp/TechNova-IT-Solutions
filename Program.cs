@@ -14,7 +14,16 @@ builder.Services.AddRazorPages(); // Keep Razor Pages support
 
 // Add DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlServerOptionsAction: sqlOptions =>
+        {
+            sqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorNumbersToAdd: null);
+            sqlOptions.CommandTimeout(120); // Increase timeout to 120 seconds for remote database
+        }));
 
 // Configure External API settings
 builder.Services.Configure<ExternalApisConfiguration>(

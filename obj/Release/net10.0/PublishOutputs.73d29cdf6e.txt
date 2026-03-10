@@ -1,8 +1,8 @@
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.exe
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova_IT_Solutions.exe
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\appsettings.json
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.dll
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.runtimeconfig.json
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.pdb
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova_IT_Solutions.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova_IT_Solutions.runtimeconfig.json
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova_IT_Solutions.pdb
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Azure.Core.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Azure.Identity.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\BCrypt.Net-Next.dll
@@ -276,4 +276,4 @@ D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\runtimes\win-ar
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\runtimes\win-arm64\native\e_sqlite3.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\runtimes\win-x64\native\e_sqlite3.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\runtimes\win-x86\native\e_sqlite3.dll
-D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova IT Solutions.deps.json
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova_IT_Solutions.deps.json

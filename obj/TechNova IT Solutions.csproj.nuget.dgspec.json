@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj": {}
+    "d:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj": {}
   },
   "projects": {
-    "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj": {
+    "d:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
-        "projectName": "TechNova IT Solutions",
-        "projectPath": "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
+        "projectUniqueName": "d:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
+        "projectName": "TechNova_IT_Solutions",
+        "projectPath": "d:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
         "packagesPath": "C:\\Users\\donyl\\.nuget\\packages\\",
-        "outputPath": "D:\\C#\\repos\\TechNova IT Solutions\\obj\\",
+        "outputPath": "d:\\C#\\repos\\TechNova IT Solutions\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "D:\\C#\\shared\\NuGetPackages"
@@ -56,7 +56,7 @@
             },
             "MailKit": {
               "target": "Package",
-              "version": "[4.15.0, )"
+              "version": "[4.15.1, )"
             },
             "Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore": {
               "target": "Package",

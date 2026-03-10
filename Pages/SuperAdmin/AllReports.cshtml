@@ -110,6 +110,18 @@
             .kpis { grid-template-columns: 1fr 1fr; }
             .kpi .value { font-size: 1.4rem; }
         }
+        @@media print {
+            .sidebar, .top-bar, .controls, .mobile-menu-btn, .mobile-overlay { display: none !important; }
+            .main-content { margin-left: 0 !important; background: #fff !important; }
+            .content-wrapper { padding: 0 !important; max-width: 100% !important; }
+            .panel { box-shadow: none !important; border: 1px solid #d1d5db !important; break-inside: avoid; margin-bottom: 12px !important; }
+            .panel:hover { box-shadow: none !important; transform: none !important; }
+            .kpi:hover { transform: none !important; box-shadow: none !important; }
+            .btn { display: none !important; }
+            body { background: #fff !important; }
+            .two-col { grid-template-columns: 1fr 1fr !important; }
+            @@page { margin: 1.5cm; }
+        }
     </style>
 }
 
@@ -150,10 +162,10 @@
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
                         Apply
                     </button>
-                    <a class="btn secondary" asp-page-handler="ExportSystemCsv" asp-route-periodDays="@Model.PeriodDays">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        Export CSV
-                    </a>
+                    <button type="button" class="btn secondary" onclick="window.print()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        Export PDF
+                    </button>
                     <a class="btn secondary" href="/SuperAdmin/FullAuditLogs">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                         Audit Logs
@@ -241,15 +253,5 @@
             </table>
         </div>
 
-        <div class="panel">
-            <h4 class="section-title"><span class="badge">5</span> Drilldown Access</h4>
-            <div class="meta">For operational-level detail, open the subordinate drilldown report page.</div>
-            <div style="margin-top:12px;">
-                <a class="btn secondary" href="/SuperAdmin/DetailedReports">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    Open Detailed Reports
-                </a>
-            </div>
-        </div>
     </div>
 </div>

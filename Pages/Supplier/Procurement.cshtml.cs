@@ -7,7 +7,7 @@ namespace TechNova_IT_Solutions.Pages.Supplier
     {
         public IActionResult OnGet()
         {
-            var denied = RoleAccess.RequireRoleOrRedirect(this, new[] { RoleNames.Supplier }, fallbackPage: "/Supplier/Login");
+            var denied = RoleAccess.RequireRoleOrRedirect(this, new[] { RoleNames.Supplier, RoleNames.SuperAdmin }, fallbackPage: "/Supplier/Login");
             if (denied != null) return denied;
 
             return Page();

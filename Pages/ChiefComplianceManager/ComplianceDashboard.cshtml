@@ -907,7 +907,7 @@
                 const status = row.cells[2].textContent.toLowerCase();
 
                 const matchesSearch = title.includes(searchTerm);
-                const matchesStatus = !statusFilter || status.includes(statusFilter.replace('pendingreview', 'pending'));
+                const matchesStatus = !statusFilter || status.includes(statusFilter.replace('pendingreview', 'pending review'));
 
                 row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
             }

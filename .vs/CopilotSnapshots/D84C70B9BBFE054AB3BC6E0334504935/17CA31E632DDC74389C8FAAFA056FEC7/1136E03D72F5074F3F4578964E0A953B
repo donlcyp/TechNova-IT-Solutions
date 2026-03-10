@@ -1,0 +1,839 @@
+﻿@page
+@model TechNova_IT_Solutions.Pages.Supplier.LoginModel
+@{
+    ViewData["Title"] = "Supplier Sign In";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TechNova</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+        html {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            min-height: 100vh;
+            width: 100%;
+            overflow-x: hidden;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .login-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 100vh;
+            width: 100%;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .left-panel {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            padding: 80px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 60%);
+            animation: floatBg 8s ease-in-out infinite;
+        }
+
+        .left-panel::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            right: -20%;
+            width: 60%;
+            height: 60%;
+            background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+            animation: floatBg2 10s ease-in-out infinite;
+        }
+
+        @@keyframes floatBg {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, 20px); }
+        }
+
+        @@keyframes floatBg2 {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(-20px, -30px); }
+        }
+
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-section {
+            margin-bottom: 32px;
+            animation: fadeInUp 0.8s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 28px;
+            color: white;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: 700;
+            opacity: 0.98;
+            letter-spacing: -0.5px;
+        }
+
+        .main-content h2 {
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 28px;
+            animation: fadeInLeft 0.8s ease-out;
+        }
+
+        .main-content > p {
+            font-size: 18px;
+            opacity: 0.9;
+            line-height: 1.7;
+            max-width: 520px;
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            margin-top: auto;
+            padding-top: 60px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .footer-links a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .right-panel {
+            background: #ffffff;
+            color: #1f2937;
+            padding: 60px 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .form-container {
+            max-width: 440px;
+            width: 100%;
+        }
+
+        .form-container h2 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .form-container > p {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #1f2937;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-group input[type="email"],
+        .form-group input[type="password"],
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 14px 48px 14px 16px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            color: #1f2937;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #1e40af;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toggle-password:hover {
+            color: #1f2937;
+        }
+
+        .toggle-password svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            gap: 12px;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-wrapper label {
+            font-size: 14px;
+            cursor: pointer;
+            color: #1f2937;
+        }
+
+        .form-options a {
+            color: #1e40af;
+            text-decoration: none;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .form-options a:hover {
+            text-decoration: underline;
+        }
+
+        .btn-signin {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .login-type-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 14px 0 26px;
+        }
+
+        .login-type-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            background: #ffffff;
+            color: #111827;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .login-type-btn.active {
+            border-color: #1e40af;
+            background: rgba(30, 64, 175, 0.06);
+        }
+
+        .login-type-btn:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+        }
+
+        .btn-signin:hover {
+            opacity: 0.92;
+        }
+
+        .info-box {
+            margin-top: 32px;
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .info-icon {
+            color: #1e40af;
+            flex-shrink: 0;
+        }
+
+        .info-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .info-content h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #1f2937;
+        }
+
+        .info-content p {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .error-icon {
+            flex-shrink: 0;
+        }
+
+        .error-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .field-validation-error {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .input-validation-error {
+            border-color: #ef4444 !important;
+        }
+
+        .validation-summary-errors {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .validation-summary-errors ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .validation-summary-errors li {
+            margin: 4px 0;
+        }
+
+        .switch-login {
+            margin-top: 18px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .switch-login a {
+            color: #1e40af;
+            text-decoration: none;
+        }
+
+        .switch-login a:hover {
+            text-decoration: underline;
+        }
+
+        @@media (max-width: 1024px) {
+            .login-container {
+                grid-template-columns: 1fr;
+                min-height: 100vh;
+                display: block;
+            }
+
+            .left-panel {
+                min-height: 100vh;
+            }
+
+            .right-panel {
+                min-height: 100vh;
+                padding: 60px 40px;
+            }
+
+            .main-content h2 {
+                font-size: 36px;
+            }
+        }
+
+        @@media (max-width: 640px) {
+            body {
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            .login-container {
+                display: block;
+            }
+
+            .left-panel {
+                min-height: 100vh;
+                padding: 40px 24px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .logo-section {
+                margin-bottom: 40px;
+            }
+
+            .logo-icon {
+                width: 56px;
+                height: 56px;
+                font-size: 24px;
+            }
+
+            .company-name {
+                font-size: 20px;
+            }
+
+            .main-content h2 {
+                font-size: 32px;
+                margin-bottom: 20px;
+            }
+
+            .main-content > p {
+                font-size: 16px;
+                margin-bottom: 0;
+            }
+
+            .footer-links {
+                padding-top: 40px;
+                justify-content: center;
+            }
+
+            .right-panel {
+                min-height: 100vh;
+                padding: 40px 24px;
+                display: flex;
+                align-items: center;
+            }
+
+            .form-container {
+                width: 100%;
+            }
+
+            .form-container h2 {
+                font-size: 28px;
+            }
+
+            .form-options {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .info-box {
+                flex-direction: row;
+            }
+
+            .login-type-toggle {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 375px) {
+            .left-panel {
+                padding: 32px 20px;
+            }
+
+            .right-panel {
+                padding: 32px 20px;
+            }
+
+            .main-content h2 {
+                font-size: 28px;
+            }
+
+            .main-content > p {
+                font-size: 15px;
+            }
+
+            .form-container h2 {
+                font-size: 24px;
+            }
+
+            .form-group input[type="email"],
+            .form-group input[type="password"],
+            .form-group input[type="text"] {
+                padding: 12px 40px 12px 12px;
+                font-size: 16px;
+            }
+        }
+
+        /* Password Strength Meter */
+        .pwd-strength-wrap { margin-top: 6px; }
+        .pwd-strength-bar { display: flex; gap: 4px; margin-bottom: 4px; }
+        .pwd-strength-bar .seg { flex: 1; height: 5px; border-radius: 3px; background: #e5e7eb; transition: background .25s; }
+        .pwd-strength-label { font-size: 12px; font-weight: 600; color: #6b7280; transition: color .25s; }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        .decorative-shapes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .shape {
+            position: absolute;
+            opacity: 0.1;
+        }
+
+        .shape-circle {
+            width: 300px;
+            height: 300px;
+            border: 2px solid white;
+            border-radius: 50%;
+            top: -100px;
+            right: -100px;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape-square {
+            width: 150px;
+            height: 150px;
+            border: 2px solid white;
+            bottom: 100px;
+            left: -50px;
+            transform: rotate(45deg);
+            animation: rotate 20s linear infinite;
+        }
+
+        .shape-line {
+            width: 200px;
+            height: 2px;
+            background: white;
+            top: 30%;
+            right: -100px;
+            animation: slideIn 8s ease-in-out infinite;
+        }
+
+        .grid-pattern {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.3;
+        }
+
+        .tech-icon {
+            position: absolute;
+            opacity: 0.08;
+        }
+
+        .icon-code {
+            top: 15%;
+            left: 10%;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        .icon-shield {
+            bottom: 25%;
+            right: 8%;
+            animation: pulse 4s ease-in-out 1s infinite;
+        }
+
+        .icon-network {
+            top: 60%;
+            left: 5%;
+            animation: pulse 4s ease-in-out 2s infinite;
+        }
+
+        @@keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+
+        @@keyframes rotate {
+            0% { transform: rotate(45deg); }
+            100% { transform: rotate(405deg); }
+        }
+
+        @@keyframes slideIn {
+            0%, 100% { transform: translateX(0); opacity: 0.1; }
+            50% { transform: translateX(-50px); opacity: 0.2; }
+        }
+
+        @@keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.08; }
+            50% { transform: scale(1.1); opacity: 0.12; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="left-panel">
+            <div class="decorative-shapes">
+                <div class="grid-pattern"></div>
+                <div class="shape shape-circle"></div>
+                <div class="shape shape-square"></div>
+                <div class="shape shape-line"></div>
+
+                <svg class="tech-icon icon-code" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <polyline points="16 18 22 12 16 6"></polyline>
+                    <polyline points="8 6 2 12 8 18"></polyline>
+                </svg>
+
+                <svg class="tech-icon icon-shield" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+
+                <svg class="tech-icon icon-network" width="55" height="55" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+            </div>
+
+            <div class="main-content">
+                <div class="logo-section">
+                    <img src="/images/logo2.png" alt="TechNova Logo" class="logo-icon" />
+                    <div class="company-name">TechNova IT Solutions</div>
+                </div>
+                <h2>Welcome to TechNova<br />The Consulting and Software Services Company</h2>
+                <p>Sign in to view assigned policies, compliance status, and procurement information.</p>
+            </div>
+
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Contact IT</a>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="form-container">
+                <h2>Company Sign In</h2>
+                <p>Use the credentials provided by your administrator</p>
+
+                <div class="login-type-toggle" aria-label="Choose login type">
+                    <a class="login-type-btn" href="/Account/Login">Employee</a>
+                    <a class="login-type-btn active" href="/Supplier/Login">Supplier</a>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="error-message">
+                        <div class="error-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                        </div>
+                        <div>@Model.ErrorMessage</div>
+                    </div>
+                }
+
+                <form method="post" novalidate autocomplete="off" id="loginForm">
+                    <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+                    <div class="form-group">
+                        <label asp-for="Email">Supplier Email</label>
+                        <input asp-for="Email" type="email" placeholder="supplier@company.com" autocomplete="off" />
+                        <span asp-validation-for="Email" class="field-validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Password">Password</label>
+                        <div class="input-wrapper">
+                            <input asp-for="Password" type="password" id="passwordField" placeholder="Enter your password" autocomplete="off" />
+                            <button type="button" class="toggle-password" onclick="togglePassword()" id="toggleBtn" aria-label="Toggle password visibility">
+                                <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path id="eyePath" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle id="eyeCircle" cx="12" cy="12" r="3"></circle>
+                                    <line id="eyeSlash" x1="1" y1="1" x2="23" y2="23" style="display: none;"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="field-validation-error"></span>
+                    </div>
+
+                    <div class="form-options">
+                        <div class="checkbox-wrapper">
+                            <input asp-for="RememberMe" type="checkbox" />
+                            <label asp-for="RememberMe">Remember me</label>
+                        </div>
+                        <a href="#">Contact Admin</a>
+                    </div>
+
+                    <button type="submit" class="btn-signin">Sign In</button>
+                </form>
+
+                <div class="info-box">
+                    <div class="info-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                    </div>
+                    <div class="info-content">
+                        <h4>Need Access?</h4>
+                        <p>Contact your IT administrator to receive your login credentials. All supplier accounts are created and managed by the admin team.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Clear form on page load/refresh
+        window.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('loginForm');
+            if (form) {
+                form.reset();
+                // Also clear individual fields to ensure they're empty
+                document.getElementById('Email').value = '';
+                document.getElementById('passwordField').value = '';
+            }
+        });
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('passwordField');
+            const eyePath = document.getElementById('eyePath');
+            const eyeCircle = document.getElementById('eyeCircle');
+            const eyeSlash = document.getElementById('eyeSlash');
+            const isPassword = passwordInput.getAttribute('type') === 'password';
+
+            if (isPassword) {
+                passwordInput.setAttribute('type', 'text');
+                eyePath.setAttribute('d', 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24');
+                eyeCircle.style.display = 'none';
+                eyeSlash.style.display = 'block';
+            } else {
+                passwordInput.setAttribute('type', 'password');
+                eyePath.setAttribute('d', 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z');
+                eyeCircle.style.display = 'block';
+                eyeSlash.style.display = 'none';
+            }
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+</body>
+</html>

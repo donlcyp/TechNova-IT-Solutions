@@ -78,9 +78,13 @@
     @@media (max-width: 991px) { .main-content { margin-left: 0; } }
     @@media (max-width: 1100px) { .summary-cards { grid-template-columns: repeat(2, 1fr); } }
     @@media (max-width: 768px) { .summary-cards { grid-template-columns: 1fr; } .content-wrapper { padding: 20px; } }
+    .loading-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+    .loading-overlay.active { display:flex; }
+    .loading-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,.3); border-top:4px solid #fff; border-radius:50%; animation:spin .8s linear infinite; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 }
-
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div id="loadingText" style="color:#fff;font-size:16px;font-weight:500;">Processing...</div></div>
 @await Html.PartialAsync("_ComplianceManagerSidebar", "BranchComplianceArchive")
 
 <main class="main-content">
@@ -237,6 +241,9 @@
 
 @section Scripts {
 <script>
+    function showLoading(msg) { document.getElementById('loadingText').textContent = msg || 'Processing...'; document.getElementById('loadingOverlay').classList.add('active'); }
+    function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
     const API = '/ComplianceManagerPolicy';
     let allViolations = [];
     let allAcknowledgements = [];
@@ -349,8 +356,10 @@
     async function restorePolicy(id, title) {
         const ok = await window.showAppConfirm(`Restore policy "${title}" back to active?`);
         if (!ok) return;
+        const _t = setTimeout(() => showLoading('Restoring policy...'), 300);
         try {
             const res = await fetch(`${API}/RestorePolicy?policyId=${id}`, { method: 'POST' }).then(r => r.json());
+            clearTimeout(_t); hideLoading();
             if (res.success) {
                 await window.showAppMessage(res.message || 'Policy restored successfully', 'Success');
                 loadArchivedPolicies();
@@ -359,6 +368,7 @@
                 await window.showAppMessage(res.message || 'Failed to restore policy', 'Error');
             }
         } catch {
+            clearTimeout(_t); hideLoading();
             await window.showAppMessage('Error restoring policy', 'Error');
         }
     }

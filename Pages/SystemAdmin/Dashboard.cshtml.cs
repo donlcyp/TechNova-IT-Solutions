@@ -44,9 +44,8 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
                 return RedirectToPage("/Account/Login");
 
             var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
-            if (userRole != RoleNames.SystemAdmin)
+            if (userRole != RoleNames.SystemAdmin && userRole != RoleNames.SuperAdmin)
             {
-                if (userRole == RoleNames.SuperAdmin)  return RedirectToPage("/SuperAdmin/Dashboard");
                 if (userRole == RoleNames.BranchAdmin) return RedirectToPage("/BranchAdmin/Dashboard");
                 if (userRole == RoleNames.Employee)    return RedirectToPage("/Employee/Dashboard");
                 if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager)

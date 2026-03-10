@@ -22,8 +22,12 @@ namespace TechNova_IT_Solutions.Pages.Supplier
 
         public async Task<IActionResult> OnGetAsync()
         {
-            var denied = RoleAccess.RequireRoleOrRedirect(this, new[] { RoleNames.Supplier }, fallbackPage: "/Supplier/Login");
+            var denied = RoleAccess.RequireRoleOrRedirect(this, new[] { RoleNames.Supplier, RoleNames.SuperAdmin }, fallbackPage: "/Supplier/Login");
             if (denied != null) return denied;
+
+            var userRole  = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (userRole == RoleNames.SuperAdmin)
+                return Page();
 
             var userEmail = HttpContext.Session.GetString(SessionKeys.UserEmail);
             if (string.IsNullOrWhiteSpace(userEmail))

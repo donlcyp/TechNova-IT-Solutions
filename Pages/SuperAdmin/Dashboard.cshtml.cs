@@ -7,6 +7,14 @@ using TechNova_IT_Solutions.Infrastructure;
 
 namespace TechNova_IT_Solutions.Pages.SuperAdmin
 {
+    public class DashboardRecentLog
+    {
+        public string Action { get; set; } = string.Empty;
+        public string Module { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public DateTime LogDate { get; set; }
+    }
+
     public class DashboardModel : PageModel
     {
         private readonly ApplicationDbContext _context;
@@ -30,6 +38,24 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
         public int TotalProcurements { get; set; }
         public decimal SystemComplianceRate { get; set; }
 
+        // Extended stats
+        public int ActiveUsers { get; set; }
+        public int InactiveUsers { get; set; }
+        public int OpenViolations { get; set; }
+        public int CriticalViolations { get; set; }
+        public int PendingProcurements { get; set; }
+        public int PendingPolicyReviews { get; set; }
+        public int ActiveSuppliers { get; set; }
+        public int TotalComplianceManagers { get; set; }
+
+        // Recent activity
+        public List<DashboardRecentLog> RecentAuditLogs { get; set; } = new();
+
+        // Procurement breakdown
+        public int ProcurementApproved { get; set; }
+        public int ProcurementRejected { get; set; }
+        public int ProcurementDraft { get; set; }
+
         public async Task<IActionResult> OnGetAsync()
         {
             var denied = RoleAccess.RequireRoleOrRedirect(
@@ -47,7 +73,7 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
             UserEmail = HttpContext.Session.GetString(SessionKeys.UserEmail) ?? "superadmin@technova.com";
             UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Super Administrator";
 
-            // System-wide aggregates
+            // Core aggregates
             TotalBranches = await _context.Branches.CountAsync();
             TotalUsers = await _context.Users.CountAsync();
             TotalAdmins = await _context.Users.CountAsync(u => u.Role == RoleNames.SystemAdmin || u.Role == RoleNames.BranchAdmin);
@@ -57,13 +83,42 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
             ActivePolicies = await _context.Policies.CountAsync(p => !p.IsArchived);
             TotalProcurements = await _context.Procurements.CountAsync();
 
-            // System-wide compliance rate (acknowledged / total assignments)
+            // Extended aggregates
+            ActiveUsers = await _context.Users.CountAsync(u => u.Status == "Active");
+            InactiveUsers = TotalUsers - ActiveUsers;
+            OpenViolations = await _context.ComplianceViolations.CountAsync(v => v.Status == "Open" || v.Status == "UnderReview" || v.Status == "Escalated");
+            CriticalViolations = await _context.ComplianceViolations.CountAsync(v => v.SeverityLevel == "Critical" && v.Status != "Resolved");
+            PendingProcurements = await _context.Procurements.CountAsync(p => p.Status == "Pending" || p.Status == "Draft");
+            PendingPolicyReviews = await _context.ExternalPolicyImports.CountAsync(e => e.ReviewStatus == "PendingReview");
+            ActiveSuppliers = await _context.Suppliers.CountAsync(s => s.Status == "Active");
+            TotalComplianceManagers = await _context.Users.CountAsync(u =>
+                u.Role == RoleNames.ComplianceManager || u.Role == RoleNames.ChiefComplianceManager);
+
+            // Procurement breakdown
+            ProcurementApproved = await _context.Procurements.CountAsync(p => p.Status == "Approved");
+            ProcurementRejected = await _context.Procurements.CountAsync(p => p.Status == "Rejected");
+            ProcurementDraft = await _context.Procurements.CountAsync(p => p.Status == "Draft");
+
+            // System-wide compliance rate
             var totalAssignments = await _context.PolicyAssignments.CountAsync();
-            var acknowledgedAssignments = await _context.ComplianceStatuses
-                .CountAsync(cs => cs.Status == "Acknowledged");
+            var acknowledgedAssignments = await _context.ComplianceStatuses.CountAsync(cs => cs.Status == "Acknowledged");
             SystemComplianceRate = totalAssignments == 0
                 ? 0
                 : Math.Round((decimal)acknowledgedAssignments * 100 / totalAssignments, 1);
+
+            // Recent audit logs (last 8)
+            RecentAuditLogs = await _context.AuditLogs
+                .Include(l => l.User)
+                .OrderByDescending(l => l.LogDate)
+                .Take(8)
+                .Select(l => new DashboardRecentLog
+                {
+                    Action = l.Action ?? "Unknown action",
+                    Module = l.Module ?? "System",
+                    UserName = l.User != null ? l.User.FirstName + " " + l.User.LastName : "System",
+                    LogDate = l.LogDate
+                })
+                .ToListAsync();
 
             return Page();
         }

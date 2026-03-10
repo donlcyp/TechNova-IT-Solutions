@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model TechNova_IT_Solutions.Pages.SuperAdmin.PolicyManagementModel
 @{
     ViewData["Title"] = "Policy Management";
@@ -6,99 +6,324 @@
 
 @section Styles {
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f8f9fa; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f1f5f9; }
         .main-content { margin-left: 260px; min-height: 100vh; }
-        .content-wrapper { padding: 24px; max-width: 1280px; margin: 0 auto; }
-        .table-container { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 760px; }
-        th, td { text-align: left; padding: 14px 16px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }
-        th { font-size: 12px; color: #6b7280; text-transform: uppercase; background: #f9fafb; }
-        .btn { border: 1px solid #1e40af; background: #fff; color: #1e40af; border-radius: 8px; padding: 8px 10px; text-decoration: none; font-size: 13px; font-weight: 600; }
-        .btn:hover { background: #eff6ff; }
-        .actions { margin-bottom: 14px; display: flex; gap: 10px; }
-        .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
-        .filters input[type=text] { flex: 1; min-width: 200px; padding: 9px 14px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: #f9fafb; }
-        .filters input[type=text]:focus { outline: none; border-color: #1e40af; }
-        .filters select { padding: 9px 14px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 14px; background: #f9fafb; cursor: pointer; }
-        .filters select:focus { outline: none; border-color: #1e40af; }
-        @@media (max-width: 991px) { .main-content { margin-left: 0; } .filters { flex-direction: column; } .filters input[type=text], .filters select { min-width: 100%; } }
+        .content-wrapper { padding: 28px; max-width: 1400px; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.04);
+        }
+
+        .stat-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stat-icon svg { width: 22px; height: 22px; }
+        .stat-val { font-size: 26px; font-weight: 700; color: #0f172a; line-height: 1; }
+        .stat-lbl { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+        /* Tabs */
+        .tab-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+
+        .tab-btn {
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            color: #475569;
+            border-radius: 8px;
+            padding: 9px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .tab-btn:hover { border-color: #1d4ed8; color: #1d4ed8; background: #eff6ff; }
+        .tab-btn.active { background: #1e40af; color: #fff; border-color: #1e40af; }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+            align-items: center;
+        }
+
+        .filters input[type=text],
+        .filters select {
+            padding: 9px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #f8fafc;
+        }
+
+        .filters input[type=text] { flex: 1; min-width: 220px; }
+        .filters input[type=text]:focus,
+        .filters select:focus { outline: none; border-color: #1d4ed8; }
+
+        /* Table */
+        .table-wrap {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            overflow-x: auto;
+            box-shadow: 0 1px 4px rgba(0,0,0,.04);
+        }
+
+        table { width: 100%; border-collapse: collapse; min-width: 680px; }
+        th, td { text-align: left; padding: 13px 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        th { font-size: 12px; color: #64748b; text-transform: uppercase; background: #f8fafc; font-weight: 600; letter-spacing: .4px; }
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #f8fafc; }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-active   { background: #dcfce7; color: #16a34a; }
+        .badge-archived { background: #f1f5f9; color: #64748b; }
+        .badge-compliant     { background: #dcfce7; color: #16a34a; }
+        .badge-noncompliant  { background: #fee2e2; color: #dc2626; }
+
+        .empty-row td { text-align: center; color: #94a3b8; padding: 32px; }
+
+        @@media (max-width: 991px) { .main-content { margin-left: 0; } .stats { grid-template-columns: 1fr 1fr; } }
+        @@media (max-width: 600px) { .stats { grid-template-columns: 1fr; } }
     </style>
 }
 
-@await Html.PartialAsync("_SuperAdminSidebar", "SystemSettingsPolicies")
+@await Html.PartialAsync("_SuperAdminSidebar", "PolicyManagement")
 
 <div class="main-content">
-    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Policy Management", Description: "Super Admin-owned policy listing and controls"))
+    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Policy Management", Description: "Policy listing, compliance overview, and external policy API"))
+
     <div class="content-wrapper">
-        <div class="actions">
-            <a class="btn" href="/SuperAdmin/SystemSettingsPolicies">Back to Settings & Policies</a>
-        </div>
-        <!-- Filters -->
-        <div class="filters">
-            <input type="text" id="searchInput" placeholder="Search by policy title..." oninput="filterPolicies()" />
-            <select id="categoryFilter" onchange="filterPolicies()">
-                <option value="">All Categories</option>
-                <option>Supplier Management</option>
-                <option>Procurement Policy</option>
-                <option>IT Governance</option>
-                <option>Contract Management</option>
-                <option>Quality Assurance</option>
-                <option>Compliance &amp; Regulatory</option>
-                <option>Code of Conduct</option>
-                <option>Risk Management</option>
-            </select>
-            <select id="statusFilter" onchange="filterPolicies()">
-                <option value="">All Status</option>
-                <option>Active</option>
-                <option>Archived</option>
-            </select>
+
+        @* Stats *@
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#eff6ff;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-val">@Model.TotalPolicies</div>
+                    <div class="stat-lbl">Total Policies</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#f0fdf4;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-val">@Model.ActivePolicies</div>
+                    <div class="stat-lbl">Active Policies</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#f8fafc;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 8h14M5 8a2 2 0 1 0 0-4h14a2 2 0 1 0 0 4M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/>
+                        <line x1="10" y1="12" x2="14" y2="12"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-val">@Model.ArchivedPolicies</div>
+                    <div class="stat-lbl">Archived Policies</div>
+                </div>
+            </div>
         </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Policy Title</th>
-                        <th>Category</th>
-                        <th>Status</th>
-                        <th>Date Uploaded</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var p in Model.Policies)
-                    {
-                        <tr>
-                            <td>@p.PolicyTitle</td>
-                            <td>@p.Category</td>
-                            <td>@(p.IsArchived ? "Archived" : "Active")</td>
-                            <td>@(p.DateUploaded?.ToString("MMM dd, yyyy") ?? "N/A")</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        @* Tab bar *@
+        <div class="tab-bar">
+            <button type="button" class="tab-btn active" id="tabPolicies" onclick="switchTab('policies')">Policy List</button>
+            <button type="button" class="tab-btn" id="tabCompliance" onclick="switchTab('compliance')">Compliance Overview</button>
+            <button type="button" class="tab-btn" id="tabExternal" onclick="switchTab('external')">External Policy API</button>
         </div>
+
+        @* ── Policy List Tab ── *@
+        <div id="panePolicies">
+            <div class="filters">
+                <input type="text" id="searchInput" placeholder="Search by policy title..." oninput="filterPolicies()" />
+                <select id="categoryFilter" onchange="filterPolicies()">
+                    <option value="">All Categories</option>
+                    <option>Supplier Management</option>
+                    <option>Procurement Policy</option>
+                    <option>IT Governance</option>
+                    <option>Contract Management</option>
+                    <option>Quality Assurance</option>
+                    <option>Compliance &amp; Regulatory</option>
+                    <option>Code of Conduct</option>
+                    <option>Risk Management</option>
+                </select>
+                <select id="statusFilter" onchange="filterPolicies()">
+                    <option value="">All Status</option>
+                    <option>Active</option>
+                    <option>Archived</option>
+                </select>
+            </div>
+            <div class="table-wrap">
+                <table id="policyTable">
+                    <thead>
+                        <tr>
+                            <th>Policy Title</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Date Uploaded</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Policies.Any())
+                        {
+                            <tr class="empty-row"><td colspan="4">No policies found.</td></tr>
+                        }
+                        @foreach (var p in Model.Policies)
+                        {
+                            <tr>
+                                <td>@p.PolicyTitle</td>
+                                <td>@p.Category</td>
+                                <td><span class="badge @(p.IsArchived ? "badge-archived" : "badge-active")">@(p.IsArchived ? "Archived" : "Active")</span></td>
+                                <td>@(p.DateUploaded?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @* ── Compliance Overview Tab ── *@
+        <div id="paneCompliance" style="display:none;">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Assignee</th>
+                            <th>Policy Title</th>
+                            <th>Status</th>
+                            <th>Date Assigned</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.ComplianceRows.Any())
+                        {
+                            <tr class="empty-row"><td colspan="4">No compliance records found.</td></tr>
+                        }
+                        @foreach (var row in Model.ComplianceRows)
+                        {
+                            <tr>
+                                <td>@row.Assignee</td>
+                                <td>@row.PolicyTitle</td>
+                                <td>
+                                    <span class="badge @(row.ComplianceStatus == "Compliant" ? "badge-compliant" : "badge-noncompliant")">
+                                        @row.ComplianceStatus
+                                    </span>
+                                </td>
+                                <td>@(row.DateAssigned?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @* ── External Policy API Tab ── *@
+        <div id="paneExternal" style="display:none;">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Policy Title</th>
+                            <th>Category</th>
+                            <th>Source</th>
+                            <th>Date Published</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.ExternalPolicies.Any())
+                        {
+                            <tr class="empty-row"><td colspan="4">No external policies available.</td></tr>
+                        }
+                        @foreach (var p in Model.ExternalPolicies)
+                        {
+                            <tr>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(p.ExternalUrl))
+                                    {
+                                        <a href="@p.ExternalUrl" target="_blank" rel="noopener noreferrer">@p.PolicyTitle</a>
+                                    }
+                                    else
+                                    {
+                                        @p.PolicyTitle
+                                    }
+                                </td>
+                                <td>@p.Category</td>
+                                <td>@p.SourceApi</td>
+                                <td>@(p.DateUploaded?.ToString("MMM dd, yyyy") ?? "N/A")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 </div>
+
 @section Scripts {
     <script>
+        function switchTab(tab) {
+            ['policies','compliance','external'].forEach(t => {
+                document.getElementById('pane' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === tab ? '' : 'none';
+                document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+            });
+        }
+
         function filterPolicies() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const category = document.getElementById('categoryFilter').value;
             const status = document.getElementById('statusFilter').value;
 
-            document.querySelectorAll('tbody tr').forEach(row => {
+            document.querySelectorAll('#policyTable tbody tr:not(.empty-row)').forEach(row => {
                 const tds = row.querySelectorAll('td');
                 if (tds.length < 3) return;
-
-                const title = tds[0].textContent.toLowerCase();
+                const title       = tds[0].textContent.toLowerCase();
                 const rowCategory = tds[1].textContent.trim();
-                const rowStatus = tds[2].textContent.trim();
-
-                const matchesSearch = !search || title.includes(search);
-                const matchesCategory = !category || rowCategory === category;
-                const matchesStatus = !status || rowStatus === status;
-
-                row.style.display = (matchesSearch && matchesCategory && matchesStatus) ? '' : 'none';
+                const rowStatus   = tds[2].textContent.trim();
+                row.style.display = (
+                    (!search   || title.includes(search)) &&
+                    (!category || rowCategory === category) &&
+                    (!status   || rowStatus === status)
+                ) ? '' : 'none';
             });
         }
     </script>

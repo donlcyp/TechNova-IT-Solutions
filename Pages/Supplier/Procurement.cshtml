@@ -30,22 +30,23 @@
             background: #ffffff;
             border: 1px solid #e5e7eb;
             border-radius: 12px;
-            padding: 14px 16px;
+            padding: 18px 20px;
         }
 
         .summary-label {
             color: #6b7280;
             font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.4px;
-            margin-bottom: 6px;
-            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+            font-weight: 700;
         }
 
         .summary-value {
             color: #1f2937;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 700;
+            line-height: 1;
         }
 
         .section-card {
@@ -57,7 +58,7 @@
         }
 
         .section-title {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
             margin-bottom: 14px;
             color: #1f2937;
@@ -324,9 +325,14 @@
             .section-title { font-size: 20px; }
             .content-wrapper { padding: 16px; }
         }
+    .loading-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+    .loading-overlay.active { display:flex; }
+    .loading-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,.3); border-top:4px solid #fff; border-radius:50%; animation:spin .8s linear infinite; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
     </style>
 }
 
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div id="loadingText" style="color:#fff;font-size:16px;font-weight:500;">Processing...</div></div>
 @await Html.PartialAsync("_SupplierSidebar", "Procurement")
 
 <div class="main-content">
@@ -335,10 +341,6 @@
     <div class="content-wrapper">
         <div class="summary-grid">
             <div class="summary-card">
-                <div class="summary-label">Inventory Items</div>
-                <div class="summary-value" id="inventoryCount">0</div>
-            </div>
-            <div class="summary-card">
                 <div class="summary-label">Pending Requests</div>
                 <div class="summary-value" id="pendingCount">0</div>
             </div>
@@ -346,39 +348,17 @@
                 <div class="summary-label">Approved Requests</div>
                 <div class="summary-value" id="approvedCount">0</div>
             </div>
+            <div class="summary-card">
+                <div class="summary-label">Inventory Items</div>
+                <div class="summary-value" id="inventoryCount">0</div>
+            </div>
         </div>
 
         <div class="section-card">
             <div class="section-head">
-                <div class="section-title">Inventory Management</div>
-                <button class="btn btn-light" type="button" onclick="openItemModal()">Add Item</button>
+                <div class="section-title">Procurement Requests</div>
+                <div class="section-subtitle">Respond to submitted requests with approval + ship date, or reject with a reason.</div>
             </div>
-            <div class="section-subtitle">Add or update items that admins can request from your catalog.</div>
-            <div class="stock-alerts">
-                <div id="lowStockAlert" class="stock-alert low" style="display:none;"></div>
-                <div id="outStockAlert" class="stock-alert out" style="display:none;"></div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Item</th>
-                            <th>Category</th>
-                            <th>Unit Price</th>
-                            <th>Currency</th>
-                            <th>Qty Available</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inventoryRows"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="section-card">
-            <div class="section-title">Procurement Requests</div>
-            <div class="section-subtitle">Respond to submitted requests with approval + ship date, or reject with a reason.</div>
             <div class="table-wrap">
                 <table>
                     <thead>
@@ -603,6 +583,9 @@
 
     @section Scripts {
     <script>
+        function showLoading(msg) { document.getElementById('loadingText').textContent = msg || 'Processing...'; document.getElementById('loadingOverlay').classList.add('active'); }
+        function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
         const modalFocusState = {
             itemModal: null,
             stockModal: null
@@ -678,77 +661,36 @@
                 return;
             }
 
-            const res = await fetch('/Supplier/AddInventoryStock', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    supplierItemId: selectedStockItemId,
-                    addQuantity: addQty
-                })
-            });
-            const json = await res.json();
-            if (!json.success) {
-                showToast(json.message || 'Failed to add stock', 'error');
-                return;
-            }
+            const _t = setTimeout(() => showLoading('Adding stock...'), 300);
+            try {
+                const res = await fetch('/Supplier/AddInventoryStock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        supplierItemId: selectedStockItemId,
+                        addQuantity: addQty
+                    })
+                });
+                const json = await res.json();
+                clearTimeout(_t); hideLoading();
+                if (!json.success) {
+                    showToast(json.message || 'Failed to add stock', 'error');
+                    return;
+                }
 
-            closeStockModal();
-            showToast('Stock added successfully.', 'success');
-            await loadInventory();
+                closeStockModal();
+                showToast('Stock added successfully.', 'success');
+                await loadInventory();
+            } catch { clearTimeout(_t); hideLoading(); showToast('Error adding stock', 'error'); }
         }
 
         async function loadInventory() {
-            const res = await fetch('/Supplier/GetInventory');
-            const json = await res.json();
-            if (!json.success) return;
-            const tbody = document.getElementById('inventoryRows');
-            tbody.innerHTML = '';
-            document.getElementById('inventoryCount').textContent = json.items.length;
-            const lowStockItems = (json.items || []).filter(i => i.quantityAvailable > 0 && i.quantityAvailable <= 10);
-            const outStockItems = (json.items || []).filter(i => i.quantityAvailable <= 0 || i.status === 'OutOfStock');
-
-            const lowAlert = document.getElementById('lowStockAlert');
-            const outAlert = document.getElementById('outStockAlert');
-            if (lowStockItems.length) {
-                lowAlert.style.display = '';
-                lowAlert.textContent = `Low stock warning: ${lowStockItems.length} item(s) are at or below 10 units.`;
-            } else {
-                lowAlert.style.display = 'none';
-            }
-
-            if (outStockItems.length) {
-                outAlert.style.display = '';
-                outAlert.textContent = `Out of stock alert: ${outStockItems.length} item(s) need replenishment.`;
-            } else {
-                outAlert.style.display = 'none';
-            }
-
-            if (!json.items.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="empty-row">No inventory items yet. Add your first item above.</td></tr>';
-                return;
-            }
-
-            json.items.forEach(item => {
-                let statusClass = 'status-available';
-                if (item.quantityAvailable <= 0 || item.status === 'OutOfStock') statusClass = 'status-out';
-                else if (item.quantityAvailable <= 10) statusClass = 'status-low';
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${item.itemName}</td>
-                        <td>${item.category || ''}</td>
-                        <td>${Number(item.unitPrice || 0).toFixed(2)}</td>
-                        <td>${item.currencyCode || 'PHP'}</td>
-                        <td>${item.quantityAvailable}</td>
-                        <td><span class="status-pill ${statusClass}">${item.status}</span></td>
-                        <td>
-                            <div class="action-group">
-                                <button class="btn btn-light" type="button" onclick="openStockModal(${item.supplierItemId}, '${(item.itemName || '').replace(/'/g, "\\'")}')">Add Stock</button>
-                                <button class="btn btn-light" type="button" onclick="openEditPriceModal(${item.supplierItemId}, '${(item.itemName || '').replace(/'/g, "\\'")}', '${(item.category || '').replace(/'/g, "\\'")}', ${item.quantityAvailable}, ${Number(item.unitPrice || 0)}, '${(item.currencyCode || 'PHP').replace(/'/g, "\\'")}')">Edit Unit Price</button>
-                            </div>
-                        </td>
-                    </tr>`;
-            });
+            try {
+                const res = await fetch('/Supplier/GetInventory');
+                const json = await res.json();
+                if (!json.success) return;
+                document.getElementById('inventoryCount').textContent = json.items.length;
+            } catch { /* silent — inventory count is non-critical */ }
         }
 
         async function saveItem() {
@@ -762,29 +704,33 @@
             if (!Number.isFinite(unitPrice) || unitPrice <= 0) { showToast('Unit price must be greater than zero', 'error'); return; }
             if (currencyCode.length !== 3) { showToast('Currency must be a 3-letter code', 'error'); return; }
 
-            const res = await fetch('/Supplier/UpsertInventoryItem', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    supplierItemId: supplierItemId > 0 ? supplierItemId : 0,
-                    itemName,
-                    category,
-                    unitPrice,
-                    currencyCode,
-                    quantityAvailable: quantity
-                })
-            });
+            const _t = setTimeout(() => showLoading('Saving inventory item...'), 300);
+            try {
+                const res = await fetch('/Supplier/UpsertInventoryItem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        supplierItemId: supplierItemId > 0 ? supplierItemId : 0,
+                        itemName,
+                        category,
+                        unitPrice,
+                        currencyCode,
+                        quantityAvailable: quantity
+                    })
+                });
 
-            const json = await res.json();
-            if (!json.success) { showToast(json.message || 'Save failed', 'error'); return; }
-            document.getElementById('itemName').value = '';
-            document.getElementById('itemCategory').value = '';
-            document.getElementById('itemUnitPrice').value = '';
-            document.getElementById('itemCurrencyCode').value = 'PHP';
-            document.getElementById('itemQuantity').value = '';
-            closeItemModal();
-            showToast('Inventory item saved', 'success');
-            await loadInventory();
+                const json = await res.json();
+                clearTimeout(_t); hideLoading();
+                if (!json.success) { showToast(json.message || 'Save failed', 'error'); return; }
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemCategory').value = '';
+                document.getElementById('itemUnitPrice').value = '';
+                document.getElementById('itemCurrencyCode').value = 'PHP';
+                document.getElementById('itemQuantity').value = '';
+                closeItemModal();
+                showToast('Inventory item saved', 'success');
+                await loadInventory();
+            } catch { clearTimeout(_t); hideLoading(); showToast('Error saving inventory item', 'error'); }
         }
 
         function openEditPriceModal(supplierItemId, itemName, category, quantityAvailable, unitPrice, currencyCode) {
@@ -803,6 +749,7 @@
         }
 
         async function loadProcurements() {
+            try {
             const res = await fetch('/Supplier/GetProcurementRequests');
             const json = await res.json();
             if (!json.success) return;
@@ -860,6 +807,7 @@
                         </td>
                     </tr>`;
             });
+            } catch { /* silent — procurement list is refreshed on next user action */ }
         }
 
         async function respondApprove(procurementId) {
@@ -871,6 +819,7 @@
                 return;
             }
 
+            const _t = setTimeout(() => showLoading('Approving procurement request...'), 300);
             try {
                 const res = await fetch('/Supplier/RespondToProcurement', {
                     method: 'POST',
@@ -889,6 +838,7 @@
                     json = null;
                 }
 
+                clearTimeout(_t); hideLoading();
                 if (!res.ok || !json?.success) {
                     showToast(json?.message || 'Failed to approve request. Please refresh and try again.', 'error');
                     return;
@@ -897,6 +847,7 @@
                 showToast('Request approved', 'success');
                 await loadProcurements();
             } catch {
+                clearTimeout(_t); hideLoading();
                 showToast('Network error while approving request.', 'error');
             }
         }
@@ -904,19 +855,23 @@
         async function respondReject(procurementId) {
             const reason = document.getElementById(`reason-${procurementId}`).value.trim();
             if (!reason) { showToast('Reject reason is required', 'error'); return; }
-            const res = await fetch('/Supplier/RespondToProcurement', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    procurementId,
-                    approve: false,
-                    rejectionReason: reason
-                })
-            });
-            const json = await res.json();
-            if (!json.success) { showToast(json.message || 'Failed', 'error'); return; }
-            showToast('Request rejected', 'success');
-            await loadProcurements();
+            const _t = setTimeout(() => showLoading('Rejecting request...'), 300);
+            try {
+                const res = await fetch('/Supplier/RespondToProcurement', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        procurementId,
+                        approve: false,
+                        rejectionReason: reason
+                    })
+                });
+                const json = await res.json();
+                clearTimeout(_t); hideLoading();
+                if (!json.success) { showToast(json.message || 'Failed', 'error'); return; }
+                showToast('Request rejected', 'success');
+                await loadProcurements();
+            } catch { clearTimeout(_t); hideLoading(); showToast('Network error while rejecting request.', 'error'); }
         }
 
         async function reportDelay(procurementId) {
@@ -931,33 +886,33 @@
                 return;
             }
 
-            const res = await fetch('/Supplier/ReportDelay', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    procurementId,
-                    delayReason,
-                    revisedDeliveryDate
-                })
-            });
-            const json = await res.json();
-            if (!json.success) { showToast(json.message || 'Failed to report delay', 'error'); return; }
-            showToast('Delay reported and escalated', 'success');
-            await loadProcurements();
+            const _t = setTimeout(() => showLoading('Reporting delay...'), 300);
+            try {
+                const res = await fetch('/Supplier/ReportDelay', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        procurementId,
+                        delayReason,
+                        revisedDeliveryDate
+                    })
+                });
+                const json = await res.json();
+                clearTimeout(_t); hideLoading();
+                if (!json.success) { showToast(json.message || 'Failed to report delay', 'error'); return; }
+                showToast('Delay reported and escalated', 'success');
+                await loadProcurements();
+            } catch { clearTimeout(_t); hideLoading(); showToast('Network error while reporting delay.', 'error'); }
         }
 
         document.addEventListener('DOMContentLoaded', async function () {
             setModalState('itemModal', false);
-            setModalState('stockModal', false);
 
             await loadInventory();
             await loadProcurements();
 
             document.getElementById('itemModal').addEventListener('click', function (e) {
                 if (e.target === this) closeItemModal();
-            });
-            document.getElementById('stockModal').addEventListener('click', function (e) {
-                if (e.target === this) closeStockModal();
             });
         });
 

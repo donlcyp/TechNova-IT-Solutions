@@ -833,12 +833,15 @@
         }
 
         async function openEditModal(branchId) {
-            const res  = await fetch(`/Branch/Get?branchId=${branchId}`);
-            const data = await res.json();
-            if (!data.success) {
-                await showMessageModal(data.message || 'Could not load branch.', 'Error');
-                return;
-            }
+            showLoading('Loading branch details...');
+            try {
+                const res  = await fetch(`/Branch/Get?branchId=${branchId}`);
+                const data = await res.json();
+                hideLoading();
+                if (!data.success) {
+                    await showMessageModal(data.message || 'Could not load branch.', 'Error');
+                    return;
+                }
 
             const b = data.branch;
             editingBranchId = b.branchId;
@@ -856,6 +859,10 @@
             document.getElementById('branchFormTitle').textContent    = 'Edit Branch';
             document.getElementById('branchFormSaveBtn').textContent  = 'Save Changes';
             document.getElementById('branchFormModal').classList.add('active');
+            } catch {
+                hideLoading();
+                await showMessageModal('A network error occurred. Could not load branch details.', 'Error');
+            }
         }
 
         function closeBranchModal() {
@@ -934,22 +941,27 @@
             if (isCreate && managerEmail) showLoading('Creating branch & sending notification...');
             else showLoading('Saving branch...');
 
-            const res = await fetch(url, {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify(payload)
-            });
-            const result = await res.json();
-            hideLoading();
+            try {
+                const res = await fetch(url, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify(payload)
+                });
+                const result = await res.json();
+                hideLoading();
 
-            if (res.ok && result.success) {
-                closeBranchModal();
-                await showMessageModal(result.message, 'Success');
-                window.location.reload();
-                return;
+                if (res.ok && result.success) {
+                    closeBranchModal();
+                    await showMessageModal(result.message, 'Success');
+                    window.location.reload();
+                    return;
+                }
+
+                await showMessageModal(result.message || 'Operation failed.', 'Error');
+            } catch {
+                hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
             }
-
-            await showMessageModal(result.message || 'Operation failed.', 'Error');
         }
 
         /* ── Status toggle (deactivate / reactivate) ─── */
@@ -964,17 +976,22 @@
             if (action === 'reactivate') showLoading('Reactivating branch & sending notification...');
             else showLoading('Deactivating branch...');
 
-            const res    = await fetch(url, { method: 'POST' });
-            const result = await res.json();
-            hideLoading();
+            try {
+                const res    = await fetch(url, { method: 'POST' });
+                const result = await res.json();
+                hideLoading();
 
-            if (res.ok && result.success) {
-                await showMessageModal(result.message, 'Success');
-                window.location.reload();
-                return;
+                if (res.ok && result.success) {
+                    await showMessageModal(result.message, 'Success');
+                    window.location.reload();
+                    return;
+                }
+
+                await showMessageModal(result.message || 'Failed to update status.', 'Error');
+            } catch {
+                hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
             }
-
-            await showMessageModal(result.message || 'Failed to update status.', 'Error');
         }
 
         /* ── Delete ─────────────────────────── */
@@ -984,16 +1001,23 @@
                 'Delete Branch');
             if (!confirm) return;
 
-            const res    = await fetch(`/Branch/Delete?branchId=${branchId}`, { method: 'POST' });
-            const result = await res.json();
+            const _t = setTimeout(() => showLoading('Deleting branch...'), 300);
+            try {
+                const res    = await fetch(`/Branch/Delete?branchId=${branchId}`, { method: 'POST' });
+                const result = await res.json();
+                clearTimeout(_t); hideLoading();
 
-            if (res.ok && result.success) {
-                await showMessageModal(result.message, 'Deleted');
-                window.location.reload();
-                return;
+                if (res.ok && result.success) {
+                    await showMessageModal(result.message, 'Deleted');
+                    window.location.reload();
+                    return;
+                }
+
+                await showMessageModal(result.message || 'Failed to delete branch.', 'Error');
+            } catch {
+                clearTimeout(_t); hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
             }
-
-            await showMessageModal(result.message || 'Failed to delete branch.', 'Error');
         }
 
         /* ── Assign Admin ────────────────────────────────────── */
@@ -1050,20 +1074,25 @@
             closeAssignModal();
             showLoading('Assigning admin & sending notifications...');
 
-            const res    = await fetch('/Branch/AssignAdmin', {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ branchId: assigningBranchId, adminUserId })
-            });
-            const result = await res.json();
-            hideLoading();
+            try {
+                const res    = await fetch('/Branch/AssignAdmin', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ branchId: assigningBranchId, adminUserId })
+                });
+                const result = await res.json();
+                hideLoading();
 
-            if (res.ok && result.success) {
-                await showMessageModal(result.message, 'Success');
-                window.location.reload();
-                return;
+                if (res.ok && result.success) {
+                    await showMessageModal(result.message, 'Success');
+                    window.location.reload();
+                    return;
+                }
+                await showMessageModal(result.message || 'Failed to assign admin.', 'Error');
+            } catch {
+                hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
             }
-            await showMessageModal(result.message || 'Failed to assign admin.', 'Error');
         }
 
         async function unassignAdmin(branchId) {
@@ -1071,15 +1100,22 @@
                 'Remove the assigned admin from this branch?', 'Unassign Admin');
             if (!confirmed) return;
 
-            const res    = await fetch(`/Branch/UnassignAdmin?branchId=${branchId}`, { method: 'POST' });
-            const result = await res.json();
+            const _t = setTimeout(() => showLoading('Removing admin assignment...'), 300);
+            try {
+                const res    = await fetch(`/Branch/UnassignAdmin?branchId=${branchId}`, { method: 'POST' });
+                const result = await res.json();
+                clearTimeout(_t); hideLoading();
 
-            if (res.ok && result.success) {
-                await showMessageModal(result.message, 'Success');
-                window.location.reload();
-                return;
+                if (res.ok && result.success) {
+                    await showMessageModal(result.message, 'Success');
+                    window.location.reload();
+                    return;
+                }
+                await showMessageModal(result.message || 'Failed to unassign admin.', 'Error');
+            } catch {
+                clearTimeout(_t); hideLoading();
+                await showMessageModal('A network error occurred. Please check your connection and try again.', 'Error');
             }
-            await showMessageModal(result.message || 'Failed to unassign admin.', 'Error');
         }
     </script>
 }

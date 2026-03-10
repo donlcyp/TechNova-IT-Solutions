@@ -1,35 +1,44 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
-
-using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Infrastructure;
-using TechNova_IT_Solutions.Models;
-using TechNova_IT_Solutions.Services;
 
 namespace TechNova_IT_Solutions.Pages.SuperAdmin
 {
     public class SystemSettingsPoliciesModel : PageModel
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IPolicyReferenceApiService _policyReferenceApiService;
+        private readonly IConfiguration _configuration;
 
-        public SystemSettingsPoliciesModel(
-            ApplicationDbContext context,
-            IPolicyReferenceApiService policyReferenceApiService)
+        public SystemSettingsPoliciesModel(IConfiguration configuration)
         {
-            _context = context;
-            _policyReferenceApiService = policyReferenceApiService;
+            _configuration = configuration;
         }
 
-        public int TotalPolicies { get; set; }
-        public int ActivePolicies { get; set; }
-        public int ArchivedPolicies { get; set; }
-        public List<Policy> RecentPolicies { get; set; } = new();
-        public List<ComplianceTableRow> ComplianceRows { get; set; } = new();
-        public List<ExternalPolicyData> ExternalPolicies { get; set; } = new();
+        // Email Settings
+        public string EmailHost { get; set; } = string.Empty;
+        public string EmailPort { get; set; } = string.Empty;
+        public string EmailUsername { get; set; } = string.Empty;
+        public string EmailFrom { get; set; } = string.Empty;
+        public bool EmailUseSsl { get; set; }
 
-        public async Task<IActionResult> OnGet()
+        // Federal Register API
+        public string FederalRegisterBaseUrl { get; set; } = string.Empty;
+        public string FederalRegisterPerPage { get; set; } = string.Empty;
+        public string FederalRegisterTimeout { get; set; } = string.Empty;
+        public string FederalRegisterSearchTerm { get; set; } = string.Empty;
+
+        // Exchange Rate API
+        public string ExchangeRateBaseUrl { get; set; } = string.Empty;
+        public string ExchangeRateBaseCurrency { get; set; } = string.Empty;
+        public string ExchangeRateTimeout { get; set; } = string.Empty;
+
+        // Database
+        public bool AutoMigrateOnStartup { get; set; }
+
+        // Bootstrap
+        public bool BootstrapEnabled { get; set; }
+        public string BootstrapEmail { get; set; } = string.Empty;
+
+        public IActionResult OnGet()
         {
             var denied = RoleAccess.RequireRoleOrRedirect(
                 this,
@@ -43,46 +52,27 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
                 });
             if (denied != null) return denied;
 
-            TotalPolicies = await _context.Policies.CountAsync();
-            ActivePolicies = await _context.Policies.CountAsync(p => !p.IsArchived);
-            ArchivedPolicies = await _context.Policies.CountAsync(p => p.IsArchived);
-            RecentPolicies = await _context.Policies
-                .OrderByDescending(p => p.DateUploaded)
-                .Take(10)
-                .ToListAsync();
+            EmailHost = _configuration["EmailSettings:Host"] ?? "—";
+            EmailPort = _configuration["EmailSettings:Port"] ?? "—";
+            EmailUsername = _configuration["EmailSettings:Username"] ?? "—";
+            EmailFrom = _configuration["EmailSettings:FromEmail"] ?? "—";
+            EmailUseSsl = bool.TryParse(_configuration["EmailSettings:UseSsl"], out var ssl) && ssl;
 
-            ComplianceRows = await _context.PolicyAssignments
-                .Include(pa => pa.User)
-                .Include(pa => pa.Policy)
-                .Include(pa => pa.ComplianceStatus)
-                .OrderByDescending(pa => pa.AssignedDate)
-                .Take(10)
-                .Select(pa => new ComplianceTableRow
-                {
-                    Assignee = pa.User.FirstName + " " + pa.User.LastName,
-                    PolicyTitle = pa.Policy.PolicyTitle,
-                    ComplianceStatus = pa.ComplianceStatus != null && pa.ComplianceStatus.Status == "Acknowledged"
-                        ? "Compliant"
-                        : "Not Compliant",
-                    DateAssigned = pa.AssignedDate
-                })
-                .ToListAsync();
+            FederalRegisterBaseUrl = _configuration["ExternalApis:FederalRegisterApi:BaseUrl"] ?? "—";
+            FederalRegisterPerPage = _configuration["ExternalApis:FederalRegisterApi:PerPage"] ?? "—";
+            FederalRegisterTimeout = _configuration["ExternalApis:FederalRegisterApi:Timeout"] ?? "—";
+            FederalRegisterSearchTerm = _configuration["ExternalApis:FederalRegisterApi:DefaultSearchTerm"] ?? "—";
 
-            var externalPolicies = await _policyReferenceApiService.GetAllPoliciesAsync();
-            ExternalPolicies = externalPolicies
-                .OrderByDescending(p => p.DateUploaded ?? DateTime.MinValue)
-                .Take(10)
-                .ToList();
+            ExchangeRateBaseUrl = _configuration["ExternalApis:ExchangeRateApi:BaseUrl"] ?? "—";
+            ExchangeRateBaseCurrency = _configuration["ExternalApis:ExchangeRateApi:BaseCurrency"] ?? "—";
+            ExchangeRateTimeout = _configuration["ExternalApis:ExchangeRateApi:Timeout"] ?? "—";
+
+            AutoMigrateOnStartup = bool.TryParse(_configuration["Database:AutoMigrateOnStartup"], out var migrate) && migrate;
+
+            BootstrapEnabled = bool.TryParse(_configuration["BootstrapSuperAdmin:Enabled"], out var boot) && boot;
+            BootstrapEmail = _configuration["BootstrapSuperAdmin:Email"] ?? "—";
 
             return Page();
-        }
-
-        public class ComplianceTableRow
-        {
-            public string Assignee { get; set; } = string.Empty;
-            public string PolicyTitle { get; set; } = string.Empty;
-            public string ComplianceStatus { get; set; } = string.Empty;
-            public DateTime? DateAssigned { get; set; }
         }
     }
 }

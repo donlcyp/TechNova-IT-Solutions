@@ -257,7 +257,7 @@
                 <tbody>
                     @foreach (var log in Model.AuditLogs)
                     {
-                        <tr onclick="openDetailModal('@log.LogId', '@log.UserName', '@log.Role', '@log.ActionPerformed', '@log.Module', '@log.DateTime.ToString("yyyy-MM-dd HH:mm:ss")', '@log.UserEmail', '@log.IpAddress', '@log.FullDescription')">
+                        <tr data-date="@log.DateTime.ToString("yyyy-MM-dd")" onclick="openDetailModal('@log.LogId', '@log.UserName', '@log.Role', '@log.ActionPerformed', '@log.Module', '@log.DateTime.ToString("yyyy-MM-dd HH:mm:ss")', '@log.UserEmail', '@log.IpAddress', '@log.FullDescription')">
                             <td>@log.LogId</td>
                             <td>@log.UserName</td>
                             <td><span class="role-badge">@log.Role</span></td>
@@ -340,8 +340,7 @@
                 const userName = rows[i].cells[1].textContent.toLowerCase();
                 const action = rows[i].cells[3].textContent.toLowerCase();
                 const module = rows[i].cells[4].textContent.toLowerCase();
-                const dateTimeText = rows[i].getAttribute('onclick').split("'")[11];
-                const rowDate = dateTimeText.split(' ')[0];
+                const rowDate = rows[i].dataset.date || '';
 
                 let showRow = true;
 

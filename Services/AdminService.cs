@@ -653,28 +653,30 @@ namespace TechNova_IT_Solutions.Services
         // Supplier operations
         public async Task<SupplierOperationResult> CreateSupplierAsync(SupplierData supplierData)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            // Validate before entering the execution strategy so validation failures aren't retried
+            var cleanedData = NormalizeSupplierData(supplierData);
+            var validation = ValidateSupplierData(cleanedData);
+            if (!validation.Success)
+                return validation;
+
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+            await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var cleanedData = NormalizeSupplierData(supplierData);
-                var validation = ValidateSupplierData(cleanedData);
-                if (!validation.Success)
-                {
-                    return validation;
-                }
-
                 var normalizedEmail = cleanedData.Email.Trim().ToLowerInvariant();
                 var supplierEmail = cleanedData.Email.Trim();
 
                 var supplierEmailExists = await _context.Suppliers
-                    .AnyAsync(s => s.Email != null && s.Email.Trim().ToLower() == normalizedEmail);
+                    .AnyAsync(s => s.Email != null && s.Email.ToLower() == normalizedEmail);
                 if (supplierEmailExists)
                 {
                     return new SupplierOperationResult { Success = false, Message = "A supplier account with this email already exists." };
                 }
 
                 var userEmailExists = await _context.Users
-                    .AnyAsync(u => u.Email != null && u.Email.Trim().ToLower() == normalizedEmail);
+                    .AnyAsync(u => u.Email != null && u.Email.ToLower() == normalizedEmail);
                 if (userEmailExists)
                 {
                     return new SupplierOperationResult { Success = false, Message = "A user account with this email already exists." };
@@ -733,14 +735,25 @@ namespace TechNova_IT_Solutions.Services
                 await transaction.RollbackAsync();
                 return new SupplierOperationResult { Success = false, Message = "Failed to create supplier. Check data format and field lengths." };
             }
+            }); // end strategy.ExecuteAsync
         }
 
         public async Task<SupplierOperationResult> UpdateSupplierAsync(SupplierData supplierData)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            // Validate before entering the execution strategy
+            var cleanedDataUpd = NormalizeSupplierData(supplierData);
+            cleanedDataUpd.SupplierId = supplierData.SupplierId;
+            var validationUpd = ValidateSupplierData(cleanedDataUpd);
+            if (!validationUpd.Success)
+                return validationUpd;
+
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+            await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var cleanedData = NormalizeSupplierData(supplierData);
+                var cleanedData = cleanedDataUpd;
                 cleanedData.SupplierId = supplierData.SupplierId;
 
                 var validation = ValidateSupplierData(cleanedData);
@@ -773,8 +786,8 @@ namespace TechNova_IT_Solutions.Services
                 var oldEmailNormalized = (oldEmail ?? string.Empty).Trim().ToLowerInvariant();
                 var userEmailExists = await _context.Users
                     .AnyAsync(u => u.Email != null &&
-                                   u.Email.Trim().ToLower() == normalizedEmail &&
-                                   u.Email.Trim().ToLower() != oldEmailNormalized);
+                                   u.Email.ToLower() == normalizedEmail &&
+                                   u.Email.ToLower() != oldEmailNormalized);
                 if (userEmailExists)
                 {
                     return new SupplierOperationResult { Success = false, Message = "A user account with this email already exists." };
@@ -856,6 +869,7 @@ namespace TechNova_IT_Solutions.Services
                 await transaction.RollbackAsync();
                 return new SupplierOperationResult { Success = false, Message = "Failed to update supplier. Check data format and field lengths." };
             }
+            }); // end strategy.ExecuteAsync
         }
 
         private static SupplierData NormalizeSupplierData(SupplierData supplierData)
@@ -974,7 +988,10 @@ namespace TechNova_IT_Solutions.Services
 
         public async Task<bool> TerminateSupplierAsync(SupplierTerminationData terminationData, int? changedByUserId)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+            await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 if (terminationData.SupplierId <= 0) return false;
@@ -1034,11 +1051,15 @@ namespace TechNova_IT_Solutions.Services
                 _logger.LogError(ex, "Failed to terminate supplier {SupplierId}", terminationData.SupplierId);
                 return false;
             }
+            }); // end strategy.ExecuteAsync
         }
 
         public async Task<bool> RestoreSupplierAsync(int supplierId, int? changedByUserId)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            var strategy = _context.Database.CreateExecutionStrategy();
+            return await strategy.ExecuteAsync(async () =>
+            {
+            await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 if (supplierId <= 0) return false;
@@ -1075,6 +1096,7 @@ namespace TechNova_IT_Solutions.Services
                 _logger.LogError(ex, "Failed to restore supplier {SupplierId} by user {ChangedBy}", supplierId, changedByUserId);
                 return false;
             }
+            }); // end strategy.ExecuteAsync
         }
 
         public async Task<SupplierData?> GetSupplierByIdAsync(int supplierId)

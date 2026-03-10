@@ -70,10 +70,10 @@
         transition: all .2s; gap: 6px;
     }
     .actions .btn-primary {
-        background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff;
-        border: none; box-shadow: 0 2px 8px rgba(37,99,235,.25);
+        background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: #fff;
+        border: none; box-shadow: 0 2px 8px rgba(30,64,175,.25);
     }
-    .actions .btn-primary:hover { box-shadow: 0 4px 14px rgba(37,99,235,.35); transform: translateY(-1px); }
+    .actions .btn-primary:hover { box-shadow: 0 4px 14px rgba(30,64,175,.35); transform: translateY(-1px); }
     .actions .btn-secondary {
         background: #fff; color: #2563eb; border: 1.5px solid #bfdbfe;
     }
@@ -176,14 +176,10 @@
                         <i class="fas fa-chart-line"></i>
                         Generate
                     </button>
-                    <a class="btn btn-secondary"
-                       asp-page-handler="ExportCsv"
-                       asp-route-reportType="@Model.ReportType"
-                       asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
-                       asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")">
-                        <i class="fas fa-file-csv"></i>
-                        Export CSV
-                    </a>
+                    <button type="button" class="btn btn-secondary" onclick="exportReportPdf()">
+                        <i class="fas fa-file-pdf"></i>
+                        Export PDF
+                    </button>
                 </div>
             </form>
         </div>
@@ -272,3 +268,20 @@
         </div>
     </div>
 </main>
+
+@section Scripts {
+    <style>
+        @@media print {
+            body * { visibility: hidden; }
+            .report-card, .report-card * { visibility: visible; }
+            .report-card { position: absolute; left: 0; top: 0; width: 100%; }
+            .report-card .actions, .report-card .filters { display: none !important; }
+            .main-content { margin-left: 0 !important; }
+        }
+    </style>
+    <script>
+        function exportReportPdf() {
+            window.print();
+        }
+    </script>
+}
