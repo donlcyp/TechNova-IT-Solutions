@@ -1,0 +1,140 @@
+﻿@model (string Title, string Description)
+@{
+    var sessionRole = Context.Session.GetString("UserRole") ?? string.Empty;
+    var showReturnToSuperAdmin = sessionRole.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase);
+}
+
+<div class="top-bar">
+    <div class="page-header">
+        <h1>@Model.Title</h1>
+        <p>@Model.Description</p>
+    </div>
+    <div class="account-section">
+        @if (showReturnToSuperAdmin)
+        {
+            <a class="return-super-admin-btn" href="/SuperAdmin/Dashboard">&#8592; Back to Super Admin</a>
+        }
+        <div class="account-info">
+            <h4>@Context.Session.GetString("UserName")</h4>
+            <p>System Administrator</p>
+        </div>
+        <div class="account-avatar">
+            @{
+                var userName = Context.Session.GetString("UserName") ?? "System Admin";
+                var nameParts = userName.Split(' ');
+                var initials = nameParts.Length >= 2
+                    ? $"{nameParts[0][0]}{nameParts[1][0]}"
+                    : userName.Length >= 2 ? userName.Substring(0, 2).ToUpper() : userName[0].ToString().ToUpper();
+            }
+            @initials
+        </div>
+    </div>
+</div>
+
+<style>
+    .top-bar {
+        background: #ffffff;
+        border-bottom: 1px solid #e2e8f0;
+        padding: 20px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    .page-header h1 {
+        font-size: 30px;
+        margin: 0;
+        color: #0f172a;
+    }
+
+    .page-header p {
+        margin: 2px 0 0;
+        color: #475569;
+        font-size: 14px;
+    }
+
+    .account-section {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .account-info {
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+    }
+
+    .account-info h4 {
+        margin: 0;
+        font-size: 14px;
+        color: #0f172a;
+    }
+
+    .account-info p {
+        margin: 0;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .account-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        background: #1e40af;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+    }
+
+    .return-super-admin-btn {
+        display: inline-flex;
+        align-items: center;
+        height: 36px;
+        padding: 0 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #f8fafc;
+        color: #1e3a8a;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .return-super-admin-btn:hover {
+        background: #eff6ff;
+        border-color: #93c5fd;
+    }
+
+    @@media (max-width: 991px) {
+        .top-bar {
+            padding: 16px 20px 16px 70px;
+        }
+    }
+
+    @@media (max-width: 640px) {
+        .top-bar {
+            padding: 14px 16px 14px 60px;
+        }
+
+        .page-header h1 {
+            font-size: 22px;
+        }
+
+        .page-header p {
+            display: none;
+        }
+
+        .account-info {
+            display: none;
+        }
+    }
+</style>

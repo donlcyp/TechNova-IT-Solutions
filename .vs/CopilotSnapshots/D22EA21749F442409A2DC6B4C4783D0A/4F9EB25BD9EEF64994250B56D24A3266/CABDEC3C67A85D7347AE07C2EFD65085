@@ -1,0 +1,1460 @@
+﻿@page
+@model TechNova_IT_Solutions.Pages.SystemAdmin.ProcurementModel
+@{
+    ViewData["Title"] = "Procurement Management";
+}
+
+@section Styles {
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f8f9fa;
+            color: #1f2937;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+        }
+
+        .nav-menu {
+            padding: 20px 16px;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: #6b7280;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: #f3f4f6;
+            color: #1e40af;
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+        }
+
+        .nav-item svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .content-wrapper {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header Section */
+        .page-header-section {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .btn-add {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-add:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(30, 64, 175, 0.3);
+        }
+
+        .btn-add svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Filters */
+        .filters-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1f2937;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        /* Table */
+        .table-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        .view-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        thead {
+            background: #f3f4f6;
+        }
+
+        th {
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 16px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 14px;
+            color: #1f2937;
+        }
+
+        tbody tr {
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-pending {
+            color: #d97706;
+        }
+
+        .status-approved {
+            color: #48bb78;
+        }
+
+        .status-submitted {
+            color: #d97706;
+        }
+
+        .status-supplierapproved,
+        .status-shipped,
+        .status-received,
+        .status-closed {
+            color: #16a34a;
+        }
+
+        .status-supplierrejected {
+            color: #dc2626;
+        }
+
+        .status-late {
+            color: #dc2626;
+        }
+
+        .status-draft {
+            color: #64748b;
+        }
+
+        .status-notstarted,
+        .status-pendingsupplier {
+            color: #64748b;
+        }
+
+        .status-ontheway,
+        .status-arrived {
+            color: #16a34a;
+        }
+
+        .status-rejected {
+            color: #dc2626;
+        }
+
+        /* Action Buttons */
+        .action-btns {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: #f8f9fa;
+            color: #6b7280;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-action:hover {
+            border-color: #1e40af;
+            color: #1e40af;
+        }
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px 20px;
+            transition: all 0.2s;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            grid-template-rows: auto auto;
+            gap: 0 12px;
+            align-items: center;
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            grid-row: 1 / 3;
+        }
+
+        .card-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .card-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .card-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 24px 28px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            background: #f3f4f6;
+            border: none;
+            font-size: 20px;
+            color: #6b7280;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #e5e7eb;
+        }
+
+        .modal-body {
+            padding: 28px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1f2937;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .modal-footer {
+            padding: 20px 28px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #1f2937;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .toast-container {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 380px;
+        }
+
+        .toast {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid #1e40af;
+            border-radius: 10px;
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.15);
+            padding: 12px 14px;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: all 0.25s ease;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left-color: #16a34a;
+        }
+
+        .toast.error {
+            border-left-color: #dc2626;
+        }
+
+        .toast-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: #374151;
+        }
+
+        @@media (max-width: 1024px) {
+            .filters-row {
+                grid-template-columns: 1fr;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+        }
+
+        @@media (max-width: 991px) {
+            .main-content {
+                margin-left: 0;
+            }
+
+            .content-wrapper {
+                padding: 20px;
+            }
+
+            .header-top {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .page-header-section {
+                padding: 16px;
+            }
+
+            .modal-header {
+                padding: 16px 20px;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            .modal-footer {
+                padding: 16px 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 10px;
+            }
+
+            .view-detail-grid {
+                grid-template-columns: 1fr;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 13px;
+            }
+        }
+    .loading-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+    .loading-overlay.active { display:flex; }
+    .loading-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,.3); border-top:4px solid #fff; border-radius:50%; animation:spin .8s linear infinite; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+}
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div id="loadingText" style="color:#fff;font-size:16px;font-weight:500;">Processing...</div></div>
+@await Html.PartialAsync("_SystemAdminSidebar", "Procurement")
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- Main Content -->
+<div class="main-content">
+    @await Html.PartialAsync("_SystemAdminTopBar", (Title: "Procurement Management", Description: "Manage procurement records and approvals"))
+
+    <div class="content-wrapper">
+        <!-- Header Section -->
+        <div class="page-header-section">
+            <div class="header-top">
+                <h1 class="header-title">Procurement Management</h1>
+                <button class="btn-add" onclick="openModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add Procurement Record
+                </button>
+            </div>
+
+            <div class="filters-row">
+                    <div class="filter-group">
+                        <label class="filter-label">Search</label>
+                        <input type="text" class="filter-input" placeholder="Search by item name or supplier..." id="searchInput">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Supplier</label>
+                        <select class="filter-input" id="supplierFilter">
+                            <option value="">All Suppliers</option>
+                            @foreach (var supplier in Model.Suppliers)
+                            {
+                                <option value="@supplier.Name">@supplier.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Approval Status</label>
+                        <select class="filter-input" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Submitted">Submitted</option>
+                            <option value="SupplierApproved">SupplierApproved</option>
+                            <option value="SupplierRejected">SupplierRejected</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Delivery Status</label>
+                        <select class="filter-input" id="deliveryFilter">
+                            <option value="">All Delivery</option>
+                            <option value="NotStarted">NotStarted</option>
+                            <option value="PendingSupplier">PendingSupplier</option>
+                            <option value="OnTheWay">OnTheWay</option>
+                            <option value="Late">Late</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Arrived">Arrived</option>
+                            <option value="Closed">Closed</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Branch</label>
+                        <select class="filter-input" id="branchFilter">
+                            <option value="">All Branches</option>
+                            <option value="Company-Wide">Company-Wide</option>
+                            @foreach (var branch in Model.Branches)
+                            {
+                                <option value="@branch.Name">@branch.Name</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-cards" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="summary-card">
+                    <div class="card-icon" style="color: #1e40af;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                    </div>
+                    <div class="card-value">@Model.TotalProcurements</div>
+                    <div class="card-label">Total Procurement Records</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon" style="color: #d97706;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </div>
+                    <div class="card-value">@Model.PendingApprovals</div>
+                    <div class="card-label">Pending Approvals</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon" style="color: #48bb78;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </div>
+                    <div class="card-value">@Model.ProcurementsThisMonth</div>
+                    <div class="card-label">Procurements This Month</div>
+                </div>
+                <div class="summary-card">
+                    <div class="card-icon" style="color: #7c3aed;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <div class="card-value">₱@Model.TotalValue.ToString("N2")</div>
+                    <div class="card-label">Total Procurement Value</div>
+                </div>
+            </div>
+
+            <!-- Main Table -->
+            <div class="table-card">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Procurement ID</th>
+                                <th>Item Name</th>
+                                <th>Category</th>
+                                <th>Quantity</th>
+                                <th>Supplier Name</th>
+                                <th>Branch</th>
+                                <th>Linked Policy</th>
+                                <th>Order Date</th>
+                                <th>Currency</th>
+                                <th>Original Amount</th>
+                                <th>Converted Amount (PHP)</th>
+                                <th>Delivery Begin</th>
+                                <th>Possible Arrival</th>
+                                <th>Approval Status</th>
+                                <th>Delivery Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="procurementTable">
+                            @foreach (var record in Model.ProcurementRecords)
+                            {
+                            <tr data-supplier="@record.SupplierName"
+                                data-approval-status="@record.ApprovalStatus"
+                                data-delivery-status="@record.DeliveryStatus"
+                                data-workflow-status="@record.WorkflowStatus"
+                                data-branch="@record.BranchName"
+                                data-db-id="@record.ProcurementId.Replace("PROC-", "")"
+                                data-exchange-rate="@(record.ExchangeRate?.ToString("0.000000") ?? "N/A")"
+                                data-delay-reason="@(record.DelayReason ?? string.Empty)"
+                                data-revised-delivery="@(record.RevisedDeliveryDate?.ToString("MMM d, yyyy") ?? "N/A")">
+                                <td>@record.ProcurementId</td>
+                                <td>@record.ItemName</td>
+                                <td>@record.Category</td>
+                                <td>@record.Quantity</td>
+                                <td>@record.SupplierName</td>
+                                <td>@record.BranchName</td>
+                                <td>@record.LinkedPolicy</td>
+                                <td>@record.PurchaseDate.ToString("MMM d, yyyy")</td>
+                                <td>@record.CurrencyCode</td>
+                                <td>@(record.OriginalAmount.HasValue ? record.OriginalAmount.Value.ToString("N2") : "N/A")</td>
+                                <td>@(record.ConvertedAmount.HasValue ? record.ConvertedAmount.Value.ToString("N2") : "N/A")</td>
+                                <td>@(record.DeliveryBegin.HasValue ? record.DeliveryBegin.Value.ToString("MMM d, yyyy") : "TBD")</td>
+                                <td>@(record.PossibleArrival.HasValue ? record.PossibleArrival.Value.ToString("MMM d, yyyy") : "TBD")</td>
+                                <td><span class="status-badge status-@record.ApprovalStatus.ToLower()">@record.ApprovalStatus</span></td>
+                                <td><span class="status-badge status-@record.DeliveryStatus.ToLower()">@record.DeliveryStatus</span></td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="btn-action" onclick="viewRecord('@record.ProcurementId')">View</button>
+                                        @if (record.CanMarkDeliveryArrived)
+                                        {
+                                            <button class="btn-action" onclick="markDeliveryArrived('@record.ProcurementId')">Delivery Arrived</button>
+                                        }
+                                        else if (record.CanEdit)
+                                        {
+                                            <button class="btn-action" onclick="editRecord('@record.ProcurementId')">Edit</button>
+                                        }
+                                        @if (record.CanDelete)
+                                        {
+                                            <button class="btn-action" style="color:#dc2626;border-color:#fca5a5;" onclick="confirmDeleteProcurement('@record.ProcurementId')">Delete</button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Add/Edit Procurement Modal -->
+    <div class="modal" id="procurementModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Add Procurement Record</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="procurementForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Supplier *</label>
+                            <select id="supplierId" class="form-input" required>
+                                <option value="">Select Supplier</option>
+                                @foreach (var supplier in Model.Suppliers)
+                                {
+                                    <option value="@supplier.Id">@supplier.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Available Supplier Item *</label>
+                            <select id="supplierItemId" class="form-input" required disabled>
+                                <option value="">Select Supplier First</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Category</label>
+                            <input type="text" id="category" class="form-input" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Quantity *</label>
+                            <input type="number" id="quantity" class="form-input" placeholder="0" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Linked Policy *</label>
+                            <select id="policyId" class="form-input" required disabled>
+                                <option value="">Select Supplier First</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Supplier Currency</label>
+                            <input type="text" id="derivedCurrencyCode" class="form-input" value="Auto from item" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Original Amount</label>
+                            <input type="text" id="derivedOriginalAmount" class="form-input" value="Auto from unit price x quantity" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Order Date</label>
+                            <input type="text" class="form-input" value="Auto-set on save" readonly>
+                        </div>
+                        <div class="form-group full-width">
+                            <small style="color:#64748b;">Currency and original amount are derived from selected supplier item price. Converted amount in PHP is computed on save using the latest exchange rate API quote.</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveProcurement()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Procurement Details Modal -->
+    <div class="modal" id="viewModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Procurement Details</h2>
+                <button class="modal-close" onclick="closeViewModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 24px;">
+                <div class="view-detail-grid">
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Procurement ID</div>
+                        <div id="viewId" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Item Name</div>
+                        <div id="viewItem" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Category</div>
+                        <div id="viewCategory" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Quantity</div>
+                        <div id="viewQuantity" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Supplier</div>
+                        <div id="viewSupplier" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Branch</div>
+                        <div id="viewBranch" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Linked Policy</div>
+                        <div id="viewPolicy" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Order Date</div>
+                        <div id="viewDate" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Currency</div>
+                        <div id="viewCurrency" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Original Amount</div>
+                        <div id="viewOriginalAmount" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Converted Amount (PHP)</div>
+                        <div id="viewConvertedAmount" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Exchange Rate Used</div>
+                        <div id="viewExchangeRate" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Delivery Begin</div>
+                        <div id="viewDeliveryBegin" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Possible Arrival</div>
+                        <div id="viewPossibleArrival" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Revised Delivery</div>
+                        <div id="viewRevisedDelivery" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Delay Reason</div>
+                        <div id="viewDelayReason" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Approval Status</div>
+                        <div id="viewApprovalStatus" style="font-weight: 600; font-size: 15px;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Delivery Status</div>
+                        <div id="viewDeliveryStatus" style="font-weight: 600; font-size: 15px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeViewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal" id="errorModal">
+        <div class="modal-content" style="max-width: 460px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="errorModalTitle">Action Required</h2>
+                <button class="modal-close" onclick="closeErrorModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px 24px;">
+                <p id="errorModalMessage" style="color:#334155; font-size:14px; margin:0;"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeErrorModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content" style="max-width: 460px;">
+            <div class="modal-header">
+                <h2 class="modal-title" style="color:#dc2626;">Confirm Deletion</h2>
+                <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px 24px;">
+                <p style="color:#334155; font-size:14px; margin:0;">Are you sure you want to delete procurement <strong id="deleteTargetId"></strong>? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn" style="background:#dc2626;color:#fff;" onclick="executeDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            function showLoading(msg) { document.getElementById('loadingText').textContent = msg || 'Processing...'; document.getElementById('loadingOverlay').classList.add('active'); }
+            function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
+            // Filter functionality
+            const searchInput = document.getElementById('searchInput');
+            const supplierFilter = document.getElementById('supplierFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const deliveryFilter = document.getElementById('deliveryFilter');
+            const branchFilter = document.getElementById('branchFilter');
+            const tableRows = document.querySelectorAll('#procurementTable tr');
+
+            function filterTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const supplierValue = supplierFilter.value;
+                const statusValue = statusFilter.value;
+                const deliveryValue = deliveryFilter.value;
+                const branchValue = branchFilter.value;
+
+                tableRows.forEach(row => {
+                    const itemName = row.cells[1]?.textContent.toLowerCase() || '';
+                    const supplier = row.dataset.supplier || '';
+                    const approvalStatus = row.dataset.approvalStatus || '';
+                    const deliveryStatus = row.dataset.deliveryStatus || '';
+                    const branch = row.dataset.branch || '';
+
+                    const matchSearch = itemName.includes(searchTerm) || supplier.toLowerCase().includes(searchTerm);
+                    const matchSupplier = !supplierValue || supplier === supplierValue;
+                    const matchStatus = !statusValue || approvalStatus === statusValue;
+                    const matchDelivery = !deliveryValue || deliveryStatus === deliveryValue;
+                    const matchBranch = !branchValue || branch === branchValue;
+
+                    row.style.display = (matchSearch && matchSupplier && matchStatus && matchDelivery && matchBranch) ? '' : 'none';
+                });
+            }
+
+        searchInput.addEventListener('input', filterTable);
+        supplierFilter.addEventListener('change', filterTable);
+        statusFilter.addEventListener('change', filterTable);
+        deliveryFilter.addEventListener('change', filterTable);
+        branchFilter.addEventListener('change', filterTable);
+
+        // Modal functions
+        function openModal() {
+            editingProcurementId = null;
+            document.getElementById('modalTitle').textContent = 'Add Procurement Record';
+            document.getElementById('procurementForm').reset();
+            categoryInput.value = '';
+            document.getElementById('derivedCurrencyCode').value = 'Auto from item';
+            document.getElementById('derivedOriginalAmount').value = 'Auto from unit price x quantity';
+            supplierItemSelect.innerHTML = '<option value="">Select Supplier First</option>';
+            supplierItemSelect.disabled = true;
+            policySelect.innerHTML = '<option value="">Select Supplier First</option>';
+            policySelect.disabled = true;
+            document.getElementById('procurementModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('procurementModal').classList.remove('active');
+        }
+
+        function showErrorModal(message, title = 'Action Required') {
+            document.getElementById('errorModalTitle').textContent = title;
+            document.getElementById('errorModalMessage').textContent = message;
+            document.getElementById('errorModal').classList.add('active');
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').classList.remove('active');
+        }
+
+        function showToast(message, type = 'error', title = null) {
+            if (type !== 'success') {
+                showErrorModal(message, title || 'Action Required');
+                return;
+            }
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const resolvedTitle = title || (type === 'success' ? 'Success' : 'Action Required');
+            toast.innerHTML = `
+                <div class="toast-title">${resolvedTitle}</div>
+                <div class="toast-message">${message}</div>
+            `;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 220);
+            }, 3000);
+        }
+
+        function viewRecord(id) {
+            // Find the table row matching this procurement ID
+            const rows = document.querySelectorAll('#procurementTable tr');
+            let targetRow = null;
+            rows.forEach(row => {
+                if (row.cells[0] && row.cells[0].textContent.trim() === id) {
+                    targetRow = row;
+                }
+            });
+
+            if (!targetRow) {
+                showToast('Record not found.');
+                return;
+            }
+
+            document.getElementById('viewId').textContent = targetRow.cells[0].textContent.trim();
+            document.getElementById('viewItem').textContent = targetRow.cells[1].textContent.trim();
+            document.getElementById('viewCategory').textContent = targetRow.cells[2].textContent.trim();
+            document.getElementById('viewQuantity').textContent = targetRow.cells[3].textContent.trim();
+            document.getElementById('viewSupplier').textContent = targetRow.cells[4].textContent.trim();
+            document.getElementById('viewBranch').textContent = targetRow.cells[5].textContent.trim();
+            document.getElementById('viewPolicy').textContent = targetRow.cells[6].textContent.trim();
+            document.getElementById('viewDate').textContent = targetRow.cells[7].textContent.trim();
+            document.getElementById('viewCurrency').textContent = targetRow.cells[8].textContent.trim();
+            document.getElementById('viewOriginalAmount').textContent = targetRow.cells[9].textContent.trim();
+            document.getElementById('viewConvertedAmount').textContent = targetRow.cells[10].textContent.trim();
+            document.getElementById('viewExchangeRate').textContent = targetRow.dataset.exchangeRate || 'N/A';
+            document.getElementById('viewDeliveryBegin').textContent = targetRow.cells[11].textContent.trim();
+            document.getElementById('viewPossibleArrival').textContent = targetRow.cells[12].textContent.trim();
+            document.getElementById('viewRevisedDelivery').textContent = targetRow.dataset.revisedDelivery || 'N/A';
+            document.getElementById('viewDelayReason').textContent = targetRow.dataset.delayReason || 'N/A';
+
+            const approvalStatus = targetRow.cells[13].textContent.trim();
+            const deliveryStatus = targetRow.cells[14].textContent.trim();
+            const approvalStatusEl = document.getElementById('viewApprovalStatus');
+            const deliveryStatusEl = document.getElementById('viewDeliveryStatus');
+            approvalStatusEl.textContent = approvalStatus;
+            deliveryStatusEl.textContent = deliveryStatus;
+
+            if (approvalStatus === 'SupplierRejected') approvalStatusEl.style.color = '#dc2626';
+            else if (approvalStatus === 'Submitted' || approvalStatus === 'Draft') approvalStatusEl.style.color = '#d97706';
+            else approvalStatusEl.style.color = '#16a34a';
+
+            if (deliveryStatus === 'Late' || deliveryStatus === 'Rejected') deliveryStatusEl.style.color = '#dc2626';
+            else if (deliveryStatus === 'PendingSupplier' || deliveryStatus === 'NotStarted') deliveryStatusEl.style.color = '#64748b';
+            else deliveryStatusEl.style.color = '#16a34a';
+
+            document.getElementById('viewModal').classList.add('active');
+        }
+
+        function closeViewModal() {
+            document.getElementById('viewModal').classList.remove('active');
+        }
+
+        function editRecord(id) {
+            const rows = document.querySelectorAll('#procurementTable tr');
+            let targetRow = null;
+            rows.forEach(row => {
+                if (row.cells[0] && row.cells[0].textContent.trim() === id) {
+                    targetRow = row;
+                }
+            });
+
+            if (!targetRow) {
+                showToast('Record not found.');
+                return;
+            }
+
+            const status = (targetRow.dataset.workflowStatus || '').trim();
+            if (status !== 'Draft' && status !== 'Submitted') {
+                showToast('Only Draft or Submitted records can be edited.');
+                return;
+            }
+
+            // Extract numeric DB ID from "PROC-001" format
+            editingProcurementId = parseInt(id.replace('PROC-', ''));
+            document.getElementById('modalTitle').textContent = 'Edit Procurement Record';
+            document.getElementById('procurementModal').classList.add('active');
+        }
+
+        function markDeliveryArrived(id) {
+            const procurementId = parseInt(id.replace('PROC-', ''));
+            if (!Number.isFinite(procurementId) || procurementId <= 0) {
+                showToast('Invalid procurement id.');
+                return;
+            }
+
+            const _t = setTimeout(() => showLoading('Marking delivery as arrived...'), 300);
+            fetch(`/AdminProcurement/MarkDeliveryArrived?procurementId=${procurementId}`, {
+                method: 'POST'
+            })
+            .then(async res => {
+                let payload = null;
+                try {
+                    payload = await res.json();
+                } catch {
+                    payload = null;
+                }
+                return { ok: res.ok, payload };
+            })
+            .then(result => {
+                clearTimeout(_t); hideLoading();
+                if (result.ok && result.payload?.success) {
+                    showToast(result.payload?.message || 'Delivery marked as arrived.', 'success', 'Updated');
+                    location.reload();
+                } else {
+                    showToast(result.payload?.message || 'Failed to mark delivery as arrived.');
+                }
+            })
+            .catch(() => { clearTimeout(_t); hideLoading(); showToast('Error updating delivery status.'); });
+        }
+
+        let editingProcurementId = null;
+
+        function saveProcurement() {
+            const supplierIdValue = parseInt(document.getElementById('supplierId').value);
+            const supplierItemIdValue = parseInt(document.getElementById('supplierItemId').value);
+            const quantityValue = parseInt(document.getElementById('quantity').value);
+            if (isNaN(supplierIdValue)) {
+                showToast('Please select a supplier.');
+                return;
+            }
+            if (isNaN(supplierItemIdValue)) {
+                showToast('Please select an available supplier item.');
+                return;
+            }
+            if (!Number.isFinite(quantityValue) || quantityValue <= 0) {
+                showToast('Quantity must be greater than zero.');
+                return;
+            }
+            const maxStock = supplierItemStock[supplierItemIdValue] || 0;
+            if (maxStock > 0 && quantityValue > maxStock) {
+                showToast(`Only ${maxStock} item(s) available for this supplier item.`);
+                return;
+            }
+            const policyIdValue = parseInt(document.getElementById('policyId').value);
+            if (isNaN(policyIdValue)) {
+                showToast('Please select a compliant linked policy for this supplier.');
+                return;
+            }
+            const data = {
+                procurementId: editingProcurementId || 0,
+                supplierId: supplierIdValue,
+                supplierItemId: supplierItemIdValue,
+                itemName: document.getElementById('supplierItemId').selectedOptions[0]?.text?.split(' (')[0] || '',
+                category: document.getElementById('category').value,
+                quantity: quantityValue,
+                procurementDate: new Date().toISOString(),
+                policyId: policyIdValue
+            };
+
+            const url = editingProcurementId ? '/AdminProcurement/UpdateProcurement' : '/AdminProcurement/CreateProcurement';
+
+            const _t = setTimeout(() => showLoading('Saving procurement...'), 300);
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(async res => {
+                let payload = null;
+                try {
+                    payload = await res.json();
+                } catch {
+                    payload = null;
+                }
+                return { ok: res.ok, payload };
+            })
+            .then(result => {
+                clearTimeout(_t); hideLoading();
+                const success = result.payload?.success === true;
+                if (result.ok && success) {
+                    showToast(result.payload?.message || 'Procurement saved successfully.', 'success', 'Saved');
+                    closeModal();
+                    location.reload();
+                } else {
+                    showToast(result.payload?.message || 'Failed to save procurement.');
+                }
+            })
+            .catch(() => { clearTimeout(_t); hideLoading(); showToast('Error saving procurement.'); });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('procurementModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        document.getElementById('viewModal').addEventListener('click', function(e) {
+            if (e.target === this) closeViewModal();
+        });
+        document.getElementById('errorModal').addEventListener('click', function(e) {
+            if (e.target === this) closeErrorModal();
+        });
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDeleteModal();
+        });
+
+        let deletingProcurementId = null;
+
+        function confirmDeleteProcurement(id) {
+            deletingProcurementId = parseInt(id.replace('PROC-', ''));
+            document.getElementById('deleteTargetId').textContent = id;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            deletingProcurementId = null;
+        }
+
+        function executeDelete() {
+            if (!Number.isFinite(deletingProcurementId) || deletingProcurementId <= 0) {
+                showToast('Invalid procurement id.');
+                closeDeleteModal();
+                return;
+            }
+            closeDeleteModal();
+            const _t = setTimeout(() => showLoading('Deleting procurement...'), 300);
+            fetch(`/AdminProcurement/DeleteProcurement?procurementId=${deletingProcurementId}`, { method: 'POST' })
+                .then(async res => {
+                    let payload = null;
+                    try { payload = await res.json(); } catch { payload = null; }
+                    return { ok: res.ok, payload };
+                })
+                .then(result => {
+                    clearTimeout(_t); hideLoading();
+                    if (result.ok && result.payload?.success) {
+                        showToast(result.payload?.message || 'Procurement deleted.', 'success', 'Deleted');
+                        location.reload();
+                    } else {
+                        showToast(result.payload?.message || 'Failed to delete procurement.');
+                    }
+                })
+                .catch(() => { clearTimeout(_t); hideLoading(); showToast('Error deleting procurement.'); });
+        }
+
+        const supplierSelect = document.getElementById('supplierId');
+        const supplierItemSelect = document.getElementById('supplierItemId');
+        const policySelect = document.getElementById('policyId');
+        const categoryInput = document.getElementById('category');
+        let supplierItemStock = {};
+        let supplierItemPricing = {};
+
+        function updatePricingPreview() {
+            const selectedItemId = parseInt(supplierItemSelect.value);
+            const qty = parseInt(document.getElementById('quantity').value || '0');
+            const pricing = supplierItemPricing[selectedItemId];
+
+            if (!pricing) {
+                document.getElementById('derivedCurrencyCode').value = 'Auto from item';
+                document.getElementById('derivedOriginalAmount').value = 'Auto from unit price x quantity';
+                return;
+            }
+
+            document.getElementById('derivedCurrencyCode').value = pricing.currencyCode;
+            if (Number.isFinite(qty) && qty > 0) {
+                document.getElementById('derivedOriginalAmount').value = (pricing.unitPrice * qty).toFixed(2);
+            } else {
+                document.getElementById('derivedOriginalAmount').value = 'Enter quantity to compute';
+            }
+        }
+
+        async function reloadSupplierItems() {
+            const supplierId = parseInt(supplierSelect.value);
+            supplierItemSelect.innerHTML = '';
+            supplierItemStock = {};
+            supplierItemPricing = {};
+            document.getElementById('derivedCurrencyCode').value = 'Auto from item';
+            document.getElementById('derivedOriginalAmount').value = 'Auto from unit price x quantity';
+
+            if (isNaN(supplierId)) {
+                supplierItemSelect.innerHTML = '<option value="">Select Supplier First</option>';
+                categoryInput.value = '';
+                supplierItemSelect.disabled = true;
+                policySelect.innerHTML = '<option value="">Select Supplier First</option>';
+                policySelect.disabled = true;
+                return;
+
+            }
+
+            // Reset policy until supplier items and policies are loaded
+            policySelect.innerHTML = '<option value="">Loading policies...</option>';
+            policySelect.disabled = true;
+
+            supplierItemSelect.innerHTML = '<option value="">Loading items...</option>';
+            supplierItemSelect.disabled = true;
+            categoryInput.value = '';
+
+            // Load all policies for the dropdown
+            try {
+                const policyResponse = await fetch(`/AdminProcurement/GetSupplierCompliantPoliciesByItemCategory?supplierId=${supplierId}&supplierItemId=0`);
+                const policyPayload = await policyResponse.json();
+                const policies = policyPayload.policies || [];
+                if (policies.length) {
+                    policySelect.innerHTML = '<option value="">Select Policy</option>';
+                    policies.forEach(policy => {
+                        const option = document.createElement('option');
+                        option.value = policy.id;
+                        option.textContent = policy.title;
+                        policySelect.appendChild(option);
+                    });
+                    policySelect.disabled = false;
+                } else {
+                    policySelect.innerHTML = '<option value="">No policies available</option>';
+                }
+            } catch {
+                policySelect.innerHTML = '<option value="">Failed to load policies</option>';
+            }
+
+            let items = [];
+            try {
+                const response = await fetch(`/AdminProcurement/GetSupplierItems?supplierId=${supplierId}`);
+                const payload = await response.json();
+                if (!payload.success) {
+                    supplierItemSelect.innerHTML = '<option value="">Failed to load items</option>';
+                    policySelect.innerHTML = '<option value="">Failed to load policies</option>';
+                    policySelect.disabled = true;
+                    return;
+                }
+                items = (payload.items || [])
+                    .filter(i => i.status === 'Available' && i.quantityAvailable > 0);
+            } catch {
+                supplierItemSelect.innerHTML = '<option value="">Failed to load items</option>';
+                return;
+            }
+
+            if (!items.length) {
+                supplierItemSelect.innerHTML = '<option value="">No available items</option>';
+                categoryInput.value = '';
+                supplierItemSelect.disabled = true;
+            } else {
+                supplierItemSelect.innerHTML = '<option value="">Select Item</option>';
+                items.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.supplierItemId;
+                    option.textContent = `${item.itemName} (${item.currencyCode} ${Number(item.unitPrice).toFixed(2)} / unit, Stock: ${item.quantityAvailable})`;
+                    option.dataset.category = item.category || '';
+                    supplierItemSelect.appendChild(option);
+                    supplierItemStock[item.supplierItemId] = item.quantityAvailable;
+                    supplierItemPricing[item.supplierItemId] = {
+                        unitPrice: Number(item.unitPrice || 0),
+                        currencyCode: item.currencyCode || 'PHP'
+                    };
+                });
+                supplierItemSelect.disabled = false;
+            }
+        }
+
+        supplierSelect.addEventListener('change', reloadSupplierItems);
+        supplierItemSelect.addEventListener('change', function () {
+            const selected = supplierItemSelect.selectedOptions[0];
+            categoryInput.value = selected?.dataset?.category || '';
+            updatePricingPreview();
+        });
+
+        document.getElementById('quantity').addEventListener('input', function () {
+            // No native custom validity bubble; validation is handled with custom modal on save.
+            updatePricingPreview();
+        });
+    </script>
+}

@@ -151,6 +151,8 @@ namespace TechNova_IT_Solutions.Pages
         public bool IsGlobal { get; set; }
         public string BranchLabel { get; set; } = string.Empty;
         public string ComplianceStatus { get; set; } = string.Empty;
+        public string? TerminationReason { get; set; }
+        public DateTime? TerminatedAt { get; set; }
     }
 
     public class SupplierPolicyItem

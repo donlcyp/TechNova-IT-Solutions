@@ -1,0 +1,687 @@
+﻿@page
+@model TechNova_IT_Solutions.Pages.SuperAdmin.DashboardModel
+@{
+    ViewData["Title"] = "Super Admin Dashboard";
+}
+
+@section Styles {
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f1f5f9;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+
+        .content-wrapper {
+            padding: 28px 28px 40px;
+        }
+
+        /* Hero Banner */
+        .hero-banner {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 60%, #2563eb 100%);
+            color: #fff;
+            border-radius: 16px;
+            padding: 28px 32px;
+            margin-bottom: 26px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+            box-shadow: 0 4px 20px rgba(30,64,175,.25);
+        }
+
+        .hero-banner-text h2 {
+            margin: 0 0 6px;
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .hero-banner-text p {
+            margin: 0;
+            opacity: 0.88;
+            font-size: 14px;
+        }
+
+        .hero-banner-meta {
+            display: flex;
+            gap: 28px;
+            flex-shrink: 0;
+        }
+
+        .hero-meta-item { text-align: center; }
+
+        .hero-meta-item .meta-val {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .hero-meta-item .meta-lbl {
+            font-size: 11px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+            margin-top: 4px;
+        }
+
+        /* Section headings */
+        .section-heading {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            color: #64748b;
+            margin: 0 0 12px;
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 26px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.04);
+            transition: box-shadow .2s;
+        }
+
+        .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.09); }
+
+        .stat-card.alert-card {
+            border-color: #fecaca;
+            background: #fff5f5;
+        }
+
+        .stat-card.alert-card .stat-val { color: #dc2626 !important; }
+
+        .stat-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stat-icon svg { width: 22px; height: 22px; }
+
+        .stat-val {
+            font-size: 24px;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1;
+        }
+
+        .stat-lbl {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .stat-sub {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        /* Two-column lower section */
+        .lower-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 20px;
+            margin-bottom: 26px;
+        }
+
+        /* Quick Actions panel */
+        .panel {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.04);
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .action-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all .2s;
+            background: #f8fafc;
+        }
+
+        .action-card:hover {
+            border-color: #1d4ed8;
+            background: #eff6ff;
+            box-shadow: 0 2px 10px rgba(29,78,216,.1);
+        }
+
+        .ac-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ac-icon svg { width: 18px; height: 18px; }
+
+        .ac-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .ac-desc {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        /* Module buttons */
+        .module-strip {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .module-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 13px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            border: 1px solid transparent;
+            transition: filter .2s;
+        }
+
+        .module-btn svg { width: 14px; height: 14px; }
+        .module-btn:hover { filter: brightness(.92); }
+
+        .mbtn-blue   { background:#eff6ff; color:#1d4ed8; border-color:#bfdbfe; }
+        .mbtn-purple { background:#f5f3ff; color:#7c3aed; border-color:#ddd6fe; }
+        .mbtn-green  { background:#f0fdf4; color:#16a34a; border-color:#bbf7d0; }
+        .mbtn-orange { background:#fff7ed; color:#ea580c; border-color:#fed7aa; }
+        .mbtn-teal   { background:#f0fdfa; color:#0d9488; border-color:#99f6e4; }
+        .mbtn-rose   { background:#fff1f2; color:#e11d48; border-color:#fecdd3; }
+
+        /* Procurement rows */
+        .proc-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .proc-row:last-child { border-bottom: none; }
+
+        .proc-row-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #334155;
+            font-weight: 500;
+        }
+
+        .proc-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .proc-row-val {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        /* Compliance bar */
+        .bar-track {
+            background: #e2e8f0;
+            border-radius: 99px;
+            height: 10px;
+            overflow: hidden;
+            margin: 8px 0 6px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 99px;
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+
+        /* Activity list */
+        .activity-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 11px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .activity-item:last-child { border-bottom: none; }
+
+        .activity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #1d4ed8;
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+
+        .activity-body { flex: 1; min-width: 0; }
+
+        .activity-action {
+            font-size: 13px;
+            color: #0f172a;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .activity-meta {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .activity-badge {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 99px;
+            background: #f1f5f9;
+            color: #475569;
+            white-space: nowrap;
+            flex-shrink: 0;
+            align-self: center;
+        }
+
+        .no-activity {
+            color: #94a3b8;
+            font-size: 13px;
+            text-align: center;
+            padding: 24px 0;
+        }
+
+        @@media (max-width: 1200px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .lower-grid { grid-template-columns: 1fr; }
+        }
+
+        @@media (max-width: 991px) {
+            .main-content { margin-left: 0; }
+            .hero-banner { flex-direction: column; align-items: flex-start; }
+            .hero-banner-meta { flex-wrap: wrap; }
+        }
+
+        @@media (max-width: 600px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .action-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+}
+
+@await Html.PartialAsync("_SuperAdminSidebar", "Dashboard")
+
+<div class="main-content">
+    @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Super Admin Dashboard", Description: "Platform-wide oversight — accounts, compliance & procurement"))
+
+    <div class="content-wrapper">
+
+        @* Hero Banner *@
+        <div class="hero-banner">
+            <div class="hero-banner-text">
+                <h2>Global Control Panel</h2>
+                <p>Manage administrators, monitor compliance, oversee procurement, and control all platform settings from one place.</p>
+            </div>
+            <div class="hero-banner-meta">
+                <div class="hero-meta-item">
+                    <div class="meta-val">@Model.TotalBranches</div>
+                    <div class="meta-lbl">Branches</div>
+                </div>
+                <div class="hero-meta-item">
+                    <div class="meta-val">@Model.TotalUsers</div>
+                    <div class="meta-lbl">Total Users</div>
+                </div>
+                <div class="hero-meta-item">
+                    <div class="meta-val">@Model.SystemComplianceRate%</div>
+                    <div class="meta-lbl">Compliance</div>
+                </div>
+            </div>
+        </div>
+
+        @* Stats Grid *@
+        <p class="section-heading">System Overview</p>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#eff6ff;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-val">@Model.ActiveUsers</div>
+                    <div class="stat-lbl">Active Users</div>
+                    <div class="stat-sub">@Model.InactiveUsers inactive</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#f0fdf4;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-val">@Model.TotalEmployees</div>
+                    <div class="stat-lbl">Employees</div>
+                    <div class="stat-sub">@Model.TotalAdmins admins</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fff7ed;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <path d="M16 10a4 4 0 0 1-8 0"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-val">@Model.ActiveSuppliers</div>
+                    <div class="stat-lbl">Active Suppliers</div>
+                    <div class="stat-sub">@Model.TotalSuppliers total</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#f5f3ff;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-val">@Model.TotalComplianceManagers</div>
+                    <div class="stat-lbl">Compliance Managers</div>
+                    <div class="stat-sub">CCM &amp; CM roles</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#f0f9ff;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-val">@Model.ActivePolicies</div>
+                    <div class="stat-lbl">Active Policies</div>
+                    <div class="stat-sub">@Model.TotalPolicies total</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fdf4ff;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#a21caf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-val">@Model.TotalProcurements</div>
+                    <div class="stat-lbl">Total Procurements</div>
+                    <div class="stat-sub">@Model.PendingProcurements pending/draft</div>
+                </div>
+            </div>
+            @{
+                var hasViolations = Model.OpenViolations > 0;
+            }
+            <div class="stat-card @(hasViolations ? "alert-card" : "")">
+                <div class="stat-icon" style="background:@(hasViolations ? "#fee2e2" : "#f0fdf4");">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="@(hasViolations ? "#dc2626" : "#16a34a")" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-val">@Model.OpenViolations</div>
+                    <div class="stat-lbl">Open Violations</div>
+                    <div class="stat-sub">@Model.CriticalViolations critical</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fff8f1;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="stat-val">@Model.PendingPolicyReviews</div>
+                    <div class="stat-lbl">Pending Policy Reviews</div>
+                    <div class="stat-sub">External imports</div>
+                </div>
+            </div>
+        </div>
+
+        @* Lower Grid *@
+        <div class="lower-grid">
+
+            @* Left column: Quick Actions + Module Access *@
+            <div style="display:flex;flex-direction:column;gap:20px;">
+
+                <div class="panel">
+                    <p class="section-heading">Quick Actions</p>
+                    <div class="action-grid">
+                        <a class="action-card" href="/SuperAdmin/ManageAdminAccounts">
+                            <div class="ac-icon" style="background:#eff6ff;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                                </svg>
+                            </div>
+                            <div class="ac-title">Manage Global Accounts</div>
+                            <div class="ac-desc">Create, update, deactivate, and reactivate admin &amp; compliance users.</div>
+                        </a>
+                        <a class="action-card" href="/SuperAdmin/ManageBranches">
+                            <div class="ac-icon" style="background:#f0fdf4;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 9.5L12 4l9 5.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+                                    <path d="M9 21V12h6v9"/>
+                                </svg>
+                            </div>
+                            <div class="ac-title">Manage Branches</div>
+                            <div class="ac-desc">Add, edit, or remove company branches and their configurations.</div>
+                        </a>
+                        <a class="action-card" href="/SuperAdmin/SystemSettingsPolicies">
+                            <div class="ac-icon" style="background:#fff7ed;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="3"/>
+                                    <path d="M19.07 4.93A10 10 0 0 1 21 12a10 10 0 0 1-1.93 7.07M4.93 4.93A10 10 0 0 0 3 12a10 10 0 0 0 1.93 7.07"/>
+                                </svg>
+                            </div>
+                            <div class="ac-title">System Settings</div>
+                            <div class="ac-desc">Manage policy definitions and assignment flows platform-wide.</div>
+                        </a>
+                        <a class="action-card" href="/SuperAdmin/AllReports">
+                            <div class="ac-icon" style="background:#f5f3ff;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+                                </svg>
+                            </div>
+                            <div class="ac-title">All Reports</div>
+                            <div class="ac-desc">Cross-functional compliance, procurement, and supplier reports.</div>
+                        </a>
+                        <a class="action-card" href="/SuperAdmin/FullAuditLogs">
+                            <div class="ac-icon" style="background:#f0f9ff;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                                </svg>
+                            </div>
+                            <div class="ac-title">Full Audit Logs</div>
+                            <div class="ac-desc">Review complete system activity and user action history.</div>
+                        </a>
+                        <a class="action-card" href="/SuperAdmin/ComplianceMonitoring">
+                            <div class="ac-icon" style="background:#fdf4ff;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#a21caf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                </svg>
+                            </div>
+                            <div class="ac-title">Compliance Monitoring</div>
+                            <div class="ac-desc">Oversee violations, policy acknowledgments, and escalations.</div>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <p class="section-heading">Module Access Override</p>
+                    <p style="font-size:13px;color:#64748b;margin:0 0 4px;">Super Admin has read/write access across all modules.</p>
+                    <div class="module-strip">
+                        <a class="module-btn mbtn-blue" href="/SystemAdmin/Dashboard">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                            </svg>
+                            System Admin Module
+                        </a>
+                        <a class="module-btn mbtn-teal" href="/BranchAdmin/Dashboard">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                            Branch Admin Module
+                        </a>
+                        <a class="module-btn mbtn-purple" href="/ChiefComplianceManager/ComplianceDashboard">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                            Chief Compliance Module
+                        </a>
+                        <a class="module-btn mbtn-green" href="/Employee/Dashboard">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/>
+                            </svg>
+                            Employee Module
+                        </a>
+                        <a class="module-btn mbtn-orange" href="/Supplier/Dashboard">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                                <line x1="3" y1="6" x2="21" y2="6"/>
+                                <path d="M16 10a4 4 0 0 1-8 0"/>
+                            </svg>
+                            Supplier Module
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            @* Right column: Procurement Summary + Compliance Rate + Recent Activity *@
+            <div style="display:flex;flex-direction:column;gap:20px;">
+
+                <div class="panel">
+                    <p class="section-heading">Procurement Breakdown</p>
+                    <div class="proc-row">
+                        <span class="proc-row-label"><span class="proc-dot" style="background:#1d4ed8;"></span>Total</span>
+                        <span class="proc-row-val">@Model.TotalProcurements</span>
+                    </div>
+                    <div class="proc-row">
+                        <span class="proc-row-label"><span class="proc-dot" style="background:#10b981;"></span>Approved</span>
+                        <span class="proc-row-val" style="color:#10b981;">@Model.ProcurementApproved</span>
+                    </div>
+                    <div class="proc-row">
+                        <span class="proc-row-label"><span class="proc-dot" style="background:#06b6d4;"></span>Shipped</span>
+                        <span class="proc-row-val" style="color:#06b6d4;">@Model.ProcurementShipped</span>
+                    </div>
+                    <div class="proc-row">
+                        <span class="proc-row-label"><span class="proc-dot" style="background:#8b5cf6;"></span>Delivered</span>
+                        <span class="proc-row-val" style="color:#8b5cf6;">@Model.ProcurementDelivered</span>
+                    </div>
+                    <div class="proc-row">
+                        <span class="proc-row-label"><span class="proc-dot" style="background:#f59e0b;"></span>Draft / Pending</span>
+                        <span class="proc-row-val" style="color:#f59e0b;">@Model.ProcurementDraft</span>
+                    </div>
+                    <div class="proc-row">
+                        <span class="proc-row-label"><span class="proc-dot" style="background:#ef4444;"></span>Rejected</span>
+                        <span class="proc-row-val" style="color:#ef4444;">@Model.ProcurementRejected</span>
+                    </div>
+                    <div style="margin-top:18px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:12px;font-weight:600;color:#334155;">System Compliance Rate</span>
+                            <span style="font-size:16px;font-weight:700;color:#10b981;">@Model.SystemComplianceRate%</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width:@Model.SystemComplianceRate%;"></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;font-size:11px;color:#64748b;">
+                            <span>0%</span><span>100%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <p class="section-heading">Recent System Activity</p>
+                    @if (Model.RecentAuditLogs.Count == 0)
+                    {
+                        <div class="no-activity">No recent activity recorded.</div>
+                    }
+                    else
+                    {
+                        <ul class="activity-list">
+                            @foreach (var log in Model.RecentAuditLogs)
+                            {
+                                <li class="activity-item">
+                                    <div class="activity-dot"></div>
+                                    <div class="activity-body">
+                                        <div class="activity-action">@log.Action</div>
+                                        <div class="activity-meta">@log.UserName &nbsp;&middot;&nbsp; @log.LogDate.ToString("MMM dd, h:mm tt")</div>
+                                    </div>
+                                    <span class="activity-badge">@log.Module</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>

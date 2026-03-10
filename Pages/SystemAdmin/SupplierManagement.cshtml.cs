@@ -18,8 +18,10 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
         public int TotalSuppliers { get; set; }
         public int ActiveSuppliers { get; set; }
         public int CompliantSuppliers { get; set; }
+        public int TerminatedSuppliers { get; set; }
 
         public List<TechNova_IT_Solutions.Pages.SupplierItem> Suppliers { get; set; } = new();
+        public List<TechNova_IT_Solutions.Pages.SupplierItem> ArchivedSuppliers { get; set; } = new();
         public List<TechNova_IT_Solutions.Pages.SupplierPolicyItem> ActivePolicies { get; set; } = new();
 
         public async Task<IActionResult> OnGet()
@@ -54,13 +56,14 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
             var baseIds = await supplierQuery.Select(s => s.SupplierId).ToListAsync();
             TotalSuppliers = baseIds.Count;
             ActiveSuppliers = await supplierQuery.CountAsync(s => s.Status == "Active");
+            TerminatedSuppliers = await supplierQuery.CountAsync(s => s.Status == "Terminated");
             CompliantSuppliers = await _context.SupplierPolicies
                 .Where(sp => baseIds.Contains(sp.SupplierId) && sp.ComplianceStatus == "Compliant")
                 .Select(sp => sp.SupplierId)
                 .Distinct()
                 .CountAsync();
 
-            Suppliers = await supplierQuery
+            var allSuppliers = await supplierQuery
                 .Include(s => s.Branch)
                 .OrderBy(s => s.SupplierName)
                 .Select(s => new TechNova_IT_Solutions.Pages.SupplierItem
@@ -80,9 +83,14 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
                         ? "Compliant"
                         : s.SupplierPolicies.Any(sp => sp.ComplianceStatus == "Non-Compliant")
                             ? "Not Compliant"
-                            : "Pending"
+                            : "Pending",
+                    TerminationReason = s.TerminationReason,
+                    TerminatedAt = s.TerminatedAt
                 })
                 .ToListAsync();
+
+            Suppliers = allSuppliers.Where(s => s.Status != "Terminated").ToList();
+            ArchivedSuppliers = allSuppliers.Where(s => s.Status == "Terminated").ToList();
 
             ActivePolicies = await _context.Policies
                 .Where(p => p.ReviewStatus == "Approved")

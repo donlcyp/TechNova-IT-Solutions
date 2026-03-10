@@ -23,6 +23,10 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
         public int OutOfStockCount { get; set; }
         public int TotalProcurements { get; set; }
         public decimal TotalInventoryValue { get; set; }
+        public int ProcurementApproved { get; set; }
+        public int ProcurementDraftPending { get; set; }
+        public int ProcurementRejected { get; set; }
+        public int ComplianceRate { get; set; }
 
         public List<TechNova_IT_Solutions.Pages.BranchAdmin.InventoryItem> InventoryItems { get; set; } = new();
         public List<BranchReference> Branches { get; set; } = new();
@@ -76,6 +80,21 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
             LowStockCount = InventoryItems.Count(i => i.Quantity > 0 && i.Quantity <= 5);
             OutOfStockCount = InventoryItems.Count(i => i.Quantity == 0);
             TotalInventoryValue = InventoryItems.Sum(i => i.TotalCost);
+
+            ProcurementApproved = procurements.Count(p =>
+                string.Equals(p.Status, ProcurementStatuses.SupplierApproved, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(p.Status, ProcurementStatuses.Shipped,          StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(p.Status, ProcurementStatuses.Received,         StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(p.Status, ProcurementStatuses.Closed,           StringComparison.OrdinalIgnoreCase));
+            ProcurementDraftPending = procurements.Count(p =>
+                string.Equals(p.Status, ProcurementStatuses.Draft,      StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(p.Status, ProcurementStatuses.Submitted,  StringComparison.OrdinalIgnoreCase));
+            ProcurementRejected = procurements.Count(p =>
+                string.Equals(p.Status, ProcurementStatuses.SupplierRejected, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(p.Status, ProcurementStatuses.Late,             StringComparison.OrdinalIgnoreCase));
+            ComplianceRate = TotalProcurements > 0
+                ? (int)Math.Round((double)ProcurementApproved / TotalProcurements * 100)
+                : 0;
 
             Categories = InventoryItems
                 .Select(i => i.Category)

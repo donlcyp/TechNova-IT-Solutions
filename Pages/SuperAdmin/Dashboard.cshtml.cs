@@ -88,16 +88,23 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
             InactiveUsers = TotalUsers - ActiveUsers;
             OpenViolations = await _context.ComplianceViolations.CountAsync(v => v.Status == "Open" || v.Status == "UnderReview" || v.Status == "Escalated");
             CriticalViolations = await _context.ComplianceViolations.CountAsync(v => v.SeverityLevel == "Critical" && v.Status != "Resolved");
-            PendingProcurements = await _context.Procurements.CountAsync(p => p.Status == "Pending" || p.Status == "Draft");
+            PendingProcurements = await _context.Procurements.CountAsync(p =>
+                p.Status == ProcurementStatuses.Draft || p.Status == ProcurementStatuses.Submitted);
             PendingPolicyReviews = await _context.ExternalPolicyImports.CountAsync(e => e.ReviewStatus == "PendingReview");
             ActiveSuppliers = await _context.Suppliers.CountAsync(s => s.Status == "Active");
             TotalComplianceManagers = await _context.Users.CountAsync(u =>
                 u.Role == RoleNames.ComplianceManager || u.Role == RoleNames.ChiefComplianceManager);
 
             // Procurement breakdown
-            ProcurementApproved = await _context.Procurements.CountAsync(p => p.Status == "Approved");
-            ProcurementRejected = await _context.Procurements.CountAsync(p => p.Status == "Rejected");
-            ProcurementDraft = await _context.Procurements.CountAsync(p => p.Status == "Draft");
+            ProcurementApproved  = await _context.Procurements.CountAsync(p =>
+                p.Status == ProcurementStatuses.SupplierApproved ||
+                p.Status == ProcurementStatuses.Shipped ||
+                p.Status == ProcurementStatuses.Received ||
+                p.Status == ProcurementStatuses.Closed);
+            ProcurementDraft     = await _context.Procurements.CountAsync(p =>
+                p.Status == ProcurementStatuses.Draft || p.Status == ProcurementStatuses.Submitted);
+            ProcurementRejected  = await _context.Procurements.CountAsync(p =>
+                p.Status == ProcurementStatuses.SupplierRejected || p.Status == ProcurementStatuses.Late);
 
             // System-wide compliance rate
             var totalAssignments = await _context.PolicyAssignments.CountAsync();

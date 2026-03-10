@@ -1367,15 +1367,9 @@ namespace TechNova_IT_Solutions.Services
                     procurement.Status = ProcurementStatuses.SupplierRejected;
                     procurement.RejectionReason = actionData.RejectionReason.Trim();
                     procurement.SupplierCommitShipDate = null;
-
-                    var reservedItem = await FindSupplierItemForProcurementReservationAsync(procurement);
-                    var reservedQty = Math.Max(0, procurement.Quantity ?? 0);
-                    if (reservedItem != null && reservedQty > 0)
-                    {
-                        reservedItem.QuantityAvailable += reservedQty;
-                        ApplySupplierItemStockStatus(reservedItem);
-                        reservedItem.LastUpdated = DateTime.UtcNow;
-                    }
+                    // Quantity stays reduced — the requested stock remains off the
+                    // supplier's available inventory so admins can see exactly what
+                    // has been committed/requested at any point.
                 }
                 else
                 {

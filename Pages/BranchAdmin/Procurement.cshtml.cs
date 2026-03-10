@@ -54,24 +54,25 @@ namespace TechNova_IT_Solutions.Pages.BranchAdmin
             await _adminService.SyncLateProcurementsAsync();
 
             TotalProcurements = await _context.Procurements
-                .Where(p => !scoped || p.BranchId == callerBranchId || p.BranchId == null)
+                .Where(p => callerBranchId.HasValue ? p.BranchId == callerBranchId : p.BranchId == null)
                 .CountAsync();
 
             PendingApprovals = await _context.Procurements
                 .Where(p => p.Status == ProcurementStatuses.Submitted)
-                .Where(p => !scoped || p.BranchId == callerBranchId || p.BranchId == null)
+                .Where(p => callerBranchId.HasValue ? p.BranchId == callerBranchId : p.BranchId == null)
                 .CountAsync();
 
             var firstDayOfMonth = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
             ProcurementsThisMonth = await _context.Procurements
                 .Where(p => p.PurchaseDate >= firstDayOfMonth)
-                .Where(p => !scoped || p.BranchId == callerBranchId || p.BranchId == null)
+                .Where(p => callerBranchId.HasValue ? p.BranchId == callerBranchId : p.BranchId == null)
                 .CountAsync();
 
             ProcurementRecords = await _context.Procurements
                 .Include(p => p.Supplier)
                 .Include(p => p.RelatedPolicy)
-                .Where(p => !scoped || p.BranchId == callerBranchId || p.BranchId == null)
+                .Include(p => p.Branch)
+                .Where(p => callerBranchId.HasValue ? p.BranchId == callerBranchId : p.BranchId == null)
                 .OrderByDescending(p => p.PurchaseDate)
                 .Select(p => new TechNova_IT_Solutions.Pages.ProcurementRecord
                 {
@@ -90,7 +91,8 @@ namespace TechNova_IT_Solutions.Pages.BranchAdmin
                     RevisedDeliveryDate = p.RevisedDeliveryDate,
                     DelayReason = p.DelayReason,
                     WorkflowStatus = string.IsNullOrWhiteSpace(p.Status) ? ProcurementStatuses.Draft : p.Status,
-                    SupplierResponseDeadline = p.SupplierResponseDeadline
+                    SupplierResponseDeadline = p.SupplierResponseDeadline,
+                    BranchName = p.Branch != null ? p.Branch.BranchName : "Main Branch"
                 })
                 .ToListAsync();
 
