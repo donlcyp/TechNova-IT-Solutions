@@ -286,6 +286,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwcGxpZXJcUHJvY3VyZW1lbnQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/C\#/repos/TechNova IT Solutions/Pages/Supplier/Reports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwcGxpZXJcUmVwb3J0cy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/C\#/repos/TechNova IT Solutions/Pages/Supplier/Settings.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3VwcGxpZXJcU2V0dGluZ3MuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -302,8 +306,16 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3lzdGVtQWRtaW5cRGFzaGJvYXJkLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/C\#/repos/TechNova IT Solutions/Pages/SystemAdmin/Inventory.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3lzdGVtQWRtaW5cSW52ZW50b3J5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/C\#/repos/TechNova IT Solutions/Pages/SystemAdmin/MainBranchUsers.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3lzdGVtQWRtaW5cTWFpbkJyYW5jaFVzZXJzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/C\#/repos/TechNova IT Solutions/Pages/SystemAdmin/Procurement.cshtml]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcU3lzdGVtQWRtaW5cUHJvY3VyZW1lbnQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/C\#/repos/TechNova IT Solutions/Pages/SystemAdmin/Reports.cshtml]

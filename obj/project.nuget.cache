@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "9aEyD43Y2xc=",
+  "dgSpecHash": "1bB3Xgau1YI=",
   "success": true,
-  "projectFilePath": "d:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
+  "projectFilePath": "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\donyl\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\donyl\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",

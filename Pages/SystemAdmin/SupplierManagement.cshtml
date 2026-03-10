@@ -940,7 +940,6 @@
         function assignPolicy(id) {
             currentSupplierId = parseInt(id.toString().replace('SUP-', '')) || parseInt(id);
             document.getElementById('policyModal').classList.add('active');
-            document.getElementById('assignedDate').valueAsDate = new Date();
             clearPolicySelection();
             document.getElementById('policySearchInput').value = '';
             filterPolicyChecklist();

@@ -435,42 +435,66 @@
 </div>
 
 <div class="app-dialog" id="createAdminModal">
-    <div class="app-dialog-card" style="max-width:520px;">
-        <div class="app-dialog-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <span>Add Global Account</span>
-            <button type="button" class="btn" style="padding:6px 12px; font-size:13px;" onclick="closeCreateAdminModal()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <div class="app-dialog-card" style="max-width:540px;">
+        <div class="app-dialog-header" style="display:flex; justify-content:space-between; align-items:center; padding:20px 24px 16px;">
+            <div>
+                <div style="font-size:18px; font-weight:700; color:#111827;">Add Global Account</div>
+                <div style="font-size:13px; color:#6b7280; margin-top:2px; font-weight:400;">Create a new System Admin or Global Compliance account</div>
+            </div>
+            <button type="button" onclick="closeCreateAdminModal()" style="width:32px;height:32px;border:none;background:#f3f4f6;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6b7280;flex-shrink:0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
         </div>
-        <div class="app-dialog-body" style="display:grid; gap:16px;">
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-                <div>
-                    <label style="display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px;">First Name</label>
-                    <input id="firstName" type="text" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; color:#1f2937; background:#f9fafb; transition:border-color .2s; box-sizing:border-box;" placeholder="Enter first name" />
+        <div class="app-dialog-body" style="padding:20px 24px; display:flex; flex-direction:column; gap:16px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                <div class="ca-group">
+                    <label class="ca-label">First Name <span class="ca-req">*</span></label>
+                    <input id="firstName" type="text" class="ca-input" placeholder="Enter first name" />
                 </div>
-                <div>
-                    <label style="display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px;">Last Name</label>
-                    <input id="lastName" type="text" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; color:#1f2937; background:#f9fafb; transition:border-color .2s; box-sizing:border-box;" placeholder="Enter last name" />
+                <div class="ca-group">
+                    <label class="ca-label">Last Name <span class="ca-req">*</span></label>
+                    <input id="lastName" type="text" class="ca-input" placeholder="Enter last name" />
                 </div>
             </div>
-            <div>
-                <label style="display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px;">Email Address</label>
-                <input id="email" type="email" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; color:#1f2937; background:#f9fafb; transition:border-color .2s; box-sizing:border-box;" placeholder="user@company.com" />
+            <div class="ca-group">
+                <label class="ca-label">Email Address <span class="ca-req">*</span></label>
+                <input id="email" type="email" class="ca-input" placeholder="user@company.com" />
             </div>
-            <div>
-                <label style="display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px;">Role</label>
-                <select id="role" style="width:100%; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:14px; color:#1f2937; background:#f9fafb; cursor:pointer; box-sizing:border-box;">
+            <div class="ca-group">
+                <label class="ca-label">Role <span class="ca-req">*</span></label>
+                <select id="role" class="ca-input ca-select">
                     <option value="SystemAdmin">System Admin</option>
-                    <option value="ChiefComplianceManager">Global Compliance</option>
+                    <option value="ChiefComplianceManager">Global Compliance Manager</option>
                 </select>
             </div>
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px 14px; font-size:13px; color:#1e40af; display:flex; align-items:flex-start; gap:10px;">
+                <svg style="width:16px;height:16px;flex-shrink:0;margin-top:1px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>A temporary password will be sent to the user's email. They will be required to change it on first login.</span>
+            </div>
         </div>
-        <div class="app-dialog-footer">
+        <div class="app-dialog-footer" style="padding:16px 24px;">
             <button type="button" class="btn" onclick="closeCreateAdminModal()">Cancel</button>
-            <button type="button" class="btn btn-primary" onclick="createAdmin()">Create Account</button>
+            <button type="button" class="btn btn-primary" onclick="createAdmin()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                Create Account
+            </button>
         </div>
     </div>
 </div>
+
+<style>
+    .ca-group { display:flex; flex-direction:column; gap:6px; }
+    .ca-label { font-size:13px; font-weight:600; color:#374151; }
+    .ca-req { color:#ef4444; }
+    .ca-input {
+        width:100%; padding:10px 14px; border:1px solid #d1d5db; border-radius:8px;
+        font-size:14px; color:#1f2937; background:#f9fafb; box-sizing:border-box;
+        transition:border-color .2s, box-shadow .2s; font-family:inherit;
+    }
+    .ca-input:focus { outline:none; border-color:#1e40af; box-shadow:0 0 0 3px rgba(30,64,175,.1); background:#fff; }
+    .ca-select { cursor:pointer; appearance:auto; }
+    #createAdminModal .btn-primary { display:inline-flex; align-items:center; padding:10px 20px; }
+</style>
 
 <div class="app-dialog" id="appMessageModal">
     <div class="app-dialog-card">

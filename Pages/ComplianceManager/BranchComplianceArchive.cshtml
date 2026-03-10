@@ -374,26 +374,39 @@
     }
 
     function applyFilters() {
-        const q = document.getElementById('archiveSearch').value.toLowerCase().trim();
-        if (!q) {
-            renderViolations(allViolations);
-            renderAcknowledgements(allAcknowledgements);
-            renderArchivedPolicies(allArchivedPolicies);
-            return;
-        }
+        const q    = document.getElementById('archiveSearch').value.toLowerCase().trim();
+        const from = document.getElementById('fromDate').value ? new Date(document.getElementById('fromDate').value) : null;
+        const toRaw = document.getElementById('toDate').value;
+        const to   = toRaw ? new Date(toRaw + 'T23:59:59') : null;
+
+        const inDateRange = (dateStr) => {
+            if (!from && !to) return true;
+            const d = new Date(dateStr);
+            if (isNaN(d)) return true;
+            if (from && d < from) return false;
+            if (to   && d > to)   return false;
+            return true;
+        };
+
         renderViolations(allViolations.filter(v =>
-            v.subjectName.toLowerCase().includes(q) ||
-            v.policyName.toLowerCase().includes(q) ||
-            (v.description || '').toLowerCase().includes(q) ||
-            (v.resolution  || '').toLowerCase().includes(q) ||
-            v.raisedBy.toLowerCase().includes(q)));
+            (!q ||
+                v.subjectName.toLowerCase().includes(q) ||
+                v.policyName.toLowerCase().includes(q) ||
+                (v.description || '').toLowerCase().includes(q) ||
+                (v.resolution  || '').toLowerCase().includes(q) ||
+                v.raisedBy.toLowerCase().includes(q)) &&
+            inDateRange(v.raisedDate)));
         renderAcknowledgements(allAcknowledgements.filter(a =>
-            a.employeeName.toLowerCase().includes(q) ||
-            a.policyTitle.toLowerCase().includes(q)));
+            (!q ||
+                a.employeeName.toLowerCase().includes(q) ||
+                a.policyTitle.toLowerCase().includes(q)) &&
+            inDateRange(a.acknowledgedDate)));
         renderArchivedPolicies(allArchivedPolicies.filter(p =>
-            p.policyTitle.toLowerCase().includes(q) ||
-            (p.category    || '').toLowerCase().includes(q) ||
-            (p.description || '').toLowerCase().includes(q)));
+            (!q ||
+                p.policyTitle.toLowerCase().includes(q) ||
+                (p.category    || '').toLowerCase().includes(q) ||
+                (p.description || '').toLowerCase().includes(q)) &&
+            inDateRange(p.archivedDate)));
     }
 
     function switchTab(tab) {

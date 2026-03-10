@@ -676,11 +676,22 @@
                             <option value="Rejected">Rejected</option>
                         </select>
                     </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Branch</label>
+                        <select class="filter-input" id="branchFilter">
+                            <option value="">All Branches</option>
+                            <option value="Company-Wide">Company-Wide</option>
+                            @foreach (var branch in Model.Branches)
+                            {
+                                <option value="@branch.Name">@branch.Name</option>
+                            }
+                        </select>
+                    </div>
                 </div>
             </div>
 
             <!-- Summary Cards -->
-            <div class="summary-cards">
+            <div class="summary-cards" style="grid-template-columns: repeat(4, 1fr);">
                 <div class="summary-card">
                     <div class="card-icon" style="color: #1e40af;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -713,6 +724,16 @@
                     <div class="card-value">@Model.ProcurementsThisMonth</div>
                     <div class="card-label">Procurements This Month</div>
                 </div>
+                <div class="summary-card">
+                    <div class="card-icon" style="color: #7c3aed;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </div>
+                    <div class="card-value">₱@Model.TotalValue.ToString("N2")</div>
+                    <div class="card-label">Total Procurement Value</div>
+                </div>
             </div>
 
             <!-- Main Table -->
@@ -726,6 +747,7 @@
                                 <th>Category</th>
                                 <th>Quantity</th>
                                 <th>Supplier Name</th>
+                                <th>Branch</th>
                                 <th>Linked Policy</th>
                                 <th>Order Date</th>
                                 <th>Currency</th>
@@ -745,6 +767,7 @@
                                 data-approval-status="@record.ApprovalStatus"
                                 data-delivery-status="@record.DeliveryStatus"
                                 data-workflow-status="@record.WorkflowStatus"
+                                data-branch="@record.BranchName"
                                 data-db-id="@record.ProcurementId.Replace("PROC-", "")"
                                 data-exchange-rate="@(record.ExchangeRate?.ToString("0.000000") ?? "N/A")"
                                 data-delay-reason="@(record.DelayReason ?? string.Empty)"
@@ -754,6 +777,7 @@
                                 <td>@record.Category</td>
                                 <td>@record.Quantity</td>
                                 <td>@record.SupplierName</td>
+                                <td>@record.BranchName</td>
                                 <td>@record.LinkedPolicy</td>
                                 <td>@record.PurchaseDate.ToString("MMM d, yyyy")</td>
                                 <td>@record.CurrencyCode</td>
@@ -773,6 +797,10 @@
                                         else if (record.CanEdit)
                                         {
                                             <button class="btn-action" onclick="editRecord('@record.ProcurementId')">Edit</button>
+                                        }
+                                        @if (record.CanDelete)
+                                        {
+                                            <button class="btn-action" style="color:#dc2626;border-color:#fca5a5;" onclick="confirmDeleteProcurement('@record.ProcurementId')">Delete</button>
                                         }
                                     </div>
                                 </td>
@@ -881,6 +909,10 @@
                         <div id="viewSupplier" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
                     </div>
                     <div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Branch</div>
+                        <div id="viewBranch" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
+                    </div>
+                    <div>
                         <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Linked Policy</div>
                         <div id="viewPolicy" style="font-weight: 600; color: #1f2937; font-size: 15px;"></div>
                     </div>
@@ -952,6 +984,23 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content" style="max-width: 460px;">
+            <div class="modal-header">
+                <h2 class="modal-title" style="color:#dc2626;">Confirm Deletion</h2>
+                <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px 24px;">
+                <p style="color:#334155; font-size:14px; margin:0;">Are you sure you want to delete procurement <strong id="deleteTargetId"></strong>? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn" style="background:#dc2626;color:#fff;" onclick="executeDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
     @section Scripts {
         <script>
             function showLoading(msg) { document.getElementById('loadingText').textContent = msg || 'Processing...'; document.getElementById('loadingOverlay').classList.add('active'); }
@@ -962,6 +1011,7 @@
             const supplierFilter = document.getElementById('supplierFilter');
             const statusFilter = document.getElementById('statusFilter');
             const deliveryFilter = document.getElementById('deliveryFilter');
+            const branchFilter = document.getElementById('branchFilter');
             const tableRows = document.querySelectorAll('#procurementTable tr');
 
             function filterTable() {
@@ -969,19 +1019,22 @@
                 const supplierValue = supplierFilter.value;
                 const statusValue = statusFilter.value;
                 const deliveryValue = deliveryFilter.value;
+                const branchValue = branchFilter.value;
 
                 tableRows.forEach(row => {
                     const itemName = row.cells[1]?.textContent.toLowerCase() || '';
                     const supplier = row.dataset.supplier || '';
                     const approvalStatus = row.dataset.approvalStatus || '';
                     const deliveryStatus = row.dataset.deliveryStatus || '';
+                    const branch = row.dataset.branch || '';
 
                     const matchSearch = itemName.includes(searchTerm) || supplier.toLowerCase().includes(searchTerm);
                     const matchSupplier = !supplierValue || supplier === supplierValue;
                     const matchStatus = !statusValue || approvalStatus === statusValue;
                     const matchDelivery = !deliveryValue || deliveryStatus === deliveryValue;
+                    const matchBranch = !branchValue || branch === branchValue;
 
-                    row.style.display = (matchSearch && matchSupplier && matchStatus && matchDelivery) ? '' : 'none';
+                    row.style.display = (matchSearch && matchSupplier && matchStatus && matchDelivery && matchBranch) ? '' : 'none';
                 });
             }
 
@@ -989,6 +1042,7 @@
         supplierFilter.addEventListener('change', filterTable);
         statusFilter.addEventListener('change', filterTable);
         deliveryFilter.addEventListener('change', filterTable);
+        branchFilter.addEventListener('change', filterTable);
 
         // Modal functions
         function openModal() {
@@ -1064,19 +1118,20 @@
             document.getElementById('viewCategory').textContent = targetRow.cells[2].textContent.trim();
             document.getElementById('viewQuantity').textContent = targetRow.cells[3].textContent.trim();
             document.getElementById('viewSupplier').textContent = targetRow.cells[4].textContent.trim();
-            document.getElementById('viewPolicy').textContent = targetRow.cells[5].textContent.trim();
-            document.getElementById('viewDate').textContent = targetRow.cells[6].textContent.trim();
-            document.getElementById('viewCurrency').textContent = targetRow.cells[7].textContent.trim();
-            document.getElementById('viewOriginalAmount').textContent = targetRow.cells[8].textContent.trim();
-            document.getElementById('viewConvertedAmount').textContent = targetRow.cells[9].textContent.trim();
+            document.getElementById('viewBranch').textContent = targetRow.cells[5].textContent.trim();
+            document.getElementById('viewPolicy').textContent = targetRow.cells[6].textContent.trim();
+            document.getElementById('viewDate').textContent = targetRow.cells[7].textContent.trim();
+            document.getElementById('viewCurrency').textContent = targetRow.cells[8].textContent.trim();
+            document.getElementById('viewOriginalAmount').textContent = targetRow.cells[9].textContent.trim();
+            document.getElementById('viewConvertedAmount').textContent = targetRow.cells[10].textContent.trim();
             document.getElementById('viewExchangeRate').textContent = targetRow.dataset.exchangeRate || 'N/A';
-            document.getElementById('viewDeliveryBegin').textContent = targetRow.cells[10].textContent.trim();
-            document.getElementById('viewPossibleArrival').textContent = targetRow.cells[11].textContent.trim();
+            document.getElementById('viewDeliveryBegin').textContent = targetRow.cells[11].textContent.trim();
+            document.getElementById('viewPossibleArrival').textContent = targetRow.cells[12].textContent.trim();
             document.getElementById('viewRevisedDelivery').textContent = targetRow.dataset.revisedDelivery || 'N/A';
             document.getElementById('viewDelayReason').textContent = targetRow.dataset.delayReason || 'N/A';
 
-            const approvalStatus = targetRow.cells[12].textContent.trim();
-            const deliveryStatus = targetRow.cells[13].textContent.trim();
+            const approvalStatus = targetRow.cells[13].textContent.trim();
+            const deliveryStatus = targetRow.cells[14].textContent.trim();
             const approvalStatusEl = document.getElementById('viewApprovalStatus');
             const deliveryStatusEl = document.getElementById('viewDeliveryStatus');
             approvalStatusEl.textContent = approvalStatus;
@@ -1235,6 +1290,48 @@
         document.getElementById('errorModal').addEventListener('click', function(e) {
             if (e.target === this) closeErrorModal();
         });
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDeleteModal();
+        });
+
+        let deletingProcurementId = null;
+
+        function confirmDeleteProcurement(id) {
+            deletingProcurementId = parseInt(id.replace('PROC-', ''));
+            document.getElementById('deleteTargetId').textContent = id;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            deletingProcurementId = null;
+        }
+
+        function executeDelete() {
+            if (!Number.isFinite(deletingProcurementId) || deletingProcurementId <= 0) {
+                showToast('Invalid procurement id.');
+                closeDeleteModal();
+                return;
+            }
+            closeDeleteModal();
+            const _t = setTimeout(() => showLoading('Deleting procurement...'), 300);
+            fetch(`/AdminProcurement/DeleteProcurement?procurementId=${deletingProcurementId}`, { method: 'POST' })
+                .then(async res => {
+                    let payload = null;
+                    try { payload = await res.json(); } catch { payload = null; }
+                    return { ok: res.ok, payload };
+                })
+                .then(result => {
+                    clearTimeout(_t); hideLoading();
+                    if (result.ok && result.payload?.success) {
+                        showToast(result.payload?.message || 'Procurement deleted.', 'success', 'Deleted');
+                        location.reload();
+                    } else {
+                        showToast(result.payload?.message || 'Failed to delete procurement.');
+                    }
+                })
+                .catch(() => { clearTimeout(_t); hideLoading(); showToast('Error deleting procurement.'); });
+        }
 
         const supplierSelect = document.getElementById('supplierId');
         const supplierItemSelect = document.getElementById('supplierItemId');

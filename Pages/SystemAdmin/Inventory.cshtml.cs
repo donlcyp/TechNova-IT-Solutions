@@ -22,8 +22,11 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
         public int LowStockCount { get; set; }
         public int OutOfStockCount { get; set; }
         public int TotalProcurements { get; set; }
+        public decimal TotalInventoryValue { get; set; }
 
         public List<TechNova_IT_Solutions.Pages.BranchAdmin.InventoryItem> InventoryItems { get; set; } = new();
+        public List<BranchReference> Branches { get; set; } = new();
+        public List<string> Categories { get; set; } = new();
 
         public async Task<IActionResult> OnGet()
         {
@@ -48,6 +51,7 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
             var procurements = await _context.Procurements
                 .Include(p => p.Supplier)
                 .Include(p => p.RelatedPolicy)
+                .Include(p => p.Branch)
                 .OrderByDescending(p => p.PurchaseDate)
                 .ToListAsync();
 
@@ -63,12 +67,32 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
                 TotalCost = p.ConvertedAmount,
                 Status = p.Status ?? "Unknown",
                 ProcurementDate = p.PurchaseDate,
-                LinkedPolicy = p.RelatedPolicy?.PolicyTitle ?? "—"
+                LinkedPolicy = p.RelatedPolicy?.PolicyTitle ?? "—",
+                BranchName = p.Branch?.BranchName ?? "Company-Wide",
+                Category = p.Category ?? "—"
             }).ToList();
 
             TotalItems = InventoryItems.Select(i => i.ItemName).Distinct().Count();
             LowStockCount = InventoryItems.Count(i => i.Quantity > 0 && i.Quantity <= 5);
             OutOfStockCount = InventoryItems.Count(i => i.Quantity == 0);
+            TotalInventoryValue = InventoryItems.Sum(i => i.TotalCost);
+
+            Categories = InventoryItems
+                .Select(i => i.Category)
+                .Where(c => c != "—")
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
+
+            Branches = await _context.Branches
+                .Where(b => b.Status == "Active")
+                .OrderBy(b => b.BranchName)
+                .Select(b => new BranchReference
+                {
+                    Id = b.BranchId,
+                    Name = b.BranchName
+                })
+                .ToListAsync();
 
             return Page();
         }

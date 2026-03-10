@@ -81,6 +81,8 @@ namespace TechNova_IT_Solutions.Pages
         public string DeliveryStatus { get; set; } = string.Empty;
         public bool CanEdit { get; set; }
         public bool CanMarkDeliveryArrived { get; set; }
+        public bool CanDelete { get; set; }
+        public string BranchName { get; set; } = string.Empty;
     }
 
     public class SupplierReference

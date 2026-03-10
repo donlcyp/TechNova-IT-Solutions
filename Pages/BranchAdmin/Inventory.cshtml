@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model TechNova_IT_Solutions.Pages.BranchAdmin.InventoryModel
 @{
     ViewData["Title"] = "Inventory";
@@ -29,7 +29,7 @@
 
         .content-wrapper { padding: 32px; }
 
-        /* ── Stats cards ── */
+        /* â”€â”€ Stats cards â”€â”€ */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -67,7 +67,7 @@
         .stat-info h3 { font-size: 28px; font-weight: 700; color: #1f2937; }
         .stat-info p  { font-size: 13px; color: #6b7280; margin-top: 2px; }
 
-        /* ── Table card ── */
+        /* â”€â”€ Table card â”€â”€ */
         .table-card {
             background: #fff;
             border-radius: 16px;
@@ -182,6 +182,33 @@
         .empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: .4; }
         .empty-state p   { font-size: 15px; }
 
+        .btn-action {
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: #f8f9fa;
+            color: #6b7280;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-action:hover { border-color: #1e40af; color: #1e40af; }
+
+        /* Modal */
+        .modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center; }
+        .modal.active { display:flex; }
+        .modal-content { background:#fff; border-radius:16px; max-width:560px; width:90%; max-height:90vh; overflow-y:auto; }
+        .modal-header { padding:24px 28px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; }
+        .modal-title { font-size:20px; font-weight:700; color:#1f2937; }
+        .modal-close { background:#f3f4f6; border:none; font-size:20px; color:#6b7280; cursor:pointer; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:8px; transition:all .2s; }
+        .modal-close:hover { background:#e5e7eb; }
+        .modal-body { padding:28px; }
+        .modal-footer { padding:20px 28px; border-top:1px solid #e5e7eb; display:flex; gap:12px; justify-content:flex-end; }
+        .btn { padding:10px 18px; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer; transition:all .2s; border:none; }
+        .btn-secondary { background:#f3f4f6; color:#1f2937; }
+        .btn-secondary:hover { background:#e5e7eb; }
+        .view-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+
         @@media (max-width: 991px) {
             .main-content { margin-left: 0; }
             .stats-grid   { grid-template-columns: repeat(2,1fr); }
@@ -190,6 +217,7 @@
         @@media (max-width: 576px) {
             .content-wrapper { padding: 16px; }
             .stats-grid      { grid-template-columns: 1fr; }
+            .view-detail-grid { grid-template-columns: 1fr; }
         }
     </style>
 }
@@ -201,7 +229,7 @@
     <div class="content-wrapper">
 
         <!-- Stats -->
-        <div class="stats-grid">
+        <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr);">
             <div class="stat-card">
                 <div class="stat-icon blue">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -251,6 +279,18 @@
                     <p>Total Procurements</p>
                 </div>
             </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:rgba(124,58,237,.1);color:#7c3aed;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <h3>â‚±@Model.TotalInventoryValue.ToString("N2")</h3>
+                    <p>Total Inventory Value</p>
+                </div>
+            </div>
         </div>
 
         <!-- Table -->
@@ -261,9 +301,20 @@
                     <input type="text" class="search-input" id="searchInput" placeholder="Search items or suppliers..." oninput="filterTable()" />
                     <select class="filter-select" id="statusFilter" onchange="filterTable()">
                         <option value="">All Statuses</option>
-                        <option value="Approved">Approved</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Rejected">Rejected</option>
+                        <option value="Draft">Draft</option>
+                        <option value="Submitted">Submitted</option>
+                        <option value="SupplierApproved">SupplierApproved</option>
+                        <option value="SupplierRejected">SupplierRejected</option>
+                        <option value="Received">Received</option>
+                        <option value="Closed">Closed</option>
+                        <option value="Late">Late</option>
+                    </select>
+                    <select class="filter-select" id="categoryFilter" onchange="filterTable()">
+                        <option value="">All Categories</option>
+                        @foreach (var cat in Model.Categories)
+                        {
+                            <option value="@cat">@cat</option>
+                        }
                     </select>
                 </div>
             </div>
@@ -273,6 +324,7 @@
                         <tr>
                             <th>#</th>
                             <th>Item Name</th>
+                            <th>Category</th>
                             <th>Supplier</th>
                             <th>Qty</th>
                             <th>Unit Price</th>
@@ -280,13 +332,14 @@
                             <th>Status</th>
                             <th>Date</th>
                             <th>Linked Policy</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="inventoryBody">
                         @if (!Model.InventoryItems.Any())
                         {
                             <tr>
-                                <td colspan="9">
+                                <td colspan="11">
                                     <div class="empty-state">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -304,19 +357,24 @@
                                 var qtyClass = item.Quantity == 0 ? "qty-zero" : item.Quantity <= 5 ? "qty-low" : "qty-ok";
                                 var statusLower = item.Status.ToLower();
                                 var statusClass = statusLower.Contains("approv") ? "status-approved"
-                                               : statusLower.Contains("pend")   ? "status-pending"
-                                               : statusLower.Contains("reject") ? "status-rejected"
+                                               : statusLower.Contains("pend") || statusLower.Contains("submit") || statusLower.Contains("draft") ? "status-pending"
+                                               : statusLower.Contains("reject") || statusLower.Contains("late") ? "status-rejected"
+                                               : statusLower.Contains("receiv") || statusLower.Contains("closed") ? "status-approved"
                                                : "status-default";
-                                <tr>
+                                <tr data-status="@item.Status" data-category="@item.Category">
                                     <td>@(row++)</td>
                                     <td><span class="item-name">@item.ItemName</span></td>
+                                    <td>@item.Category</td>
                                     <td><span class="supplier">@item.SupplierName</span></td>
                                     <td><span class="qty-badge @qtyClass">@item.Quantity</span></td>
-                                    <td>₱@item.UnitPrice.ToString("N2")</td>
-                                    <td>₱@item.TotalCost.ToString("N2")</td>
+                                    <td>â‚±@item.UnitPrice.ToString("N2")</td>
+                                    <td>â‚±@item.TotalCost.ToString("N2")</td>
                                     <td><span class="status-badge @statusClass">@item.Status</span></td>
-                                    <td>@(item.ProcurementDate?.ToString("MMM d, yyyy") ?? "—")</td>
+                                    <td>@(item.ProcurementDate?.ToString("MMM d, yyyy") ?? "â€”")</td>
                                     <td>@item.LinkedPolicy</td>
+                                    <td>
+                                        <button class="btn-action" onclick="viewInventoryItem(this)">View</button>
+                                    </td>
                                 </tr>
                             }
                         }
@@ -328,19 +386,109 @@
     </div>
 </div>
 
+<!-- Inventory Detail Modal -->
+<div class="modal" id="inventoryDetailModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Inventory Item Details</h2>
+            <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="view-detail-grid">
+                <div>
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Item Name</div>
+                    <div id="detailItemName" style="font-weight:600;color:#1f2937;font-size:15px;"></div>
+                </div>
+                <div>
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Category</div>
+                    <div id="detailCategory" style="font-weight:600;color:#1f2937;font-size:15px;"></div>
+                </div>
+                <div>
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Supplier</div>
+                    <div id="detailSupplier" style="font-weight:600;color:#1f2937;font-size:15px;"></div>
+                </div>
+                <div>
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Quantity</div>
+                    <div id="detailQuantity" style="font-weight:600;color:#1f2937;font-size:15px;"></div>
+                </div>
+                <div>
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Unit Price</div>
+                    <div id="detailUnitPrice" style="font-weight:600;color:#1f2937;font-size:15px;"></div>
+                </div>
+                <div>
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Total Cost (PHP)</div>
+                    <div id="detailTotalCost" style="font-weight:600;color:#1f2937;font-size:15px;"></div>
+                </div>
+                <div>
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Status</div>
+                    <div id="detailStatus" style="font-weight:600;font-size:15px;"></div>
+                </div>
+                <div>
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Procurement Date</div>
+                    <div id="detailDate" style="font-weight:600;color:#1f2937;font-size:15px;"></div>
+                </div>
+                <div style="grid-column:span 2;">
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Linked Policy</div>
+                    <div id="detailPolicy" style="font-weight:600;color:#1f2937;font-size:15px;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeDetailModal()">Close</button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         function filterTable() {
             const search = document.getElementById('searchInput').value.toLowerCase();
-            const status = document.getElementById('statusFilter').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const category = document.getElementById('categoryFilter').value;
             const rows = document.querySelectorAll('#inventoryBody tr');
 
             rows.forEach(row => {
                 const text = row.innerText.toLowerCase();
+                const rowStatus = row.dataset.status || '';
+                const rowCategory = row.dataset.category || '';
+
                 const matchSearch = !search || text.includes(search);
-                const matchStatus = !status || text.includes(status);
-                row.style.display = matchSearch && matchStatus ? '' : 'none';
+                const matchStatus = !status || rowStatus === status;
+                const matchCategory = !category || rowCategory === category;
+
+                row.style.display = (matchSearch && matchStatus && matchCategory) ? '' : 'none';
             });
         }
+
+        function viewInventoryItem(btn) {
+            const row = btn.closest('tr');
+            if (!row) return;
+            document.getElementById('detailItemName').textContent = row.cells[1].textContent.trim();
+            document.getElementById('detailCategory').textContent = row.cells[2].textContent.trim();
+            document.getElementById('detailSupplier').textContent = row.cells[3].textContent.trim();
+            document.getElementById('detailQuantity').textContent = row.cells[4].textContent.trim();
+            document.getElementById('detailUnitPrice').textContent = row.cells[5].textContent.trim();
+            document.getElementById('detailTotalCost').textContent = row.cells[6].textContent.trim();
+
+            const statusText = row.cells[7].textContent.trim();
+            const statusEl = document.getElementById('detailStatus');
+            statusEl.textContent = statusText;
+            const sl = statusText.toLowerCase();
+            statusEl.style.color = sl.includes('approv') || sl.includes('receiv') || sl.includes('closed') ? '#059669'
+                : sl.includes('reject') || sl.includes('late') ? '#dc2626'
+                : sl.includes('submit') || sl.includes('draft') ? '#ca8a04' : '#6b7280';
+
+            document.getElementById('detailDate').textContent = row.cells[8].textContent.trim();
+            document.getElementById('detailPolicy').textContent = row.cells[9].textContent.trim();
+            document.getElementById('inventoryDetailModal').classList.add('active');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('inventoryDetailModal').classList.remove('active');
+        }
+
+        document.getElementById('inventoryDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDetailModal();
+        });
     </script>
 }

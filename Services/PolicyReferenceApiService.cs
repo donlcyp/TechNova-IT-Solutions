@@ -193,9 +193,25 @@ namespace TechNova_IT_Solutions.Services
             });
 
             var batchResults = await Task.WhenAll(tasks);
+            var seenDocNumbers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var seenUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             foreach (var batch in batchResults)
             {
-                allResults.AddRange(batch);
+                foreach (var item in batch)
+                {
+                    var docNum = item.DocumentNumber?.Trim();
+                    var url = item.ExternalUrl?.Trim();
+
+                    bool isNew = docNum != null
+                        ? seenDocNumbers.Add(docNum)
+                        : url != null && seenUrls.Add(url);
+
+                    if (isNew)
+                    {
+                        allResults.Add(item);
+                    }
+                }
             }
 
             return allResults;

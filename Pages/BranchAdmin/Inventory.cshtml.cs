@@ -23,6 +23,9 @@ namespace TechNova_IT_Solutions.Pages.BranchAdmin
         public int LowStockCount { get; set; }
         public int OutOfStockCount { get; set; }
         public int TotalProcurements { get; set; }
+        public decimal TotalInventoryValue { get; set; }
+
+        public List<string> Categories { get; set; } = new();
 
         // Procurement items used as inventory records
         public List<InventoryItem> InventoryItems { get; set; } = new();
@@ -77,12 +80,21 @@ namespace TechNova_IT_Solutions.Pages.BranchAdmin
                 TotalCost = p.ConvertedAmount,
                 Status = p.Status ?? "Unknown",
                 ProcurementDate = p.PurchaseDate,
-                LinkedPolicy = p.RelatedPolicy?.PolicyTitle ?? "—"
+                LinkedPolicy = p.RelatedPolicy?.PolicyTitle ?? "—",
+                Category = p.Category ?? "—"
             }).ToList();
 
             TotalItems = InventoryItems.Select(i => i.ItemName).Distinct().Count();
             LowStockCount = InventoryItems.Count(i => i.Quantity > 0 && i.Quantity <= 5);
             OutOfStockCount = InventoryItems.Count(i => i.Quantity == 0);
+            TotalInventoryValue = InventoryItems.Sum(i => i.TotalCost);
+
+            Categories = InventoryItems
+                .Select(i => i.Category)
+                .Where(c => c != "—")
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
 
             return Page();
         }
@@ -99,5 +111,7 @@ namespace TechNova_IT_Solutions.Pages.BranchAdmin
         public string Status { get; set; } = string.Empty;
         public DateTime? ProcurementDate { get; set; }
         public string LinkedPolicy { get; set; } = string.Empty;
+        public string BranchName { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
     }
 }

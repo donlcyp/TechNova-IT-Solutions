@@ -24,11 +24,13 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
         public int TotalProcurements { get; set; }
         public int PendingApprovals { get; set; }
         public int ProcurementsThisMonth { get; set; }
+        public decimal TotalValue { get; set; }
 
         public List<TechNova_IT_Solutions.Pages.ProcurementRecord> ProcurementRecords { get; set; } = new();
         public List<TechNova_IT_Solutions.Pages.SupplierReference> Suppliers { get; set; } = new();
         public List<TechNova_IT_Solutions.Pages.PolicyReference> Policies { get; set; } = new();
         public List<TechNova_IT_Solutions.Pages.SupplierItemReference> SupplierItems { get; set; } = new();
+        public List<BranchReference> Branches { get; set; } = new();
 
         public async Task<IActionResult> OnGet()
         {
@@ -65,6 +67,7 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
             ProcurementRecords = await _context.Procurements
                 .Include(p => p.Supplier)
                 .Include(p => p.RelatedPolicy)
+                .Include(p => p.Branch)
                 .OrderByDescending(p => p.PurchaseDate)
                 .Select(p => new TechNova_IT_Solutions.Pages.ProcurementRecord
                 {
@@ -83,7 +86,8 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
                     RevisedDeliveryDate = p.RevisedDeliveryDate,
                     DelayReason = p.DelayReason,
                     WorkflowStatus = string.IsNullOrWhiteSpace(p.Status) ? ProcurementStatuses.Draft : p.Status,
-                    SupplierResponseDeadline = p.SupplierResponseDeadline
+                    SupplierResponseDeadline = p.SupplierResponseDeadline,
+                    BranchName = p.Branch != null ? p.Branch.BranchName : "Company-Wide"
                 })
                 .ToListAsync();
 
@@ -114,7 +118,10 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
 
                 record.CanEdit = record.WorkflowStatus == ProcurementStatuses.Draft || record.WorkflowStatus == ProcurementStatuses.Submitted;
                 record.CanMarkDeliveryArrived = record.WorkflowStatus == ProcurementStatuses.SupplierApproved || record.WorkflowStatus == ProcurementStatuses.Late;
+                record.CanDelete = record.WorkflowStatus == ProcurementStatuses.Draft;
             }
+
+            TotalValue = ProcurementRecords.Sum(r => r.ConvertedAmount ?? 0);
 
             Suppliers = await _context.Suppliers
                 .Where(s => s.Status == "Active")
@@ -152,7 +159,23 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
                 })
                 .ToListAsync();
 
+            Branches = await _context.Branches
+                .Where(b => b.Status == "Active")
+                .OrderBy(b => b.BranchName)
+                .Select(b => new BranchReference
+                {
+                    Id = b.BranchId,
+                    Name = b.BranchName
+                })
+                .ToListAsync();
+
             return Page();
         }
+    }
+
+    public class BranchReference
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
 }

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "d:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj": {}
+    "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj": {}
   },
   "projects": {
-    "d:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj": {
+    "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
+        "projectUniqueName": "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
         "projectName": "TechNova_IT_Solutions",
-        "projectPath": "d:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
+        "projectPath": "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
         "packagesPath": "C:\\Users\\donyl\\.nuget\\packages\\",
-        "outputPath": "d:\\C#\\repos\\TechNova IT Solutions\\obj\\",
+        "outputPath": "D:\\C#\\repos\\TechNova IT Solutions\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "D:\\C#\\shared\\NuGetPackages"

@@ -132,6 +132,14 @@
     @await Html.PartialAsync("_SuperAdminTopBar", (Title: "Operational Drilldown Reports", Description: "Investigative, record-level view for exceptions and audit tracing"))
 
     <div class="content-wrapper">
+        <div class="print-header" style="display:none;">
+            <div style="font-size:1.1rem;font-weight:800;color:#1e40af;">TechNova IT Solutions</div>
+            <div style="font-size:1.45rem;font-weight:700;color:#0f172a;margin:6px 0;">Operational Drilldown Report</div>
+            <div style="font-size:0.85rem;color:#64748b;">
+                Module: @Model.ModuleType &nbsp;|&nbsp; Status: @Model.Status &nbsp;|&nbsp;
+                Period: @Model.FromDate?.ToString("MMM dd, yyyy") &ndash; @Model.ToDate?.ToString("MMM dd, yyyy")
+            </div>
+        </div>
         <div class="panel">
             <h3 class="panel-title">
                 <span class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></span>
@@ -287,6 +295,7 @@
             .panel { position: absolute; left: 0; top: 0; width: 100%; }
             .filter-bar, .actions, .pagination { display: none !important; }
             .main-content, .content-wrapper { margin-left: 0 !important; }
+            .print-header { display: block !important; visibility: visible !important; position: static; text-align: center; padding-bottom: 16px; border-bottom: 2px solid #1e40af; margin-bottom: 20px; }
         }
     </style>
     <script>
