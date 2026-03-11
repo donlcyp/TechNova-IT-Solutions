@@ -271,64 +271,71 @@ namespace TechNova_IT_Solutions.Controllers
 
             request ??= new ApproveStagedPolicyRequest();
 
-            var staged = await _context.ExternalPolicyImports.FirstOrDefaultAsync(i => i.ImportId == importId);
-            if (staged == null)
+            try
             {
-                return NotFound(new { success = false, message = "Staged policy not found." });
-            }
-
-            Policy? policy = null;
-
-            if (staged.ApprovedPolicyId.HasValue)
-            {
-                policy = await _context.Policies.FirstOrDefaultAsync(p => p.PolicyId == staged.ApprovedPolicyId.Value);
-            }
-
-            if (policy == null)
-            {
-                policy = await _context.Policies
-                    .FirstOrDefaultAsync(p => !p.IsArchived && p.PolicyTitle == staged.PolicyTitle);
-
-                if (policy == null || request.ForceCreate)
+                var staged = await _context.ExternalPolicyImports.FirstOrDefaultAsync(i => i.ImportId == importId);
+                if (staged == null)
                 {
-                    policy = new Policy
-                    {
-                        PolicyTitle = staged.PolicyTitle,
-                        Description = staged.Description,
-                        Category = FirstNonEmpty(request.Category, staged.Category, "General"),
-                        DateUploaded = staged.PublicationDate ?? DateTime.Now,
-                        UploadedBy = reviewerUserId
-                    };
-                    _context.Policies.Add(policy);
-                    await _context.SaveChangesAsync();
+                    return NotFound(new { success = false, message = "Staged policy not found." });
                 }
+
+                Policy? policy = null;
+
+                if (staged.ApprovedPolicyId.HasValue)
+                {
+                    policy = await _context.Policies.FirstOrDefaultAsync(p => p.PolicyId == staged.ApprovedPolicyId.Value);
+                }
+
+                if (policy == null)
+                {
+                    policy = await _context.Policies
+                        .FirstOrDefaultAsync(p => !p.IsArchived && p.PolicyTitle == staged.PolicyTitle);
+
+                    if (policy == null || request.ForceCreate)
+                    {
+                        policy = new Policy
+                        {
+                            PolicyTitle = staged.PolicyTitle,
+                            Description = staged.Description,
+                            Category = FirstNonEmpty(request.Category, staged.Category, "General"),
+                            DateUploaded = staged.PublicationDate ?? DateTime.Now,
+                            UploadedBy = reviewerUserId
+                        };
+                        _context.Policies.Add(policy);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                staged.ReviewStatus = "Approved";
+                staged.ReviewedAt = DateTime.Now;
+                staged.ReviewedByUserId = reviewerUserId;
+                staged.ReviewNotes = string.IsNullOrWhiteSpace(request.ReviewNotes) ? staged.ReviewNotes : request.ReviewNotes.Trim();
+                staged.ApprovedPolicyId = policy.PolicyId;
+
+                _context.AuditLogs.Add(new AuditLog
+                {
+                    UserId = reviewerUserId,
+                    Module = "Policy",
+                    Action = TruncateAction($"Approved external policy import #{staged.ImportId} -> Policy ID: {policy.PolicyId}"),
+                    LogDate = DateTime.Now
+                });
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    importId = staged.ImportId,
+                    reviewStatus = staged.ReviewStatus,
+                    policyId = policy.PolicyId,
+                    policyTitle = policy.PolicyTitle,
+                    message = "Policy approved successfully. You can now assign it."
+                });
             }
-
-            staged.ReviewStatus = "Approved";
-            staged.ReviewedAt = DateTime.Now;
-            staged.ReviewedByUserId = reviewerUserId;
-            staged.ReviewNotes = string.IsNullOrWhiteSpace(request.ReviewNotes) ? staged.ReviewNotes : request.ReviewNotes.Trim();
-            staged.ApprovedPolicyId = policy.PolicyId;
-
-            _context.AuditLogs.Add(new AuditLog
+            catch (Exception ex)
             {
-                UserId = reviewerUserId,
-                Module = "Policy",
-                Action = TruncateAction($"Approved external policy import #{staged.ImportId} -> Policy ID: {policy.PolicyId}"),
-                LogDate = DateTime.Now
-            });
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new
-            {
-                success = true,
-                importId = staged.ImportId,
-                reviewStatus = staged.ReviewStatus,
-                policyId = policy.PolicyId,
-                policyTitle = policy.PolicyTitle,
-                message = "Policy approved successfully. You can now assign it."
-            });
+                return StatusCode(500, new { success = false, message = ex.InnerException?.Message ?? ex.Message });
+            }
         }
 
         [HttpPost("staging/{importId:int}/assign")]

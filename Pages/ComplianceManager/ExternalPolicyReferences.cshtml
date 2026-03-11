@@ -1157,8 +1157,15 @@ else
                 body: JSON.stringify(payload)
             });
 
-            const result = await res.json();
+            const text = await res.text();
             clearTimeout(_t); hideLoading();
+
+            let result;
+            try { result = JSON.parse(text); } catch {
+                await window.showAppMessage('Error while approving import. Unexpected server response.', 'Error');
+                return;
+            }
+
             if (!res.ok || !result.success) {
                 await window.showAppMessage(result.message || 'Failed to approve import.', 'Error');
                 return;
@@ -1168,7 +1175,7 @@ else
             location.reload();
         } catch {
             clearTimeout(_t); hideLoading();
-            await window.showAppMessage('Error while approving import.', 'Error');
+            await window.showAppMessage('Error while approving import. Please check your connection.', 'Error');
         }
     }
 
