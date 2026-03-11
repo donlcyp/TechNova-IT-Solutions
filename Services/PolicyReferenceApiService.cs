@@ -52,8 +52,30 @@ namespace TechNova_IT_Solutions.Services
             ["Document Retention Policy"] = new[]
             {
                 "document retention", "records management", "records disposal", "retention schedule", "archiving"
+            },
+            ["Remote Work & BYOD Policy"] = new[]
+            {
+                "remote work", "telework", "bring your own device", "BYOD", "mobile device security", "flexible work"
+            },
+            ["Business Continuity Policy"] = new[]
+            {
+                "business continuity", "disaster recovery", "emergency response", "operational resilience", "continuity of operations"
+            },
+            ["Change Management Policy"] = new[]
+            {
+                "change management", "IT governance", "system change control", "configuration management", "change control"
+            },
+            ["Incident Response Policy"] = new[]
+            {
+                "incident response", "breach notification", "security incident", "cyber incident", "data breach", "incident handling"
+            },
+            ["Vendor Risk Management Policy"] = new[]
+            {
+                "vendor risk", "third-party assessment", "supplier audit", "supply chain risk", "vendor due diligence"
             }
         };
+
+        public static int CategoryCount => PolicySearchTerms.Count;
 
         private static readonly string[] GlobalPolicyKeywords =
         {
@@ -184,7 +206,7 @@ namespace TechNova_IT_Solutions.Services
 
             var tasks = PolicySearchTerms.Select(async kvp =>
             {
-                var results = await SearchFederalRegisterAsync(kvp.Value, perPage: 3);
+                var results = await SearchFederalRegisterAsync(kvp.Value, perPage: 5);
                 foreach (var item in results)
                 {
                     item.Category = kvp.Key;

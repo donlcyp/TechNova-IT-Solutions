@@ -736,6 +736,54 @@
     .loading-overlay.active { display:flex; }
     .loading-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,.3); border-top:4px solid #fff; border-radius:50%; animation:spin .8s linear infinite; }
     @@keyframes spin { to { transform: rotate(360deg); } }
+
+    .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+
+    .filter-search-wrap {
+        position: relative;
+        flex: 1 1 220px;
+        max-width: 360px;
+    }
+
+    .filter-search-wrap svg {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        pointer-events: none;
+    }
+
+    .filter-search-input {
+        width: 100%;
+        padding: 8px 12px 8px 34px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: .86rem;
+        font-family: inherit;
+        color: #0f172a;
+        background: #ffffff;
+        outline: none;
+        transition: border-color .15s;
+        box-sizing: border-box;
+    }
+
+    .filter-search-input:focus {
+        border-color: #1d4ed8;
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, .12);
+    }
+
+    .filter-result-count {
+        font-size: .82rem;
+        color: #64748b;
+        white-space: nowrap;
+    }
 </style>
 
 @{
@@ -784,7 +832,7 @@ else
                 <p class="stat-label">Rejected</p>
             </article>
             <article class="stat">
-                <p class="stat-value">7</p>
+                <p class="stat-value">@(ViewBag.SystemCategoryCount ?? 12)</p>
                 <p class="stat-label">System Categories</p>
             </article>
         </section>
@@ -863,6 +911,18 @@ else
                 </div>
             </div>
 
+            <div class="filter-bar">
+                <div class="filter-search-wrap">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+                    <input class="filter-search-input"
+                           type="text"
+                           id="policySearchInput"
+                           placeholder="Search policies by title or description..."
+                           oninput="applyFilters()" />
+                </div>
+                <span class="filter-result-count" id="filterResultCount"></span>
+            </div>
+
             <div class="chip-row">
                 <button class="chip active" onclick="filterCategory('all', event)">All</button>
                 @foreach (var group in grouped)
@@ -927,6 +987,25 @@ else
     </div>
 </main>
 
+<div class="modal" id="approveModal">
+    <div class="modal-content" style="max-width:480px">
+        <div class="modal-header">
+            <strong>Approve Import</strong>
+            <button class="btn" onclick="closeApproveModal()">Close</button>
+        </div>
+        <div class="modal-body">
+            <div class="field">
+                <label for="approvalNotes">Approval Notes <span style="font-weight:400;color:#64748b">(optional)</span></label>
+                <textarea id="approvalNotes" placeholder="Enter any approval notes here..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeApproveModal()">Cancel</button>
+            <button class="btn btn-success" onclick="submitApproval()">Approve</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal" id="assignModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -979,13 +1058,44 @@ else
 
     let currentImportId = null;
 
+    let _activeCategory = 'all';
+
     function filterCategory(cat, evt) {
+        _activeCategory = cat;
         document.querySelectorAll('.chip').forEach(t => t.classList.remove('active'));
         if (evt && evt.target) evt.target.classList.add('active');
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const query = (document.getElementById('policySearchInput')?.value || '').trim().toLowerCase();
+        let visibleCount = 0;
 
         document.querySelectorAll('.category-section').forEach(section => {
-            section.style.display = (cat === 'all' || section.dataset.category === cat) ? '' : 'none';
+            const catMatch = _activeCategory === 'all' || section.dataset.category === _activeCategory;
+            if (!catMatch) { section.style.display = 'none'; return; }
+
+            if (!query) {
+                section.style.display = '';
+                visibleCount += section.querySelectorAll('.policy-card').length;
+                return;
+            }
+
+            let sectionVisible = false;
+            section.querySelectorAll('.policy-card').forEach(card => {
+                const title = (card.querySelector('.policy-title')?.textContent || '').toLowerCase();
+                const desc = (card.querySelector('.policy-desc')?.textContent || '').toLowerCase();
+                const matches = title.includes(query) || desc.includes(query);
+                card.style.display = matches ? '' : 'none';
+                if (matches) { sectionVisible = true; visibleCount++; }
+            });
+            section.style.display = sectionVisible ? '' : 'none';
         });
+
+        const countEl = document.getElementById('filterResultCount');
+        if (countEl) {
+            countEl.textContent = query ? `${visibleCount} result${visibleCount !== 1 ? 's' : ''} found` : '';
+        }
     }
 
     async function queuePolicyFromButton(button) {
@@ -1020,13 +1130,28 @@ else
         }
     }
 
-    async function approveImport(importId) {
-        const notes = prompt('Approval notes (optional):') || '';
+    let _pendingApproveId = null;
+
+    function approveImport(importId) {
+        _pendingApproveId = importId;
+        document.getElementById('approvalNotes').value = '';
+        document.getElementById('approveModal').classList.add('active');
+    }
+
+    function closeApproveModal() {
+        _pendingApproveId = null;
+        document.getElementById('approveModal').classList.remove('active');
+    }
+
+    async function submitApproval() {
+        if (!_pendingApproveId) return;
+        const notes = document.getElementById('approvalNotes').value.trim();
         const payload = { reviewNotes: notes || null };
+        closeApproveModal();
 
         const _t = setTimeout(() => showLoading('Approving import...'), 300);
         try {
-            const res = await fetch(`/api/policy-references/staging/${importId}/approve`, {
+            const res = await fetch(`/api/policy-references/staging/${_pendingApproveId}/approve`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

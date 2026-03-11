@@ -380,6 +380,7 @@
                             <th>Item Name</th>
                             <th>Category</th>
                             <th>Supplier</th>
+                            <th>Branch</th>
                             <th>Qty</th>
                             <th>Unit Price</th>
                             <th>Total Cost</th>
@@ -393,7 +394,7 @@
                         @if (!Model.InventoryItems.Any())
                         {
                             <tr>
-                                <td colspan="11">
+                                <td colspan="12">
                                     <div class="empty-state">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -415,11 +416,12 @@
                                                : statusLower.Contains("reject") || statusLower.Contains("late") ? "status-rejected"
                                                : statusLower.Contains("receiv") || statusLower.Contains("closed") ? "status-approved"
                                                : "status-default";
-                                <tr data-status="@item.Status" data-category="@item.Category">
+                                <tr data-status="@item.Status" data-category="@item.Category" data-branch="@item.BranchName">
                                     <td>@(row++)</td>
                                     <td><span class="item-name">@item.ItemName</span></td>
                                     <td>@item.Category</td>
                                     <td><span class="supplier">@item.SupplierName</span></td>
+                                    <td>@item.BranchName</td>
                                     <td><span class="qty-badge @qtyClass">@item.Quantity</span></td>
                                     <td>₱@item.UnitPrice.ToString("N2")</td>
                                     <td>₱@item.TotalCost.ToString("N2")</td>
@@ -460,6 +462,10 @@
                 <div>
                     <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Supplier</div>
                     <div id="detailSupplier" style="font-weight:600;color:#1f2937;font-size:15px;"></div>
+                </div>
+                <div>
+                    <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Branch</div>
+                    <div id="detailBranch" style="font-weight:600;color:#1f2937;font-size:15px;"></div>
                 </div>
                 <div>
                     <div style="font-size:12px;color:#6b7280;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;">Quantity</div>
@@ -520,11 +526,12 @@
             document.getElementById('detailItemName').textContent = row.cells[1].textContent.trim();
             document.getElementById('detailCategory').textContent = row.cells[2].textContent.trim();
             document.getElementById('detailSupplier').textContent = row.cells[3].textContent.trim();
-            document.getElementById('detailQuantity').textContent = row.cells[4].textContent.trim();
-            document.getElementById('detailUnitPrice').textContent = row.cells[5].textContent.trim();
-            document.getElementById('detailTotalCost').textContent = row.cells[6].textContent.trim();
+            document.getElementById('detailBranch').textContent = row.dataset.branch || 'Main Branch';
+            document.getElementById('detailQuantity').textContent = row.cells[5].textContent.trim();
+            document.getElementById('detailUnitPrice').textContent = row.cells[6].textContent.trim();
+            document.getElementById('detailTotalCost').textContent = row.cells[7].textContent.trim();
 
-            const statusText = row.cells[7].textContent.trim();
+            const statusText = row.cells[8].textContent.trim();
             const statusEl = document.getElementById('detailStatus');
             statusEl.textContent = statusText;
             const sl = statusText.toLowerCase();
@@ -532,8 +539,8 @@
                 : sl.includes('reject') || sl.includes('late') ? '#dc2626'
                 : sl.includes('submit') || sl.includes('draft') ? '#ca8a04' : '#6b7280';
 
-            document.getElementById('detailDate').textContent = row.cells[8].textContent.trim();
-            document.getElementById('detailPolicy').textContent = row.cells[9].textContent.trim();
+            document.getElementById('detailDate').textContent = row.cells[9].textContent.trim();
+            document.getElementById('detailPolicy').textContent = row.cells[10].textContent.trim();
             document.getElementById('inventoryDetailModal').classList.add('active');
         }
 

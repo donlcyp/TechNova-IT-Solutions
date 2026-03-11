@@ -3,6 +3,7 @@ using TechNova_IT_Solutions.Constants;
 using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Infrastructure;
 using TechNova_IT_Solutions.Services.Interfaces;
+using TechNova_IT_Solutions.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace TechNova_IT_Solutions.Controllers
@@ -83,6 +84,7 @@ namespace TechNova_IT_Solutions.Controllers
             ViewBag.PendingImportCount = pendingCount;
             ViewBag.ApprovedImportCount = approvedCount;
             ViewBag.RejectedImportCount = rejectedCount;
+            ViewBag.SystemCategoryCount = PolicyReferenceApiService.CategoryCount;
             return View("~/Pages/ComplianceManager/ExternalPolicyReferences.cshtml", externalPolicies);
         }
 

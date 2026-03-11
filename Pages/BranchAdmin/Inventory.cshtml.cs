@@ -65,10 +65,14 @@ namespace TechNova_IT_Solutions.Pages.BranchAdmin
             var query = _context.Procurements
                 .Include(p => p.Supplier)
                 .Include(p => p.RelatedPolicy)
+                .Include(p => p.Branch)
                 .AsQueryable();
 
+            // Strict branch scoping — no overlap between branches
             if (branchId.HasValue)
-                query = query.Where(p => p.BranchId == branchId || p.BranchId == null);
+                query = query.Where(p => p.BranchId == branchId);
+            else
+                query = query.Where(p => p.BranchId == null);
 
             var procurements = await query.OrderByDescending(p => p.PurchaseDate).ToListAsync();
 
@@ -85,6 +89,7 @@ namespace TechNova_IT_Solutions.Pages.BranchAdmin
                 Status = p.Status ?? "Unknown",
                 ProcurementDate = p.PurchaseDate,
                 LinkedPolicy = p.RelatedPolicy?.PolicyTitle ?? "—",
+                BranchName = p.Branch?.BranchName ?? "Main Branch",
                 Category = p.Category ?? "—"
             }).ToList();
 

@@ -16,7 +16,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TechNova_IT_Solutions")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+48dc53a3f7b680982ebbc2c679f292af4368699f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b39787080943d2c294c4f6e022c7875a8c9bed24")]
 [assembly: System.Reflection.AssemblyProductAttribute("TechNova_IT_Solutions")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TechNova_IT_Solutions")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
