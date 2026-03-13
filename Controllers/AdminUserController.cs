@@ -70,7 +70,7 @@ namespace TechNova_IT_Solutions.Controllers
             {
                 return BadRequest(new { success = false, message = "Invalid user data" });
             }
-            // SuperAdmin can create any role. SystemAdmin can create BranchAdmin but not SystemAdmin/SuperAdmin.
+
             if (!IsCurrentUserSuperAdmin())
             {
                 if (string.Equals(userData.Role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase) ||
@@ -80,8 +80,7 @@ namespace TechNova_IT_Solutions.Controllers
                 }
             }
 
-            // If the calling user is an Admin (not SuperAdmin) and no branch was explicitly provided,
-            // automatically attach the caller's branch
+
             if (!IsCurrentUserSuperAdmin() && !userData.BranchId.HasValue)
             {
                 var branchIdStr = HttpContext.Session.GetString(SessionKeys.BranchId);

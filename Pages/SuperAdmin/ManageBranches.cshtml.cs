@@ -15,6 +15,7 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
         }
 
         public List<BranchData> Branches { get; set; } = new();
+        public List<BranchData> ArchivedBranches { get; set; } = new();
 
         public async Task<IActionResult> OnGet()
         {
@@ -30,7 +31,8 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
                 });
             if (denied != null) return denied;
 
-            Branches = await _branchService.GetAllBranchesAsync();
+            Branches         = await _branchService.GetAllBranchesAsync();
+            ArchivedBranches = await _branchService.GetArchivedBranchesAsync();
             return Page();
         }
     }

@@ -133,6 +133,9 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");
 
+// Lightweight keep-alive endpoint for uptime monitors (no DB access)
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
 app.MapRazorPages();
 
 app.Run();

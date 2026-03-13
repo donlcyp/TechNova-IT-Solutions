@@ -143,6 +143,7 @@
                                     <th>Policy</th>
                                     <th>Status</th>
                                     <th>Assigned</th>
+                                    <th>Acknowledged</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -155,6 +156,7 @@
                                         <td>@row.PolicyTitle</td>
                                         <td><span class="status-badge @statusClass">@row.Status</span></td>
                                         <td>@(row.AssignedDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                                        <td>@(row.AcknowledgedDate?.ToString("yyyy-MM-dd") ?? "-")</td>
                                     </tr>
                                 }
                             </tbody>

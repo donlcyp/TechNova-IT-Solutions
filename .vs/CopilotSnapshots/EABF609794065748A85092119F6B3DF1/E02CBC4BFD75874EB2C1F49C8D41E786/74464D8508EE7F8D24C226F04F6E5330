@@ -1,0 +1,1274 @@
+﻿@model List<TechNova_IT_Solutions.Models.ExternalPolicyData>
+@{
+    Layout = "/Pages/Shared/_Layout.cshtml";
+    ViewData["Title"] = "External Policy References";
+    var grouped = Model?.GroupBy(p => p.Category)
+        .OrderBy(g => g.Key)
+        .ToList() ?? new List<IGrouping<string, TechNova_IT_Solutions.Models.ExternalPolicyData>>();
+
+    var stagedImports = ViewBag.StagedImports as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var employees = ViewBag.ActiveEmployees as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var suppliers = ViewBag.ActiveSuppliers as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    var pendingCount = (int)(ViewBag.PendingImportCount ?? 0);
+    var approvedCount = (int)(ViewBag.ApprovedImportCount ?? 0);
+    var rejectedCount = (int)(ViewBag.RejectedImportCount ?? 0);
+}
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        color: #0f172a;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    .main-content {
+        margin-left: 260px;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+
+    .ext-policy-page {
+        display: grid;
+        gap: 20px;
+    }
+
+    .hero {
+        background: radial-gradient(circle at top right, rgba(30, 64, 175, 0.12), transparent 60%), #ffffff;
+        border: 1px solid #dbe3f0;
+        border-radius: 16px;
+        padding: 22px 24px;
+    }
+
+    .hero h2 {
+        margin: 0 0 8px;
+        font-size: 1.6rem;
+        color: #0f172a;
+    }
+
+    .hero p {
+        margin: 0;
+        color: #475569;
+        font-size: .96rem;
+    }
+
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(130px, 1fr));
+        gap: 12px;
+    }
+
+    .stat {
+        background: #ffffff;
+        border: 1px solid #dbe3f0;
+        border-radius: 12px;
+        padding: 16px 14px;
+    }
+
+    .stat-value {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 700;
+        color: #1d4ed8;
+    }
+
+    .stat-label {
+        margin: 6px 0 0;
+        font-size: .78rem;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .panel {
+        background: #ffffff;
+        border: 1px solid #dbe3f0;
+        border-radius: 16px;
+        padding: 20px;
+    }
+
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .panel-title {
+        margin: 0;
+        font-size: 1.35rem;
+        color: #0f172a;
+    }
+
+    .panel-subtitle {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: .92rem;
+    }
+
+    .queue-table-wrap {
+        overflow-x: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+    }
+
+    .queue-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 820px;
+    }
+
+    .queue-table th, .queue-table td {
+        border-bottom: 1px solid #e2e8f0;
+        padding: 11px 10px;
+        font-size: .87rem;
+        vertical-align: top;
+        text-align: left;
+    }
+
+    .queue-table th {
+        background: #f8fafc;
+        color: #475569;
+        font-size: .76rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .queue-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .queue-title {
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 3px;
+    }
+
+    .muted {
+        color: #64748b;
+        font-size: .82rem;
+    }
+
+    .badge {
+        display: inline-flex;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: .74rem;
+        font-weight: 700;
+        letter-spacing: .02em;
+    }
+
+    .badge.pending { background: transparent; color: #92400e; }
+    .badge.approved { background: #dcfce7; color: #166534; }
+    .badge.rejected { background: #fee2e2; color: #991b1b; }
+
+    .btn {
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #334155;
+        border-radius: 9px;
+        padding: 7px 11px;
+        font-size: .8rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .btn:hover {
+        border-color: #1d4ed8;
+        color: #1d4ed8;
+    }
+
+    .btn-primary {
+        border-color: #1d4ed8;
+        background: #1d4ed8;
+        color: #ffffff;
+    }
+
+    .btn-primary:hover {
+        color: #ffffff;
+        filter: brightness(0.95);
+    }
+
+    .btn-success {
+        border-color: #15803d;
+        background: #15803d;
+        color: #ffffff;
+    }
+
+    .btn-danger {
+        border-color: #b91c1c;
+        background: #b91c1c;
+        color: #ffffff;
+    }
+
+    .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .chip {
+        border: 1px solid #d1dbe9;
+        border-radius: 999px;
+        background: #ffffff;
+        color: #334155;
+        font-size: .8rem;
+        font-weight: 600;
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+
+    .chip.active {
+        background: #1d4ed8;
+        color: #ffffff;
+        border-color: #1d4ed8;
+        box-shadow: 0 10px 18px rgba(37, 99, 235, .18);
+    }
+
+    .category-section {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 14px;
+        overflow: hidden;
+    }
+
+    .category-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 14px;
+        background: linear-gradient(90deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0));
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .category-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .category-dot {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: #dbeafe;
+        color: #1d4ed8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .category-title {
+        margin: 0;
+        font-size: 1rem;
+        color: #0f172a;
+    }
+
+    .category-desc {
+        margin: 2px 0 0;
+        font-size: .83rem;
+        color: #64748b;
+    }
+
+    .category-count {
+        border-radius: 999px;
+        padding: 4px 10px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .policy-list {
+        padding: 14px;
+        display: grid;
+        gap: 12px;
+    }
+
+    .policy-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 11px;
+        background: #f8fafc;
+        padding: 14px;
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    .policy-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(15, 23, 42, .08);
+    }
+
+    .policy-title {
+        margin: 0 0 8px;
+        font-size: .95rem;
+        color: #0f172a;
+        line-height: 1.5;
+    }
+
+    .policy-desc {
+        margin: 0 0 10px;
+        font-size: .86rem;
+        color: #475569;
+        line-height: 1.55;
+    }
+
+    .policy-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .meta-chip {
+        font-size: .74rem;
+        border-radius: 8px;
+        background: #e2e8f0;
+        color: #334155;
+        padding: 4px 8px;
+    }
+
+    .policy-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .empty {
+        color: #64748b;
+        text-align: center;
+        padding: 24px 10px;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, .55);
+        z-index: 1200;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+    }
+
+    .modal.active { display: flex; }
+
+    .modal-content {
+        width: min(720px, 100%);
+        background: #ffffff;
+        border: 1px solid #dbe3f0;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 22px 45px rgba(15, 23, 42, .24);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 16px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .modal-body {
+        padding: 16px;
+        max-height: 62vh;
+        overflow-y: auto;
+    }
+
+    .modal-footer {
+        padding: 12px 16px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .field { margin-bottom: 12px; }
+
+    .field label {
+        display: block;
+        margin-bottom: 6px;
+        color: #475569;
+        font-size: .82rem;
+        font-weight: 600;
+    }
+
+    .field textarea {
+        width: 100%;
+        min-height: 88px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: .86rem;
+        padding: 10px;
+        font-family: inherit;
+        resize: vertical;
+    }
+
+    .checklist {
+        border: 1px solid #dbe3f0;
+        border-radius: 10px;
+        max-height: 170px;
+        overflow-y: auto;
+        padding: 8px;
+        background: #f8fafc;
+    }
+
+    .check-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px;
+        font-size: .85rem;
+        color: #334155;
+    }
+
+    @@media (max-width: 1200px) {
+        .stats {
+            grid-template-columns: repeat(3, minmax(130px, 1fr));
+        }
+    }
+
+    @@media (max-width: 991px) {
+        .main-content {
+            margin-left: 0;
+        }
+    }
+
+    @@media (max-width: 760px) {
+        .stats {
+            grid-template-columns: repeat(2, minmax(120px, 1fr));
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .ext-policy-page {
+            gap: 14px;
+        }
+
+        .hero {
+            padding: 16px;
+            border-radius: 12px;
+        }
+
+        .hero h2 {
+            font-size: 1.15rem;
+            line-height: 1.35;
+        }
+
+        .hero p {
+            font-size: .9rem;
+            line-height: 1.45;
+        }
+
+        .stats {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .stat {
+            padding: 12px;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            line-height: 1;
+        }
+
+        .panel {
+            padding: 14px;
+            border-radius: 12px;
+        }
+
+        .panel-title {
+            font-size: 1.05rem;
+            line-height: 1.3;
+        }
+
+        .panel-subtitle {
+            font-size: .86rem;
+        }
+
+        .queue-table {
+            min-width: 0;
+        }
+
+        .queue-title {
+            overflow-wrap: anywhere;
+        }
+
+        .queue-table-wrap {
+            overflow: visible;
+            border: none;
+        }
+
+        .queue-table thead {
+            display: none;
+        }
+
+        .queue-table,
+        .queue-table tbody,
+        .queue-table tr,
+        .queue-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .queue-table tr {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        .queue-table tr:last-child {
+            margin-bottom: 0;
+        }
+
+        .queue-table td {
+            border-bottom: 1px solid #eef2f7;
+            padding: 8px 10px;
+            font-size: .8rem;
+            display: grid;
+            grid-template-columns: 96px minmax(0, 1fr);
+            gap: 8px;
+            align-items: start;
+        }
+
+        .queue-table td:last-child {
+            border-bottom: none;
+        }
+
+        .queue-table td::before {
+            color: #64748b;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            content: "";
+        }
+
+        .queue-table td:nth-child(1)::before { content: "ID"; }
+        .queue-table td:nth-child(2)::before { content: "Title"; }
+        .queue-table td:nth-child(3)::before { content: "Category"; }
+        .queue-table td:nth-child(4)::before { content: "Status"; }
+        .queue-table td:nth-child(5)::before { content: "Doc #"; }
+        .queue-table td:nth-child(6)::before { content: "Imported"; }
+        .queue-table td:nth-child(7)::before { content: "Actions"; }
+
+        .queue-table td[colspan] {
+            grid-template-columns: 1fr;
+            text-align: left;
+        }
+
+        .queue-table td[colspan]::before {
+            display: none;
+        }
+
+        .queue-table td:nth-child(7) .btn {
+            width: 100%;
+            margin-bottom: 6px;
+        }
+
+        .queue-table td:nth-child(7) .btn:last-child {
+            margin-bottom: 0;
+        }
+
+        .chip-row {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .chip {
+            white-space: nowrap;
+            flex: 0 0 auto;
+        }
+
+        .category-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .category-count {
+            align-self: flex-start;
+        }
+
+        .policy-list {
+            padding: 12px;
+            gap: 10px;
+        }
+
+        .policy-card {
+            padding: 12px;
+        }
+
+        .policy-actions .btn {
+            width: 100%;
+        }
+
+        .modal {
+            padding: 10px;
+        }
+
+        .modal-body {
+            max-height: 70vh;
+            padding: 12px;
+        }
+
+        .modal-footer {
+            padding: 10px 12px;
+            flex-wrap: wrap;
+        }
+
+        .modal-footer .btn {
+            width: 100%;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .content-wrapper.ext-policy-page {
+            padding: 12px;
+        }
+
+        .hero,
+        .panel {
+            padding: 12px;
+        }
+
+        .hero h2 {
+            font-size: 1.05rem;
+        }
+
+        .stat {
+            padding: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.55rem;
+        }
+    }
+
+    /* iPhone 12/13/14 style viewport: 390x844 */
+    @@media (max-width: 390px) and (min-height: 800px) {
+        .content-wrapper.ext-policy-page {
+            padding: 10px;
+            gap: 10px;
+        }
+
+        .hero,
+        .panel {
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .hero h2 {
+            font-size: 1rem;
+        }
+
+        .hero p,
+        .panel-subtitle {
+            font-size: .82rem;
+        }
+
+        .stat {
+            padding: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.45rem;
+        }
+
+        .stat-label {
+            font-size: .72rem;
+        }
+
+        .queue-table td {
+            grid-template-columns: 84px minmax(0, 1fr);
+            gap: 6px;
+            padding: 7px 8px;
+            font-size: .76rem;
+        }
+
+        .queue-table td::before {
+            font-size: .66rem;
+        }
+
+        .btn {
+            padding: 6px 9px;
+            font-size: .74rem;
+            border-radius: 8px;
+        }
+
+        .chip {
+            font-size: .72rem;
+            padding: 6px 9px;
+        }
+    }
+
+    @@media (max-width: 360px) {
+        .content-wrapper.ext-policy-page {
+            padding: 10px;
+        }
+
+        .chip {
+            font-size: .74rem;
+            padding: 7px 10px;
+        }
+    }
+    .loading-overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.6); z-index:9999; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+    .loading-overlay.active { display:flex; }
+    .loading-spinner { width:48px; height:48px; border:4px solid rgba(255,255,255,.3); border-top:4px solid #fff; border-radius:50%; animation:spin .8s linear infinite; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+
+    .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+
+    .filter-search-wrap {
+        position: relative;
+        flex: 1 1 220px;
+        max-width: 360px;
+    }
+
+    .filter-search-wrap svg {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        pointer-events: none;
+    }
+
+    .filter-search-input {
+        width: 100%;
+        padding: 8px 12px 8px 34px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        font-size: .86rem;
+        font-family: inherit;
+        color: #0f172a;
+        background: #ffffff;
+        outline: none;
+        transition: border-color .15s;
+        box-sizing: border-box;
+    }
+
+    .filter-search-input:focus {
+        border-color: #1d4ed8;
+        box-shadow: 0 0 0 3px rgba(29, 78, 216, .12);
+    }
+
+    .filter-result-count {
+        font-size: .82rem;
+        color: #64748b;
+        white-space: nowrap;
+    }
+</style>
+
+@{
+    var callerRole = Context.Session.GetString("UserRole") ?? string.Empty;
+    var isChiefCM = callerRole.Equals("ChiefComplianceManager", StringComparison.OrdinalIgnoreCase)
+                 || callerRole.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase);
+}
+
+@if (isChiefCM)
+{
+    @await Html.PartialAsync("_ChiefComplianceManagerSidebar", "ExternalPolicyReferences")
+}
+else
+{
+    @await Html.PartialAsync("_AdminSidebar", "ExternalPolicyReferences")
+}
+
+<main class="main-content">
+    @await Html.PartialAsync("_ComplianceManagerTopBar", (Title: "External Policy References", Description: "Filtered Federal Register data mapped to TechNova policy domains"))
+
+    <div class="content-wrapper ext-policy-page">
+        <section class="hero">
+            <h2>Policy Intake And Review Queue</h2>
+            <p>Queue external regulations, review by compliance, and activate approved policies with targeted employee and supplier assignment.</p>
+        </section>
+
+        <section class="stats">
+            <article class="stat">
+                <p class="stat-value">@(Model?.Count ?? 0)</p>
+                <p class="stat-label">Live References</p>
+            </article>
+            <article class="stat">
+                <p class="stat-value">@grouped.Count</p>
+                <p class="stat-label">Mapped Categories</p>
+            </article>
+            <article class="stat">
+                <p class="stat-value">@pendingCount</p>
+                <p class="stat-label">Pending Review</p>
+            </article>
+            <article class="stat">
+                <p class="stat-value">@approvedCount</p>
+                <p class="stat-label">Approved</p>
+            </article>
+            <article class="stat">
+                <p class="stat-value">@rejectedCount</p>
+                <p class="stat-label">Rejected</p>
+            </article>
+            <article class="stat">
+                <p class="stat-value">@(ViewBag.SystemCategoryCount ?? 12)</p>
+                <p class="stat-label">System Categories</p>
+            </article>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <div>
+                    <h3 class="panel-title">Review Queue</h3>
+                    <p class="panel-subtitle">Pending imports must be approved before activation.</p>
+                </div>
+            </div>
+
+            <div class="queue-table-wrap">
+                <table class="queue-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Doc #</th>
+                            <th>Imported</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (stagedImports.Any())
+                        {
+                            foreach (var item in stagedImports)
+                            {
+                                var status = (item.ReviewStatus as string) ?? "PendingReview";
+                                var statusCss = status == "Approved" ? "approved" : status == "Rejected" ? "rejected" : "pending";
+                                <tr>
+                                    <td>#@item.ImportId</td>
+                                    <td>
+                                        <div class="queue-title">@item.PolicyTitle</div>
+                                        <div class="muted">@item.ReviewNotes</div>
+                                    </td>
+                                    <td>@(item.Category ?? "General")</td>
+                                    <td><span class="badge @statusCss">@status</span></td>
+                                    <td>@item.DocumentNumber</td>
+                                    <td>@(((DateTime)item.ImportedAt).ToString("MMM dd, yyyy"))</td>
+                                    <td>
+                                        @if (status == "PendingReview")
+                                        {
+                                            <button class="btn btn-primary" onclick="approveImport(@item.ImportId)">Approve</button>
+                                            <button class="btn btn-danger" onclick="rejectImport(@item.ImportId)">Reject</button>
+                                        }
+                                        else if (status == "Approved" && item.ApprovedPolicyId != null)
+                                        {
+                                            <button class="btn btn-success" onclick="openAssignModal(@item.ImportId, '@(((string)item.PolicyTitle).Replace("'", "\\'"))')">Assign Policy</button>
+                                            <a class="btn" href="/Admin/PolicyManagement">Open Policy Management</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="muted">Reviewed</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="7" class="empty">No staged imports yet.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <div>
+                    <h3 class="panel-title">Live External References</h3>
+                    <p class="panel-subtitle">Select a category and queue references for compliance review.</p>
+                </div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="filter-search-wrap">
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+                    <input class="filter-search-input"
+                           type="text"
+                           id="policySearchInput"
+                           placeholder="Search policies by title or description..."
+                           oninput="applyFilters()" />
+                </div>
+                <span class="filter-result-count" id="filterResultCount"></span>
+            </div>
+
+            <div class="chip-row">
+                <button class="chip active" onclick="filterCategory('all', event)">All</button>
+                @foreach (var group in grouped)
+                {
+                    <button class="chip" onclick="filterCategory('@group.Key.Replace("'", "\\'")', event)">@group.Key (@group.Count())</button>
+                }
+            </div>
+
+            @if (Model != null && Model.Any())
+            {
+                foreach (var group in grouped)
+                {
+                    var initial = string.IsNullOrWhiteSpace(group.Key) ? "G" : group.Key.Trim().Substring(0, 1).ToUpperInvariant();
+                    <div class="category-section" data-category="@group.Key">
+                        <div class="category-header">
+                            <div class="category-title-wrap">
+                                <div class="category-dot">@initial</div>
+                                <div>
+                                    <h4 class="category-title">@group.Key</h4>
+                                    <p class="category-desc">Federal Register references related to this policy area.</p>
+                                </div>
+                            </div>
+                            <div class="category-count">@group.Count() references</div>
+                        </div>
+
+                        <div class="policy-list">
+                            @foreach (var policy in group)
+                            {
+                                <article class="policy-card">
+                                    <h5 class="policy-title">@policy.PolicyTitle</h5>
+                                    <p class="policy-desc">@policy.Description</p>
+                                    <div class="policy-meta">
+                                        <span class="meta-chip">Doc #: @(string.IsNullOrWhiteSpace(policy.DocumentNumber) ? "N/A" : policy.DocumentNumber)</span>
+                                        <span class="meta-chip">Published: @(policy.DateUploaded?.ToString("MMM dd, yyyy") ?? "N/A")</span>
+                                    </div>
+                                    <div class="policy-actions">
+                                        <button class="btn btn-primary"
+                                                data-title="@policy.PolicyTitle"
+                                                data-description="@policy.Description"
+                                                data-category="@policy.Category"
+                                                data-doc="@policy.DocumentNumber"
+                                                data-url="@policy.ExternalUrl"
+                                                onclick="queuePolicyFromButton(this)">
+                                            Queue For Review
+                                        </button>
+                                        @if (!string.IsNullOrWhiteSpace(policy.ExternalUrl))
+                                        {
+                                            <a class="btn" href="@policy.ExternalUrl" target="_blank">Open Source</a>
+                                        }
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty">No external policy references found.</div>
+            }
+        </section>
+    </div>
+</main>
+
+<div class="modal" id="approveModal">
+    <div class="modal-content" style="max-width:480px">
+        <div class="modal-header">
+            <strong>Approve Import</strong>
+            <button class="btn" onclick="closeApproveModal()">Close</button>
+        </div>
+        <div class="modal-body">
+            <div class="field">
+                <label for="approvalNotes">Approval Notes <span style="font-weight:400;color:#64748b">(optional)</span></label>
+                <textarea id="approvalNotes" placeholder="Enter any approval notes here..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeApproveModal()">Cancel</button>
+            <button class="btn btn-success" onclick="submitApproval()">Approve</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="assignModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <strong id="assignModalTitle">Assign Approved Policy</strong>
+            <button class="btn" onclick="closeAssignModal()">Close</button>
+        </div>
+        <div class="modal-body">
+            <div class="field">
+                <label for="assignNotes">Assignment Notes</label>
+                <textarea id="assignNotes" placeholder="Optional assignment notes"></textarea>
+            </div>
+
+            <div class="field">
+                <label>Assign To Employees</label>
+                <div class="checklist" id="employeeChecklist">
+                    @foreach (var emp in employees)
+                    {
+                        <div class="check-item">
+                            <input type="checkbox" class="emp-check" value="@emp.UserId" id="emp_@emp.UserId" />
+                            <label for="emp_@emp.UserId">@emp.Name</label>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Assign To Suppliers</label>
+                <div class="checklist" id="supplierChecklist">
+                    @foreach (var supplier in suppliers)
+                    {
+                        <div class="check-item">
+                            <input type="checkbox" class="sup-check" value="@supplier.SupplierId" id="sup_@supplier.SupplierId" />
+                            <label for="sup_@supplier.SupplierId">@supplier.Name</label>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" onclick="closeAssignModal()">Cancel</button>
+            <button class="btn btn-success" onclick="assignApprovedImport()">Assign Policy</button>
+        </div>
+    </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div id="loadingText" style="color:#fff;font-size:16px;font-weight:500;">Processing...</div></div>
+<script>
+    function showLoading(msg) { document.getElementById('loadingText').textContent = msg || 'Processing...'; document.getElementById('loadingOverlay').classList.add('active'); }
+    function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
+    let currentImportId = null;
+
+    let _activeCategory = 'all';
+
+    function filterCategory(cat, evt) {
+        _activeCategory = cat;
+        document.querySelectorAll('.chip').forEach(t => t.classList.remove('active'));
+        if (evt && evt.target) evt.target.classList.add('active');
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const query = (document.getElementById('policySearchInput')?.value || '').trim().toLowerCase();
+        let visibleCount = 0;
+
+        document.querySelectorAll('.category-section').forEach(section => {
+            const catMatch = _activeCategory === 'all' || section.dataset.category === _activeCategory;
+            if (!catMatch) { section.style.display = 'none'; return; }
+
+            if (!query) {
+                section.style.display = '';
+                visibleCount += section.querySelectorAll('.policy-card').length;
+                return;
+            }
+
+            let sectionVisible = false;
+            section.querySelectorAll('.policy-card').forEach(card => {
+                const title = (card.querySelector('.policy-title')?.textContent || '').toLowerCase();
+                const desc = (card.querySelector('.policy-desc')?.textContent || '').toLowerCase();
+                const matches = title.includes(query) || desc.includes(query);
+                card.style.display = matches ? '' : 'none';
+                if (matches) { sectionVisible = true; visibleCount++; }
+            });
+            section.style.display = sectionVisible ? '' : 'none';
+        });
+
+        const countEl = document.getElementById('filterResultCount');
+        if (countEl) {
+            countEl.textContent = query ? `${visibleCount} result${visibleCount !== 1 ? 's' : ''} found` : '';
+        }
+    }
+
+    async function queuePolicyFromButton(button) {
+        const payload = {
+            sourceApi: 'Federal Register',
+            documentNumber: button.dataset.doc || null,
+            externalUrl: button.dataset.url || null,
+            policyTitle: button.dataset.title || null,
+            description: button.dataset.description || null,
+            category: button.dataset.category || null
+        };
+
+        const _t = setTimeout(() => showLoading('Queueing policy for review...'), 300);
+        try {
+            const res = await fetch('/api/policy-references/staging/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+            clearTimeout(_t); hideLoading();
+            if (!res.ok || !result.success) {
+                await window.showAppMessage(result.message || 'Failed to queue policy.', 'Error');
+                return;
+            }
+
+            await window.showAppMessage(result.message || 'Policy queued for review.', 'Success');
+            location.reload();
+        } catch {
+            clearTimeout(_t); hideLoading();
+            await window.showAppMessage('Error while queueing policy.', 'Error');
+        }
+    }
+
+    let _pendingApproveId = null;
+
+    function approveImport(importId) {
+        _pendingApproveId = importId;
+        document.getElementById('approvalNotes').value = '';
+        document.getElementById('approveModal').classList.add('active');
+    }
+
+    function closeApproveModal() {
+        _pendingApproveId = null;
+        document.getElementById('approveModal').classList.remove('active');
+    }
+
+    async function submitApproval() {
+        if (!_pendingApproveId) return;
+        const notes = document.getElementById('approvalNotes').value.trim();
+        const payload = { reviewNotes: notes || null };
+        closeApproveModal();
+
+        const _t = setTimeout(() => showLoading('Approving import...'), 300);
+        try {
+            const res = await fetch(`/api/policy-references/staging/${_pendingApproveId}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const text = await res.text();
+            clearTimeout(_t); hideLoading();
+
+            let result;
+            try { result = JSON.parse(text); } catch {
+                await window.showAppMessage('Error while approving import. Unexpected server response.', 'Error');
+                return;
+            }
+
+            if (!res.ok || !result.success) {
+                await window.showAppMessage(result.message || 'Failed to approve import.', 'Error');
+                return;
+            }
+
+            await window.showAppMessage(result.message || 'Approved successfully.', 'Success');
+            location.reload();
+        } catch {
+            clearTimeout(_t); hideLoading();
+            await window.showAppMessage('Error while approving import. Please check your connection.', 'Error');
+        }
+    }
+
+    function openAssignModal(importId, title) {
+        currentImportId = importId;
+        document.getElementById('assignModalTitle').textContent = 'Assign: ' + title;
+        document.getElementById('assignNotes').value = '';
+        document.querySelectorAll('#assignModal input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.getElementById('assignModal').classList.add('active');
+    }
+
+    function closeAssignModal() {
+        currentImportId = null;
+        document.getElementById('assignModal').classList.remove('active');
+    }
+
+    async function assignApprovedImport() {
+        if (!currentImportId) return;
+
+        const employeeIds = Array.from(document.querySelectorAll('.emp-check:checked')).map(cb => parseInt(cb.value));
+        const supplierIds = Array.from(document.querySelectorAll('.sup-check:checked')).map(cb => parseInt(cb.value));
+        const reviewNotes = document.getElementById('assignNotes').value.trim();
+
+        if (employeeIds.length === 0 && supplierIds.length === 0) {
+            await window.showAppMessage('Select at least one employee or supplier.', 'Notice');
+            return;
+        }
+
+        const payload = {
+            reviewNotes: reviewNotes || null,
+            employeeIds,
+            supplierIds
+        };
+
+        const _t = setTimeout(() => showLoading('Assigning policy...'), 300);
+        try {
+            const res = await fetch(`/api/policy-references/staging/${currentImportId}/assign`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+            clearTimeout(_t); hideLoading();
+            if (!res.ok || !result.success) {
+                await window.showAppMessage(result.message || 'Failed to assign policy.', 'Error');
+                return;
+            }
+
+            let detail = result.message || 'Policy assigned successfully.';
+            if (typeof result.assignedEmployees === 'number' || typeof result.assignedSuppliers === 'number') {
+                detail += `\nAssigned Employees: ${result.assignedEmployees ?? 0}\nSkipped Employees: ${result.skippedEmployees ?? 0}\nAssigned Suppliers: ${result.assignedSuppliers ?? 0}\nSkipped Suppliers: ${result.skippedSuppliers ?? 0}`;
+            }
+            await window.showAppMessage(detail, 'Success');
+            closeAssignModal();
+            location.reload();
+        } catch {
+            clearTimeout(_t); hideLoading();
+            await window.showAppMessage('Error while assigning policy.', 'Error');
+        }
+    }
+
+    async function rejectImport(importId) {
+        const notes = prompt('Reason for rejection (optional):') || '';
+
+        const _t = setTimeout(() => showLoading('Rejecting import...'), 300);
+        try {
+            const res = await fetch(`/api/policy-references/staging/${importId}/reject`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reviewNotes: notes })
+            });
+
+            const result = await res.json();
+            clearTimeout(_t); hideLoading();
+            if (!res.ok || !result.success) {
+                await window.showAppMessage(result.message || 'Failed to reject import.', 'Error');
+                return;
+            }
+
+            await window.showAppMessage(result.message || 'Rejected.', 'Success');
+            location.reload();
+        } catch {
+            clearTimeout(_t); hideLoading();
+            await window.showAppMessage('Error while rejecting import.', 'Error');
+        }
+    }
+
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+    });
+</script>

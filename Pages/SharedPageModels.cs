@@ -64,7 +64,9 @@ namespace TechNova_IT_Solutions.Pages
         public string ItemName { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
         public int Quantity { get; set; }
+        public int SupplierId { get; set; }
         public string SupplierName { get; set; } = string.Empty;
+        public int? PolicyId { get; set; }
         public string LinkedPolicy { get; set; } = string.Empty;
         public DateTime PurchaseDate { get; set; }
         public string CurrencyCode { get; set; } = string.Empty;

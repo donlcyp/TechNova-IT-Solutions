@@ -1,0 +1,337 @@
+﻿using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using TechNova_IT_Solutions.Constants;
+using TechNova_IT_Solutions.Data;
+
+namespace TechNova_IT_Solutions.Pages.SystemAdmin
+{
+    public class SupplierReportModel : PageModel
+    {
+        private readonly ApplicationDbContext _context;
+
+        public SupplierReportModel(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
+        // --- Filters ---
+        [BindProperty(SupportsGet = true)]
+        public string ReportType { get; set; } = "compliance";
+
+        [BindProperty(SupportsGet = true)]
+        public DateTime? FromDate { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public DateTime? ToDate { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string StatusFilter { get; set; } = "all";
+
+        // --- Page context ---
+        public string UserName { get; set; } = string.Empty;
+        public DateTime GeneratedOn { get; set; } = DateTime.UtcNow;
+
+        // --- Summary KPIs ---
+        public int TotalSuppliers { get; set; }
+        public int ActiveSuppliers { get; set; }
+        public int InactiveSuppliers { get; set; }
+        public int TerminatedSuppliers { get; set; }
+        public int CompliantSuppliers { get; set; }
+        public int NonCompliantSuppliers { get; set; }
+
+        // --- Report metrics ---
+        public int TotalRecords { get; set; }
+        public int CompliantCount { get; set; }
+        public int PendingCount { get; set; }
+        public int NonCompliantCount { get; set; }
+        public decimal ComplianceRate { get; set; }
+        public decimal TotalProcurementValue { get; set; }
+        public int ApprovedProcurements { get; set; }
+
+        // --- Table data ---
+        public List<SupplierOverviewRow> OverviewData { get; set; } = new();
+        public List<SupplierComplianceRow> ComplianceData { get; set; } = new();
+        public List<SupplierProcurementRow> ProcurementData { get; set; } = new();
+
+        public async Task<IActionResult> OnGetAsync()
+        {
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (string.IsNullOrEmpty(userIdString))
+                return RedirectToPage("/Account/Login");
+
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (userRole != RoleNames.SystemAdmin && userRole != RoleNames.SuperAdmin)
+            {
+                if (userRole == RoleNames.Employee) return RedirectToPage("/Employee/Dashboard");
+                if (userRole == RoleNames.BranchAdmin) return RedirectToPage("/BranchAdmin/Dashboard");
+                if (userRole == RoleNames.ChiefComplianceManager || userRole == RoleNames.ComplianceManager) return RedirectToPage("/ComplianceManager/ComplianceDashboard");
+                return RedirectToPage("/Account/Login");
+            }
+
+            UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
+            Init();
+            await LoadDataAsync();
+            return Page();
+        }
+
+        public async Task<IActionResult> OnGetExportCsvAsync(string reportType, DateTime? fromDate, DateTime? toDate, string statusFilter)
+        {
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (string.IsNullOrEmpty(userIdString)) return RedirectToPage("/Account/Login");
+            var userRole = HttpContext.Session.GetString(SessionKeys.UserRole);
+            if (userRole != RoleNames.SystemAdmin && userRole != RoleNames.SuperAdmin) return RedirectToPage("/Account/Login");
+
+            UserName = HttpContext.Session.GetString(SessionKeys.UserName) ?? "Administrator";
+            ReportType = reportType ?? "compliance";
+            FromDate = fromDate;
+            ToDate = toDate;
+            StatusFilter = statusFilter ?? "all";
+            Init();
+            await LoadDataAsync();
+
+            var csv = BuildCsv();
+            var fileName = $"supplier-{ReportType}-report-{DateTime.UtcNow:yyyyMMddHHmmss}.csv";
+            return File(Encoding.UTF8.GetBytes(csv), "text/csv", fileName);
+        }
+
+        private void Init()
+        {
+            ReportType = string.IsNullOrWhiteSpace(ReportType) ? "compliance" : ReportType.Trim().ToLowerInvariant();
+            StatusFilter = string.IsNullOrWhiteSpace(StatusFilter) ? "all" : StatusFilter.Trim().ToLowerInvariant();
+            var today = DateTime.UtcNow.Date;
+            FromDate ??= today.AddDays(-30);
+            ToDate ??= today;
+            if (FromDate > ToDate) (FromDate, ToDate) = (ToDate, FromDate);
+            GeneratedOn = DateTime.UtcNow;
+        }
+
+        private async Task LoadDataAsync()
+        {
+            // Global KPIs (always shown regardless of date filter)
+            var allSuppliers = await _context.Suppliers
+                .AsNoTracking()
+                .Include(s => s.SupplierPolicies)
+                .ToListAsync();
+
+            TotalSuppliers = allSuppliers.Count;
+            ActiveSuppliers = allSuppliers.Count(s => s.Status == "Active");
+            InactiveSuppliers = allSuppliers.Count(s => s.Status == "Inactive");
+            TerminatedSuppliers = allSuppliers.Count(s => s.Status == "Terminated");
+            CompliantSuppliers = allSuppliers.Count(s => s.SupplierPolicies.Any(sp => sp.ComplianceStatus == "Compliant"));
+            NonCompliantSuppliers = allSuppliers.Count(s => s.SupplierPolicies.Any(sp => sp.ComplianceStatus == "Non-Compliant"));
+
+            switch (ReportType)
+            {
+                case "procurement":
+                    await LoadProcurementAsync();
+                    break;
+                case "overview":
+                    await LoadOverviewAsync(allSuppliers);
+                    break;
+                default:
+                    ReportType = "compliance";
+                    await LoadComplianceAsync();
+                    break;
+            }
+        }
+
+        private async Task LoadOverviewAsync(List<TechNova_IT_Solutions.Models.Supplier> suppliers)
+        {
+            var procValueBySupplier = await _context.Procurements
+                .AsNoTracking()
+                .Where(p => p.SupplierId.HasValue)
+                .GroupBy(p => p.SupplierId!.Value)
+                .Select(g => new { SupplierId = g.Key, Total = g.Sum(p => p.ConvertedAmount) })
+                .ToDictionaryAsync(x => x.SupplierId, x => x.Total);
+
+            IEnumerable<TechNova_IT_Solutions.Models.Supplier> filtered = suppliers;
+            if (StatusFilter != "all")
+                filtered = suppliers.Where(s => s.Status.Equals(StatusFilter, StringComparison.OrdinalIgnoreCase));
+
+            OverviewData = filtered.Select(s => new SupplierOverviewRow
+            {
+                SupplierId = $"SUP-{s.SupplierId:D3}",
+                SupplierName = s.SupplierName,
+                Status = s.Status,
+                PolicyCount = s.SupplierPolicies.Count,
+                ComplianceStatus = s.SupplierPolicies.Any(sp => sp.ComplianceStatus == "Compliant")
+                    ? "Compliant"
+                    : s.SupplierPolicies.Any(sp => sp.ComplianceStatus == "Non-Compliant")
+                        ? "Non-Compliant"
+                        : "Pending",
+                TotalProcurement = procValueBySupplier.GetValueOrDefault(s.SupplierId, 0),
+                TerminatedAt = s.TerminatedAt,
+                TerminationReason = s.TerminationReason
+            }).OrderBy(r => r.SupplierName).ToList();
+
+            TotalRecords = OverviewData.Count;
+            CompliantCount = OverviewData.Count(r => r.ComplianceStatus == "Compliant");
+            PendingCount = OverviewData.Count(r => r.ComplianceStatus == "Pending");
+            NonCompliantCount = OverviewData.Count(r => r.ComplianceStatus == "Non-Compliant");
+            ComplianceRate = TotalRecords == 0 ? 0 : Math.Round((decimal)CompliantCount * 100 / TotalRecords, 1);
+            TotalProcurementValue = OverviewData.Sum(r => r.TotalProcurement);
+        }
+
+        private async Task LoadComplianceAsync()
+        {
+            var startDate = FromDate!.Value.Date;
+            var endDate = ToDate!.Value.Date.AddDays(1);
+
+            var query = _context.SupplierPolicies
+                .AsNoTracking()
+                .Include(sp => sp.Supplier)
+                .Include(sp => sp.Policy)
+                .Where(sp => sp.Supplier != null)
+                .Where(sp => sp.AssignedDate.HasValue
+                    && sp.AssignedDate.Value >= startDate
+                    && sp.AssignedDate.Value < endDate);
+
+            if (StatusFilter != "all")
+                query = query.Where(sp => sp.Supplier!.Status.ToLower() == StatusFilter);
+
+            ComplianceData = await query
+                .OrderBy(sp => sp.Supplier!.SupplierName)
+                .Select(sp => new SupplierComplianceRow
+                {
+                    SupplierId = $"SUP-{sp.Supplier!.SupplierId:D3}",
+                    SupplierName = sp.Supplier.SupplierName,
+                    SupplierStatus = sp.Supplier.Status,
+                    PolicyTitle = sp.Policy != null ? sp.Policy.PolicyTitle : "N/A",
+                    ComplianceStatus = string.IsNullOrWhiteSpace(sp.ComplianceStatus) ? "Pending" : sp.ComplianceStatus,
+                    AssignedDate = sp.AssignedDate
+                })
+                .ToListAsync();
+
+            TotalRecords = ComplianceData.Count;
+            CompliantCount = ComplianceData.Count(r => r.ComplianceStatus.Equals("Compliant", StringComparison.OrdinalIgnoreCase));
+            PendingCount = ComplianceData.Count(r => r.ComplianceStatus.Equals("Pending", StringComparison.OrdinalIgnoreCase));
+            NonCompliantCount = ComplianceData.Count(r => r.ComplianceStatus.Equals("Non-Compliant", StringComparison.OrdinalIgnoreCase));
+            ComplianceRate = TotalRecords == 0 ? 0 : Math.Round((decimal)CompliantCount * 100 / TotalRecords, 1);
+        }
+
+        private async Task LoadProcurementAsync()
+        {
+            var startDate = FromDate!.Value.Date;
+            var endDate = ToDate!.Value.Date.AddDays(1);
+
+            var query = _context.Procurements
+                .AsNoTracking()
+                .Include(p => p.Supplier)
+                .Include(p => p.RelatedPolicy)
+                .Where(p => p.SupplierId.HasValue && p.Supplier != null)
+                .Where(p => p.PurchaseDate.HasValue
+                    && p.PurchaseDate.Value >= startDate
+                    && p.PurchaseDate.Value < endDate);
+
+            if (StatusFilter != "all")
+                query = query.Where(p => p.Supplier!.Status.ToLower() == StatusFilter);
+
+            ProcurementData = await query
+                .OrderByDescending(p => p.PurchaseDate)
+                .Select(p => new SupplierProcurementRow
+                {
+                    ProcurementId = $"PRO-{p.ProcurementId:D3}",
+                    SupplierName = p.Supplier!.SupplierName,
+                    SupplierStatus = p.Supplier.Status,
+                    ItemName = p.ItemName ?? "—",
+                    Quantity = p.Quantity ?? 0,
+                    UnitPrice = p.OriginalAmount,
+                    TotalCost = p.ConvertedAmount,
+                    ApprovalStatus = NormalizeStatus(p.Status),
+                    PurchaseDate = p.PurchaseDate,
+                    LinkedPolicy = p.RelatedPolicy != null ? p.RelatedPolicy.PolicyTitle : "General"
+                })
+                .ToListAsync();
+
+            TotalRecords = ProcurementData.Count;
+            ApprovedProcurements = ProcurementData.Count(r => r.ApprovalStatus == "Approved");
+            PendingCount = ProcurementData.Count(r => r.ApprovalStatus == "Pending");
+            NonCompliantCount = ProcurementData.Count(r => r.ApprovalStatus == "Rejected");
+            TotalProcurementValue = ProcurementData.Sum(r => r.TotalCost);
+            ComplianceRate = TotalRecords == 0 ? 0 : Math.Round((decimal)ApprovedProcurements * 100 / TotalRecords, 1);
+        }
+
+        private static string NormalizeStatus(string? status)
+        {
+            if (string.IsNullOrWhiteSpace(status)) return "Pending";
+            if (status.Contains("reject", StringComparison.OrdinalIgnoreCase)) return "Rejected";
+            if (status.Contains("approve", StringComparison.OrdinalIgnoreCase)) return "Approved";
+            return "Pending";
+        }
+
+        private string BuildCsv()
+        {
+            var sb = new StringBuilder();
+
+            if (ReportType == "overview")
+            {
+                sb.AppendLine("Supplier ID,Supplier Name,Status,Policies,Compliance,Total Procurement,Terminated At");
+                foreach (var r in OverviewData)
+                    sb.AppendLine(string.Join(",", Csv(r.SupplierId), Csv(r.SupplierName), Csv(r.Status),
+                        r.PolicyCount.ToString(), Csv(r.ComplianceStatus),
+                        r.TotalProcurement.ToString("F2"), Csv(r.TerminatedAt?.ToString("yyyy-MM-dd") ?? "")));
+            }
+            else if (ReportType == "procurement")
+            {
+                sb.AppendLine("Procurement ID,Supplier,Supplier Status,Item,Quantity,Unit Price,Total Cost,Status,Purchase Date,Linked Policy");
+                foreach (var r in ProcurementData)
+                    sb.AppendLine(string.Join(",", Csv(r.ProcurementId), Csv(r.SupplierName), Csv(r.SupplierStatus),
+                        Csv(r.ItemName), r.Quantity.ToString(), r.UnitPrice.ToString("F2"), r.TotalCost.ToString("F2"),
+                        Csv(r.ApprovalStatus), Csv(r.PurchaseDate?.ToString("yyyy-MM-dd") ?? ""), Csv(r.LinkedPolicy)));
+            }
+            else
+            {
+                sb.AppendLine("Supplier ID,Supplier Name,Supplier Status,Policy,Compliance Status,Assigned Date");
+                foreach (var r in ComplianceData)
+                    sb.AppendLine(string.Join(",", Csv(r.SupplierId), Csv(r.SupplierName), Csv(r.SupplierStatus),
+                        Csv(r.PolicyTitle), Csv(r.ComplianceStatus), Csv(r.AssignedDate?.ToString("yyyy-MM-dd") ?? "")));
+            }
+
+            return sb.ToString();
+        }
+
+        private static string Csv(string? v)
+        {
+            var s = v ?? string.Empty;
+            return s.Contains(',') || s.Contains('"') || s.Contains('\n') ? $"\"{s.Replace("\"", "\"\"")}\"" : s;
+        }
+    }
+
+    public class SupplierOverviewRow
+    {
+        public string SupplierId { get; set; } = string.Empty;
+        public string SupplierName { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public int PolicyCount { get; set; }
+        public string ComplianceStatus { get; set; } = string.Empty;
+        public decimal TotalProcurement { get; set; }
+        public DateTime? TerminatedAt { get; set; }
+        public string? TerminationReason { get; set; }
+    }
+
+    public class SupplierComplianceRow
+    {
+        public string SupplierId { get; set; } = string.Empty;
+        public string SupplierName { get; set; } = string.Empty;
+        public string SupplierStatus { get; set; } = string.Empty;
+        public string PolicyTitle { get; set; } = string.Empty;
+        public string ComplianceStatus { get; set; } = string.Empty;
+        public DateTime? AssignedDate { get; set; }
+    }
+
+    public class SupplierProcurementRow
+    {
+        public string ProcurementId { get; set; } = string.Empty;
+        public string SupplierName { get; set; } = string.Empty;
+        public string SupplierStatus { get; set; } = string.Empty;
+        public string ItemName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal TotalCost { get; set; }
+        public string ApprovalStatus { get; set; } = string.Empty;
+        public DateTime? PurchaseDate { get; set; }
+        public string LinkedPolicy { get; set; } = string.Empty;
+    }
+}

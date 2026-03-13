@@ -152,8 +152,8 @@
         <!-- Tabs -->
         <div class="tab-bar">
             <button class="tab-btn active" data-tab="violations" onclick="switchTab('violations')">All Violations</button>
-            <button class="tab-btn" data-tab="employees" onclick="switchTab('employees')">Non-Compliant Employees</button>
-            <button class="tab-btn" data-tab="suppliers" onclick="switchTab('suppliers')">Non-Compliant Suppliers</button>
+            <button class="tab-btn" data-tab="employees" onclick="switchTab('employees')">Compliant Employees</button>
+            <button class="tab-btn" data-tab="suppliers" onclick="switchTab('suppliers')">Compliant Suppliers</button>
         </div>
 
         <!-- Violations Tab -->
@@ -203,7 +203,7 @@
             </div>
         </div>
 
-        <!-- Non-Compliant Employees Tab -->
+        <!-- Compliant Employees Tab -->
         <div class="tab-panel" id="panel-employees">
             <div class="filter-section">
                 <div class="search-box">
@@ -220,20 +220,18 @@
                                 <th>Email</th>
                                 <th>Policy</th>
                                 <th>Assigned</th>
-                                <th>Status</th>
-                                <th>Violation</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="empBody">
-                            <tr><td colspan="7" class="empty-state">Loading...</td></tr>
+                            <tr><td colspan="5" class="empty-state">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- Non-Compliant Suppliers Tab -->
+        <!-- Compliant Suppliers Tab -->
         <div class="tab-panel" id="panel-suppliers">
             <div class="filter-section">
                 <div class="search-box">
@@ -251,12 +249,11 @@
                                 <th>Policy</th>
                                 <th>Assigned</th>
                                 <th>Compliance</th>
-                                <th>Violation</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="supBody">
-                            <tr><td colspan="7" class="empty-state">Loading...</td></tr>
+                            <tr><td colspan="6" class="empty-state">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -273,10 +270,6 @@
             <button class="btn-close" onclick="closeCreateViolation()">&times;</button>
         </div>
         <div class="modal-body">
-            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;margin-bottom:18px;font-size:13px;color:#1e3a8a;display:flex;gap:10px;align-items:flex-start;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <div><strong>Tip:</strong> For easier entry, go to the <strong>Non-Compliant Employees</strong> or <strong>Non-Compliant Suppliers</strong> tab and click <em>"Raise Violation"</em> on a specific row — the form will auto-fill.</div>
-            </div>
             <div class="form-group">
                 <label for="cvType">Violation Type</label>
                 <select id="cvType" onchange="onViolationTypeChange()">
@@ -284,16 +277,20 @@
                     <option value="Supplier">Supplier Violation</option>
                 </select>
             </div>
-            <div class="form-group" id="cvAssignmentGroup">
-                <label for="cvAssignmentId">Policy Assignment ID</label>
-                <input type="number" id="cvAssignmentId" placeholder="Enter policy assignment ID" />
-                <small style="color: #6b7280; font-size: 12px;">Find from Non-Compliant Employees tab</small>
+            <div class="form-group">
+                <label id="cvSubjectLabel" for="cvSubjectSelect">Employee Name</label>
+                <select id="cvSubjectSelect" onchange="onSubjectChange()">
+                    <option value="">Select Employee</option>
+                </select>
             </div>
-            <div class="form-group" id="cvSupplierPolicyGroup" style="display:none;">
-                <label for="cvSupplierPolicyId">Supplier Policy ID</label>
-                <input type="number" id="cvSupplierPolicyId" placeholder="Enter supplier policy ID" />
-                <small style="color: #6b7280; font-size: 12px;">Find from Non-Compliant Suppliers tab</small>
+            <div class="form-group">
+                <label for="cvPolicySelect">Policy</label>
+                <select id="cvPolicySelect" disabled onchange="onPolicyChange()">
+                    <option value="">Select Employee First</option>
+                </select>
             </div>
+            <input type="hidden" id="cvAssignmentId" />
+            <input type="hidden" id="cvSupplierPolicyId" />
             <div class="form-group">
                 <label for="cvDescription">Description</label>
                 <textarea id="cvDescription" placeholder="Describe the compliance violation..."></textarea>
@@ -361,8 +358,8 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
         if (tab === 'violations') loadViolations();
-        else if (tab === 'employees') loadNonCompliantEmployees();
-        else if (tab === 'suppliers') loadNonCompliantSuppliers();
+        else if (tab === 'employees') loadCompliantEmployees();
+        else if (tab === 'suppliers') loadCompliantSuppliers();
     }
 
     /* ── Load Violations ───────────────────────────── */
@@ -411,25 +408,16 @@
         });
     }
 
-    /* ── Non-Compliant Employees ───────────────────── */
-    function loadNonCompliantEmployees() {
-        document.getElementById('empBody').innerHTML = '<tr><td colspan="7" class="empty-state">Loading...</td></tr>';
-        fetch(API + '/GetNonCompliantEmployees').then(r => r.json()).then(res => {
+    /* ── Compliant Employees ───────────────────── */
+    function loadCompliantEmployees() {
+        document.getElementById('empBody').innerHTML = '<tr><td colspan="5" class="empty-state">Loading...</td></tr>';
+        fetch(API + '/GetCompliantEmployees').then(r => r.json()).then(res => {
             if (!res.success || !res.employees.length) {
-                document.getElementById('empBody').innerHTML = '<tr><td colspan="7" class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><div>All employees are compliant!</div></td></tr>';
+                document.getElementById('empBody').innerHTML = '<tr><td colspan="5" class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><div>No compliant employees found yet.</div></td></tr>';
                 return;
             }
             let html = '';
             res.employees.forEach(e => {
-                const compClass = e.status === 'Acknowledged' ? 'acknowledged' : e.status === 'Overdue' ? 'overdue' : 'pending';
-                const statusBadge = e.userStatus === 'Suspended'
-                    ? '<span class="status-badge suspended">Suspended</span>'
-                    : `<span class="status-badge ${compClass}">${e.status}</span>`;
-                const violBadge = e.hasViolation
-                    ? '<span class="status-badge escalated">Active Violation</span>'
-                    : '<span class="status-badge none">None</span>';
-                const raiseBtn = !e.hasViolation
-                    ? `<button class="btn-icon danger" title="Raise Violation" onclick="raiseViolationFor('Employee', ${e.assignmentId}, null, '${escJs(e.employeeName)}', '${escJs(e.policyTitle)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>` : '';
                 const suspendBtn = e.userStatus !== 'Suspended'
                     ? `<button class="btn-icon danger" title="Suspend Employee" onclick="suspendEmployee(${e.userId}, '${escJs(e.employeeName)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></svg></button>`
                     : `<button class="btn-icon success" title="Reactivate Employee" onclick="unsuspendEmployee(${e.userId}, '${escJs(e.employeeName)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg></button>`;
@@ -438,105 +426,184 @@
                     <td>${e.email}</td>
                     <td>${e.policyTitle}</td>
                     <td>${e.assignedDate}</td>
-                    <td>${statusBadge}</td>
-                    <td>${violBadge}</td>
-                    <td><div class="actions">${raiseBtn}${suspendBtn}</div></td>
+                    <td><div class="actions">${suspendBtn}<button class="btn-icon warning" title="Raise Violation" onclick="raiseViolationFor('Employee', ${e.assignmentId}, '', ${e.userId}, '${escJs(e.employeeName)}', '${escJs(e.policyTitle)}')" >
                 </tr>`;
             });
             document.getElementById('empBody').innerHTML = html;
         }).catch(() => {
-            document.getElementById('empBody').innerHTML = '<tr><td colspan="7" class="empty-state" style="color:#e53e3e;">Error loading data</td></tr>';
+            document.getElementById('empBody').innerHTML = '<tr><td colspan="5" class="empty-state" style="color:#e53e3e;">Error loading data</td></tr>';
         });
     }
+                function filterEmpTable() {
+                    const q = document.getElementById('empSearch').value.toLowerCase();
+                    document.querySelectorAll('#empBody tr').forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none');
+                }
 
-    function filterEmpTable() {
-        const q = document.getElementById('empSearch').value.toLowerCase();
-        document.querySelectorAll('#empBody tr').forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none');
-    }
-
-    /* ── Non-Compliant Suppliers ───────────────────── */
-    function loadNonCompliantSuppliers() {
-        document.getElementById('supBody').innerHTML = '<tr><td colspan="7" class="empty-state">Loading...</td></tr>';
-        fetch(API + '/GetNonCompliantSuppliers').then(r => r.json()).then(res => {
-            if (!res.success || !res.suppliers.length) {
-                document.getElementById('supBody').innerHTML = '<tr><td colspan="7" class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><div>All suppliers are compliant!</div></td></tr>';
-                return;
-            }
-            let html = '';
-            res.suppliers.forEach(s => {
-                const acctBadge = s.supplierStatus === 'Suspended'
-                    ? '<span class="status-badge suspended">Suspended</span>'
-                    : `<span class="status-badge active">${s.supplierStatus}</span>`;
-                const compClass = s.complianceStatus === 'Compliant' ? 'acknowledged' : s.complianceStatus === 'Overdue' ? 'overdue' : 'pending';
-                const violBadge = s.hasViolation
-                    ? '<span class="status-badge escalated">Active Violation</span>'
-                    : '<span class="status-badge none">None</span>';
-                const raiseBtn = !s.hasViolation
-                    ? `<button class="btn-icon danger" title="Raise Violation" onclick="raiseViolationFor('Supplier', null, ${s.supplierPolicyId}, '${escJs(s.supplierName)}', '${escJs(s.policyTitle)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>` : '';
-                const suspendBtn = s.supplierStatus !== 'Suspended'
-                    ? `<button class="btn-icon danger" title="Suspend Supplier" onclick="suspendSupplier(${s.supplierId}, '${escJs(s.supplierName)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></button>`
-                    : `<button class="btn-icon success" title="Reactivate Supplier" onclick="unsuspendSupplier(${s.supplierId}, '${escJs(s.supplierName)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></button>`;
-                html += `<tr>
-                    <td>${s.supplierName}</td>
-                    <td>${acctBadge}</td>
-                    <td>${s.policyTitle}</td>
-                    <td>${s.assignedDate}</td>
-                    <td><span class="status-badge ${compClass}">${s.complianceStatus}</span></td>
-                    <td>${violBadge}</td>
-                    <td><div class="actions">${raiseBtn}${suspendBtn}</div></td>
-                </tr>`;
-            });
-            document.getElementById('supBody').innerHTML = html;
-        }).catch(() => {
-            document.getElementById('supBody').innerHTML = '<tr><td colspan="7" class="empty-state" style="color:#e53e3e;">Error loading data</td></tr>';
-        });
-    }
-
-    function filterSupTable() {
-        const q = document.getElementById('supSearch').value.toLowerCase();
-        document.querySelectorAll('#supBody tr').forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none');
-    }
+                /* ── Compliant Suppliers ───────────────────── */
+                function loadCompliantSuppliers() {
+                    document.getElementById('supBody').innerHTML = '<tr><td colspan="6" class="empty-state">Loading...</td></tr>';
+                    fetch(API + '/GetCompliantSuppliers').then(r => r.json()).then(res => {
+                        if (!res.success || !res.suppliers.length) {
+                            document.getElementById('supBody').innerHTML = '<tr><td colspan="6" class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><div>No compliant suppliers found yet.</div></td></tr>';
+                            return;
+                        }
+                        let html = '';
+                        res.suppliers.forEach(s => {
+                            const acctBadge = s.supplierStatus === 'Suspended'
+                                ? '<span class="status-badge suspended">Suspended</span>'
+                                : `<span class="status-badge active">${s.supplierStatus}</span>`;
+                            const suspendBtn = s.supplierStatus !== 'Suspended'
+                                ? `<button class="btn-icon danger" title="Suspend Supplier" onclick="suspendSupplier(${s.supplierId}, '${escJs(s.supplierName)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg></button>`
+                                : `<button class="btn-icon success" title="Reactivate Supplier" onclick="unsuspendSupplier(${s.supplierId}, '${escJs(s.supplierName)}')" ><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></button>`;
+                            html += `<tr>
+                                <td>${s.supplierName}</td>
+                                <td>${acctBadge}</td>
+                                <td>${s.policyTitle}</td>
+                                <td>${s.assignedDate}</td>
+                                <td><span class="status-badge acknowledged">Compliant</span></td>
+                                <td><div class="actions">${suspendBtn}<button class="btn-icon warning" title="Raise Violation" onclick="raiseViolationFor('Supplier', '', ${s.supplierPolicyId}, ${s.supplierId}, '${escJs(s.supplierName)}', '${escJs(s.policyTitle)}')" >
+                            </tr>`;
+                        });
+                        document.getElementById('supBody').innerHTML = html;
+                    }).catch(() => {
+                        document.getElementById('supBody').innerHTML = '<tr><td colspan="6" class="empty-state" style="color:#e53e3e;">Error loading data</td></tr>';
+                    });
+                }
+                function filterSupTable() {
+                    const q = document.getElementById('supSearch').value.toLowerCase();
+                    document.querySelectorAll('#supBody tr').forEach(r => r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none');
+                }
 
     /* ── JS Escape for inline strings ──────────────── */
     function escJs(s) { return (s || '').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
 
     /* ── Create Violation ──────────────────────────── */
-    function openCreateViolation() {
+    function resetCreateViolationForm() {
         document.getElementById('cvType').value = 'Employee';
+        document.getElementById('cvSubjectLabel').textContent = 'Employee Name';
+        document.getElementById('cvSubjectSelect').innerHTML = '<option value="">Select Employee</option>';
+        document.getElementById('cvPolicySelect').innerHTML = '<option value="">Select Employee First</option>';
+        document.getElementById('cvPolicySelect').disabled = true;
         document.getElementById('cvAssignmentId').value = '';
         document.getElementById('cvSupplierPolicyId').value = '';
         document.getElementById('cvDescription').value = '';
         document.getElementById('cvNotes').value = '';
-        onViolationTypeChange();
+    }
+
+    function openCreateViolation() {
+        resetCreateViolationForm();
+        loadCvSubjects();
         document.getElementById('createViolationModal').classList.add('active');
     }
     function closeCreateViolation() { document.getElementById('createViolationModal').classList.remove('active'); }
 
-    function raiseViolationFor(type, assignmentId, supplierPolicyId, name, policy) {
-        document.getElementById('cvType').value = type;
-        onViolationTypeChange();
-        if (type === 'Employee') document.getElementById('cvAssignmentId').value = assignmentId || '';
-        else document.getElementById('cvSupplierPolicyId').value = supplierPolicyId || '';
-        document.getElementById('cvDescription').value = `Non-compliance violation for ${name} regarding policy: ${policy}`;
-        document.getElementById('cvNotes').value = '';
-        document.getElementById('createViolationModal').classList.add('active');
+    async function onViolationTypeChange() {
+        const type = document.getElementById('cvType').value;
+        const label = type === 'Employee' ? 'Employee' : 'Supplier';
+        document.getElementById('cvSubjectLabel').textContent = label + ' Name';
+        document.getElementById('cvSubjectSelect').innerHTML = `<option value="">Select ${label}</option>`;
+        document.getElementById('cvPolicySelect').innerHTML = `<option value="">Select ${label} First</option>`;
+        document.getElementById('cvPolicySelect').disabled = true;
+        document.getElementById('cvAssignmentId').value = '';
+        document.getElementById('cvSupplierPolicyId').value = '';
+        await loadCvSubjects();
     }
 
-    function onViolationTypeChange() {
-        const isEmp = document.getElementById('cvType').value === 'Employee';
-        document.getElementById('cvAssignmentGroup').style.display = isEmp ? '' : 'none';
-        document.getElementById('cvSupplierPolicyGroup').style.display = isEmp ? 'none' : '';
+    async function loadCvSubjects(preselectId) {
+        const type = document.getElementById('cvType').value;
+        const label = type === 'Employee' ? 'Employee' : 'Supplier';
+        document.getElementById('cvSubjectSelect').innerHTML = `<option value="">Loading ${label}s...</option>`;
+        try {
+            const res = await fetch(`${API}/GetViolationSubjects?type=${type}`).then(r => r.json());
+            const subjects = res.subjects || [];
+            if (!subjects.length) {
+                document.getElementById('cvSubjectSelect').innerHTML = `<option value="">No ${label}s found</option>`;
+            } else {
+                document.getElementById('cvSubjectSelect').innerHTML =
+                    `<option value="">Select ${label}</option>` +
+                    subjects.map(s => `<option value="${s.subjectId}" ${preselectId != null && s.subjectId == preselectId ? 'selected' : ''}>${s.name}</option>`).join('');
+            }
+        } catch {
+            document.getElementById('cvSubjectSelect').innerHTML = `<option value="">Error loading ${label}s</option>`;
+        }
+    }
+
+    async function onSubjectChange() {
+        const type = document.getElementById('cvType').value;
+        const subjectId = parseInt(document.getElementById('cvSubjectSelect').value);
+        document.getElementById('cvAssignmentId').value = '';
+        document.getElementById('cvSupplierPolicyId').value = '';
+        if (!subjectId) {
+            const label = type === 'Employee' ? 'Employee' : 'Supplier';
+            document.getElementById('cvPolicySelect').innerHTML = `<option value="">Select ${label} First</option>`;
+            document.getElementById('cvPolicySelect').disabled = true;
+            return;
+        }
+        await loadCvPolicies(subjectId);
+    }
+
+    async function loadCvPolicies(subjectId, preselectId) {
+        const type = document.getElementById('cvType').value;
+        document.getElementById('cvPolicySelect').innerHTML = '<option value="">Loading policies...</option>';
+        document.getElementById('cvPolicySelect').disabled = true;
+        try {
+            const res = await fetch(`${API}/GetSubjectPolicies?type=${type}&subjectId=${subjectId}`).then(r => r.json());
+            const policies = res.policies || [];
+            if (!policies.length) {
+                document.getElementById('cvPolicySelect').innerHTML = '<option value="">No policies found</option>';
+            } else {
+                document.getElementById('cvPolicySelect').innerHTML =
+                    `<option value="">Select Policy</option>` +
+                    policies.map(p => `<option value="${p.id}" ${preselectId != null && p.id == preselectId ? 'selected' : ''}>${p.title}</option>`).join('');
+                document.getElementById('cvPolicySelect').disabled = false;
+                if (preselectId != null) {
+                    if (type === 'Employee') document.getElementById('cvAssignmentId').value = preselectId;
+                    else document.getElementById('cvSupplierPolicyId').value = preselectId;
+                }
+            }
+        } catch {
+            document.getElementById('cvPolicySelect').innerHTML = '<option value="">Error loading policies</option>';
+        }
+    }
+
+    function onPolicyChange() {
+        const type = document.getElementById('cvType').value;
+        const policyId = document.getElementById('cvPolicySelect').value;
+        if (type === 'Employee') document.getElementById('cvAssignmentId').value = policyId;
+        else document.getElementById('cvSupplierPolicyId').value = policyId;
+        const subjectName = document.getElementById('cvSubjectSelect').selectedOptions[0]?.text || '';
+        const policyTitle = document.getElementById('cvPolicySelect').selectedOptions[0]?.text || '';
+        if (policyId && subjectName && policyTitle) {
+            document.getElementById('cvDescription').value = `Non-compliance violation for ${subjectName} regarding policy: ${policyTitle}`;
+        }
+    }
+
+    async function raiseViolationFor(type, assignmentId, supplierPolicyId, subjectId, name, policy) {
+        resetCreateViolationForm();
+        document.getElementById('cvType').value = type;
+        document.getElementById('cvSubjectLabel').textContent = type === 'Employee' ? 'Employee Name' : 'Supplier Name';
+        document.getElementById('cvDescription').value = `Non-compliance violation for ${name} regarding policy: ${policy}`;
+        if (type === 'Employee') document.getElementById('cvAssignmentId').value = assignmentId || '';
+        else document.getElementById('cvSupplierPolicyId').value = supplierPolicyId || '';
+        document.getElementById('createViolationModal').classList.add('active');
+        const preselectPolicyId = type === 'Employee' ? assignmentId : supplierPolicyId;
+        await loadCvSubjects(subjectId);
+        await loadCvPolicies(subjectId, preselectPolicyId);
     }
 
     async function submitCreateViolation() {
         const type = document.getElementById('cvType').value;
         const desc = document.getElementById('cvDescription').value.trim();
         if (!desc) { await window.showAppMessage('Description is required.', 'Validation'); return; }
+        const assignId = parseInt(document.getElementById('cvAssignmentId').value) || null;
+        const supPolId = parseInt(document.getElementById('cvSupplierPolicyId').value) || null;
+        if (type === 'Employee' && !assignId) { await window.showAppMessage('Please select an employee and policy.', 'Validation'); return; }
+        if (type === 'Supplier' && !supPolId) { await window.showAppMessage('Please select a supplier and policy.', 'Validation'); return; }
 
         const body = {
             violationType: type,
-            policyAssignmentId: type === 'Employee' ? (parseInt(document.getElementById('cvAssignmentId').value) || null) : null,
-            supplierPolicyId: type === 'Supplier' ? (parseInt(document.getElementById('cvSupplierPolicyId').value) || null) : null,
+            policyAssignmentId: type === 'Employee' ? assignId : null,
+            supplierPolicyId: type === 'Supplier' ? supPolId : null,
             description: desc,
             notes: document.getElementById('cvNotes').value.trim() || null
         };
@@ -643,12 +710,12 @@
 
     /* ── Suspend / Unsuspend Employee ──────────────── */
     async function suspendEmployee(id, name) {
-        const ok = await window.showAppConfirm(`Suspend employee "${name}" for non-compliance?`);
+        const ok = await window.showAppConfirm(`Suspend employee "${name}"?`);
         if (!ok) return;
         const _t = setTimeout(() => showLoading('Suspending employee...'), 300);
-        fetch(`${API}/SuspendEmployee?userId=${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'Suspended for non-compliance' }) })
+        fetch(`${API}/SuspendEmployee?userId=${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'Suspended' }) })
             .then(r => r.json())
-            .then(async res => { clearTimeout(_t); hideLoading(); if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantEmployees(); } else { await window.showAppMessage(res.message, 'Error'); } })
+            .then(async res => { clearTimeout(_t); hideLoading(); if (res.success) { await window.showAppMessage(res.message, 'Success'); loadCompliantEmployees(); } else { await window.showAppMessage(res.message, 'Error'); } })
             .catch(async () => { clearTimeout(_t); hideLoading(); await window.showAppMessage('Error suspending employee', 'Error'); });
     }
 
@@ -658,18 +725,18 @@
         const _t = setTimeout(() => showLoading('Reactivating employee...'), 300);
         fetch(`${API}/UnsuspendEmployee?userId=${id}`, { method: 'POST' })
             .then(r => r.json())
-            .then(async res => { clearTimeout(_t); hideLoading(); if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantEmployees(); } else { await window.showAppMessage(res.message, 'Error'); } })
+            .then(async res => { clearTimeout(_t); hideLoading(); if (res.success) { await window.showAppMessage(res.message, 'Success'); loadCompliantEmployees(); } else { await window.showAppMessage(res.message, 'Error'); } })
             .catch(async () => { clearTimeout(_t); hideLoading(); await window.showAppMessage('Error reactivating employee', 'Error'); });
     }
 
     /* ── Suspend / Unsuspend Supplier ──────────────── */
     async function suspendSupplier(id, name) {
-        const ok = await window.showAppConfirm(`Suspend supplier "${name}" for non-compliance?`);
+        const ok = await window.showAppConfirm(`Suspend supplier "${name}"?`);
         if (!ok) return;
         const _t = setTimeout(() => showLoading('Suspending supplier...'), 300);
-        fetch(`${API}/SuspendSupplier?supplierId=${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'Suspended for non-compliance' }) })
+        fetch(`${API}/SuspendSupplier?supplierId=${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: 'Suspended' }) })
             .then(r => r.json())
-            .then(async res => { clearTimeout(_t); hideLoading(); if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantSuppliers(); } else { await window.showAppMessage(res.message, 'Error'); } })
+            .then(async res => { clearTimeout(_t); hideLoading(); if (res.success) { await window.showAppMessage(res.message, 'Success'); loadCompliantSuppliers(); } else { await window.showAppMessage(res.message, 'Error'); } })
             .catch(async () => { clearTimeout(_t); hideLoading(); await window.showAppMessage('Error suspending supplier', 'Error'); });
     }
 
@@ -679,7 +746,7 @@
         const _t = setTimeout(() => showLoading('Reactivating supplier...'), 300);
         fetch(`${API}/UnsuspendSupplier?supplierId=${id}`, { method: 'POST' })
             .then(r => r.json())
-            .then(async res => { clearTimeout(_t); hideLoading(); if (res.success) { await window.showAppMessage(res.message, 'Success'); loadNonCompliantSuppliers(); } else { await window.showAppMessage(res.message, 'Error'); } })
+            .then(async res => { clearTimeout(_t); hideLoading(); if (res.success) { await window.showAppMessage(res.message, 'Success'); loadCompliantSuppliers(); } else { await window.showAppMessage(res.message, 'Error'); } })
             .catch(async () => { clearTimeout(_t); hideLoading(); await window.showAppMessage('Error unsuspending supplier', 'Error'); });
     }
 

@@ -71,8 +71,7 @@ namespace TechNova_IT_Solutions.Services
                 await using var contentStream = await response.Content.ReadAsStreamAsync();
                 using var document = await JsonDocument.ParseAsync(contentStream);
 
-                // The authenticated v6.exchangerate-api.com API uses "conversion_rates";
-                // fall back to "rates" for compatibility with the free open.er-api.com endpoint.
+                
                 var ratesPropertyName = document.RootElement.TryGetProperty("conversion_rates", out _)
                     ? "conversion_rates"
                     : "rates";

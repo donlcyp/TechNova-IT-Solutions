@@ -1,0 +1,333 @@
+﻿@model (string Title, string Description)
+@{
+    var sessionRole = Context.Session.GetString("UserRole") ?? string.Empty;
+    var showReturnToSuperAdmin =
+        sessionRole.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) &&
+        !Context.Request.Path.StartsWithSegments("/SuperAdmin", StringComparison.OrdinalIgnoreCase);
+}
+
+<div class="top-bar">
+    <div class="page-header">
+        <h1>@Model.Title</h1>
+        <p>@Model.Description</p>
+    </div>
+    <div class="account-section">
+    @if (showReturnToSuperAdmin)
+    {
+        <a class="return-super-admin-btn" href="/SuperAdmin/Dashboard">Back to Super Admin</a>
+    }
+    <!-- Notification Bell -->
+    <div class="notif-wrap" id="supNotifWrap">
+        <button class="notif-btn" id="supNotifBtn" onclick="toggleSupNotif()" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <span class="notif-badge" id="supNotifBadge" style="display:none;">0</span>
+        </button>
+        <div class="notif-dropdown" id="supNotifDropdown">
+            <div class="notif-header">Notifications</div>
+            <div id="supNotifItems"><div class="notif-loading">Loading…</div></div>
+        </div>
+    </div>
+    <div class="account-info">
+            <h4>@Context.Session.GetString("UserName")</h4>
+            <p>@(sessionRole.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) ? "Super Administrator" : "Supplier")</p>
+        </div>
+        <div class="account-avatar">
+            @{
+                var userName = Context.Session.GetString("UserName") ?? "User";
+                var nameParts = userName.Split(' ');
+                var initials = nameParts.Length >= 2 
+                    ? $"{nameParts[0][0]}{nameParts[1][0]}" 
+                    : userName.Length >= 2 ? userName.Substring(0, 2).ToUpper() : userName[0].ToString().ToUpper();
+            }
+            @initials
+        </div>
+    </div>
+</div>
+
+<style>
+    .top-bar {
+        background: #ffffff;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 24px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        width: 100%;
+        margin: 0;
+        box-sizing: border-box;
+    }
+
+    .page-header {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .page-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .page-header p {
+        color: #6b7280;
+        font-size: 15px;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .account-section {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-shrink: 0;
+    }
+
+    .return-super-admin-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 38px;
+        padding: 0 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        background: #f8fafc;
+        color: #1e3a8a;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .return-super-admin-btn:hover {
+        background: #eff6ff;
+        border-color: #93c5fd;
+    }
+
+    .account-info {
+        text-align: right;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+    }
+
+    .account-info h4 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1f2937;
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    .account-info p {
+        font-size: 13px;
+        color: #6b7280;
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    .account-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 18px;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .content-wrapper {
+        padding: 32px;
+    }
+
+    @@media (max-width: 991px) {
+        .top-bar {
+            padding: 16px 20px 16px 70px;
+        }
+
+        .page-header h1 {
+            font-size: 22px;
+        }
+
+        .page-header p {
+            font-size: 13px;
+        }
+
+        .account-info {
+            display: none;
+        }
+
+        .return-super-admin-btn {
+            height: 34px;
+            padding: 0 10px;
+            font-size: 12px;
+        }
+
+        .account-avatar {
+            width: 38px;
+            height: 38px;
+            font-size: 14px;
+        }
+
+        .content-wrapper {
+            padding: 20px;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .top-bar {
+            padding: 12px 16px 12px 60px;
+        }
+
+        .page-header h1 {
+            font-size: 18px;
+        }
+
+        .page-header p {
+            font-size: 12px;
+        }
+
+        .content-wrapper {
+            padding: 16px;
+        }
+    }
+</style>
+
+<style>
+    /* ── Notification bell (supplier) ── */
+    .notif-wrap { position: relative; }
+
+    .notif-btn {
+        width: 38px; height: 38px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; position: relative; flex-shrink: 0;
+    }
+    .notif-btn:hover { background: #f3f4f6; border-color: #d1d5db; }
+    .notif-btn svg { width: 18px; height: 18px; color: #374151; }
+
+    .notif-badge {
+        position: absolute; top: -5px; right: -5px;
+        background: #ef4444; color: #fff;
+        font-size: 10px; font-weight: 700;
+        min-width: 18px; height: 18px;
+        border-radius: 9px;
+        display: flex; align-items: center; justify-content: center;
+        padding: 0 3px; border: 2px solid #fff;
+    }
+
+    .notif-dropdown {
+        display: none;
+        position: absolute; top: calc(100% + 8px); right: 0;
+        width: 300px; background: #fff;
+        border: 1px solid #e5e7eb; border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.12);
+        z-index: 100; overflow: hidden;
+    }
+    .notif-dropdown.open { display: block; }
+
+    .notif-header {
+        padding: 12px 16px;
+        font-size: 13px; font-weight: 600; color: #111827;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .notif-item {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #f9fafb;
+        text-decoration: none; color: inherit;
+    }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item:hover { background: #f9fafb; }
+
+    .notif-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+    .notif-dot.orange { background: #f97316; }
+    .notif-dot.red    { background: #ef4444; }
+    .notif-dot.amber  { background: #d97706; }
+
+    .notif-item-text { font-size: 13px; line-height: 1.4; color: #374151; }
+    .notif-item-sub  { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+    .notif-none      { padding: 16px; font-size: 13px; color: #6b7280; text-align: center; }
+    .notif-loading   { padding: 14px 16px; font-size: 13px; color: #9ca3af; }
+</style>
+<script>
+(function () {
+    async function loadSupNotifications() {
+        try {
+            const res = await fetch('/Supplier/GetSupplierNotifications').then(r => r.json());
+            if (!res.success) return;
+            const badge  = document.getElementById('supNotifBadge');
+            const items  = document.getElementById('supNotifItems');
+            const total  = res.total;
+
+            if (total > 0) {
+                badge.textContent = total > 99 ? '99+' : total;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+
+            let html = '';
+            if (res.pendingRequests > 0) {
+                html += `<a class="notif-item" href="/Supplier/Procurement">
+                    <span class="notif-dot orange"></span>
+                    <div>
+                        <div class="notif-item-text"><strong>${res.pendingRequests}</strong> pending procurement request${res.pendingRequests === 1 ? '' : 's'} awaiting your response</div>
+                        <div class="notif-item-sub">Tap to review and respond</div>
+                    </div></a>`;
+            }
+            if (res.lateDeliveries > 0) {
+                html += `<a class="notif-item" href="/Supplier/Procurement">
+                    <span class="notif-dot amber"></span>
+                    <div>
+                        <div class="notif-item-text"><strong>${res.lateDeliveries}</strong> late deliver${res.lateDeliveries === 1 ? 'y' : 'ies'} requiring attention</div>
+                        <div class="notif-item-sub">Tap to report delay or update status</div>
+                    </div></a>`;
+            }
+            if (res.activeViolations > 0) {
+                html += `<a class="notif-item" href="/Supplier/Procurement">
+                    <span class="notif-dot red"></span>
+                    <div>
+                        <div class="notif-item-text"><strong>${res.activeViolations}</strong> active compliance violation${res.activeViolations === 1 ? '' : 's'}</div>
+                        <div class="notif-item-sub">Your account has been flagged for a policy violation</div>
+                    </div></a>`;
+            }
+            if (!html) {
+                html = '<div class="notif-none">You\'re all caught up!</div>';
+            }
+            items.innerHTML = html;
+        } catch { /* silent */ }
+    }
+
+    function toggleSupNotif() {
+        document.getElementById('supNotifDropdown').classList.toggle('open');
+    }
+
+    document.addEventListener('click', function (e) {
+        const wrap = document.getElementById('supNotifWrap');
+        if (wrap && !wrap.contains(e.target)) {
+            document.getElementById('supNotifDropdown').classList.remove('open');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', loadSupNotifications);
+    window.loadSupNotifications = loadSupNotifications;
+    window.toggleSupNotif = toggleSupNotif;
+}());
+</script>

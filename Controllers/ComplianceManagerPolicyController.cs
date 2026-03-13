@@ -208,8 +208,6 @@ namespace TechNova_IT_Solutions.Controllers
             {
                 await _adminService.LogActivityAsync(GetCurrentUserId(), $"Updated policy: {policyData.PolicyTitle}", "Policy");
 
-                // Only notify employees directly when updated by SuperAdmin/CCM (no review needed).
-                // For branch roles, the AdminService stages the update, no employee notif yet.
                 var emailSummary = new EmailNotificationSummary();
                 bool directUpdate = policyData.CallerRole is not (RoleNames.BranchAdmin or RoleNames.ComplianceManager);
                 if (directUpdate && policyData.PolicyId > 0)
@@ -918,6 +916,142 @@ namespace TechNova_IT_Solutions.Controllers
             catch { /* email failure is non-blocking */ }
 
             return Ok(new { success = true, message = "Violation updated" });
+        }
+
+        // ── Violation subject / policy lookup dropdowns ────────────────────
+
+        [HttpGet]
+        public async Task<IActionResult> GetViolationSubjects(string type)
+        {
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var callerBranchId = HasGlobalScope() ? (int?)null : GetCallerBranchId();
+            bool scoped = callerBranchId.HasValue;
+
+            if (type == "Employee")
+            {
+                var subjects = await _context.PolicyAssignments
+                    .Include(pa => pa.User)
+                    .Where(pa => pa.User != null)
+                    .Where(pa => !scoped || pa.User.BranchId == callerBranchId)
+                    .GroupBy(pa => pa.UserId)
+                    .Select(g => new
+                    {
+                        SubjectId = g.Key,
+                        Name = g.First().User!.FirstName + " " + g.First().User!.LastName,
+                        Email = g.First().User!.Email
+                    })
+                    .OrderBy(s => s.Name)
+                    .ToListAsync();
+                return Ok(new { success = true, subjects });
+            }
+            else
+            {
+                var subjects = await _context.SupplierPolicies
+                    .Include(sp => sp.Supplier)
+                    .Where(sp => sp.Supplier != null)
+                    .Where(sp => !scoped || sp.Supplier.BranchId == callerBranchId || sp.Supplier.BranchId == null)
+                    .GroupBy(sp => sp.SupplierId)
+                    .Select(g => new
+                    {
+                        SubjectId = g.Key,
+                        Name = g.First().Supplier!.SupplierName
+                    })
+                    .OrderBy(s => s.Name)
+                    .ToListAsync();
+                return Ok(new { success = true, subjects });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetSubjectPolicies(string type, int subjectId)
+        {
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            if (type == "Employee")
+            {
+                var policies = await _context.PolicyAssignments
+                    .Include(pa => pa.Policy)
+                    .Where(pa => pa.UserId == subjectId && pa.Policy != null)
+                    .Select(pa => new { Id = pa.AssignmentId, Title = pa.Policy!.PolicyTitle })
+                    .OrderBy(p => p.Title)
+                    .ToListAsync();
+                return Ok(new { success = true, policies });
+            }
+            else
+            {
+                var policies = await _context.SupplierPolicies
+                    .Include(sp => sp.Policy)
+                    .Where(sp => sp.SupplierId == subjectId && sp.Policy != null)
+                    .Select(sp => new { Id = sp.SupplierPolicyId, Title = sp.Policy!.PolicyTitle })
+                    .OrderBy(p => p.Title)
+                    .ToListAsync();
+                return Ok(new { success = true, policies });
+            }
+        }
+
+        // ── Compliant auto-detect ───────────────────────────
+
+        [HttpGet]
+        public async Task<IActionResult> GetCompliantEmployees()
+        {
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var callerBranchId = HasGlobalScope() ? (int?)null : GetCallerBranchId();
+            bool scoped = callerBranchId.HasValue;
+
+            var rows = await _context.PolicyAssignments
+                .Include(pa => pa.User)
+                .Include(pa => pa.Policy)
+                .Include(pa => pa.ComplianceStatus)
+                .Where(pa => pa.ComplianceStatus != null && pa.ComplianceStatus.Status == "Acknowledged")
+                .Where(pa => !scoped || pa.User.BranchId == callerBranchId)
+                .OrderBy(pa => pa.User.FirstName)
+                .Select(pa => new
+                {
+                    pa.AssignmentId,
+                    UserId = pa.User != null ? pa.User.UserId : 0,
+                    EmployeeName = pa.User != null ? $"{pa.User.FirstName} {pa.User.LastName}" : "Unknown",
+                    Email = pa.User != null ? pa.User.Email : "",
+                    UserStatus = pa.User != null ? pa.User.Status : "Active",
+                    PolicyTitle = pa.Policy != null ? pa.Policy.PolicyTitle : "Unknown",
+                    AssignedDate = pa.AssignedDate.HasValue ? pa.AssignedDate.Value.ToString("yyyy-MM-dd") : "N/A",
+                    AcknowledgedDate = pa.ComplianceStatus!.AcknowledgedDate.HasValue
+                        ? pa.ComplianceStatus.AcknowledgedDate.Value.ToString("yyyy-MM-dd") : "N/A",
+                    Status = "Acknowledged"
+                })
+                .ToListAsync();
+
+            return Ok(new { success = true, employees = rows });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetCompliantSuppliers()
+        {
+            if (!HasPolicyAssignmentAuthority()) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var callerBranchId = HasGlobalScope() ? (int?)null : GetCallerBranchId();
+            bool scoped = callerBranchId.HasValue;
+
+            var rows = await _context.SupplierPolicies
+                .Include(sp => sp.Supplier)
+                .Include(sp => sp.Policy)
+                .Where(sp => sp.ComplianceStatus == "Compliant")
+                .Where(sp => !scoped || sp.Supplier.BranchId == callerBranchId || sp.Supplier.BranchId == null)
+                .OrderBy(sp => sp.Supplier.SupplierName)
+                .Select(sp => new
+                {
+                    sp.SupplierPolicyId,
+                    SupplierName = sp.Supplier.SupplierName,
+                    SupplierStatus = sp.Supplier.Status,
+                    PolicyTitle = sp.Policy != null ? sp.Policy.PolicyTitle : "Unknown",
+                    AssignedDate = sp.AssignedDate.HasValue ? sp.AssignedDate.Value.ToString("yyyy-MM-dd") : "N/A",
+                    ComplianceStatus = "Compliant",
+                    SupplierId = sp.SupplierId
+                })
+                .ToListAsync();
+
+            return Ok(new { success = true, suppliers = rows });
         }
 
         // ── Non-compliant auto-detect ───────────────────────────

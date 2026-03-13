@@ -19,14 +19,12 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpGet]
         public async Task<IActionResult> GetRule()
         {
-            // External policy API is restricted to Chief Compliance Manager and Super Admin only
             var userRole = HttpContext.Session.GetString("UserRole");
             if (userRole != Constants.RoleNames.ChiefComplianceManager && userRole != Constants.RoleNames.SuperAdmin)
             {
                 return Unauthorized(new { success = false, message = "Access denied. Only Chief Compliance Manager or Super Admin can access external policy data." });
             }
-            // The specific document number for:
-            // "Securing the Information and Communications Technology and Services Supply Chain"
+            
             string documentNumber = "2019-25554";
 
             var response = await _policyService.GetPolicyDataAsync(documentNumber);

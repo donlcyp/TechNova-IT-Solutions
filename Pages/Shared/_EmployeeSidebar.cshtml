@@ -15,6 +15,7 @@
 
 <!-- Sidebar -->
 <div class="sidebar" id="employeeSidebar">
+    <script>(function(){var s=document.currentScript.parentElement;if(localStorage.getItem('employeeSidebarCollapsed')==='true')s.classList.add('collapsed','notransition');})()</script>
     <div class="logo">
         <img src="/images/logo2.png" alt="TechNova Logo" class="logo-image" />
         <span class="logo-text">TechNova</span>
@@ -91,6 +92,8 @@
         width: 70px;
     }
 
+    .sidebar.notransition { transition: none !important; }
+
     .logo {
         padding: 20px;
         display: flex;
@@ -149,7 +152,14 @@
         flex: 1;
         padding: 8px 0;
         overflow-y: auto;
+        min-height: 0;
+        scrollbar-width: thin;
+        scrollbar-color: #e2e8f0 transparent;
     }
+
+    .nav-menu::-webkit-scrollbar { width: 4px; }
+    .nav-menu::-webkit-scrollbar-track { background: transparent; }
+    .nav-menu::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
 
     .nav-item {
         padding: 14px 24px;
@@ -350,12 +360,7 @@
 
     // Restore sidebar state on page load
     document.addEventListener('DOMContentLoaded', function() {
-        const sidebar = document.getElementById('employeeSidebar');
-        const isCollapsed = localStorage.getItem('employeeSidebarCollapsed') === 'true';
-        
-        if (isCollapsed) {
-            sidebar.classList.add('collapsed');
-        }
+        document.getElementById('employeeSidebar').classList.remove('notransition');
     });
 
     // Mobile sidebar functions

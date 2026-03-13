@@ -137,6 +137,34 @@ namespace TechNova_IT_Solutions.Controllers
             return BadRequest(new { success = false, message = "Failed to reactivate branch." });
         }
 
+        // POST /Branch/Archive?branchId=1
+        [HttpPost]
+        public async Task<IActionResult> Archive(int branchId)
+        {
+            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
+
+            var result = await _branchService.ArchiveBranchAsync(branchId);
+            if (result)
+                return Ok(new { success = true, message = "Branch archived successfully." });
+
+            return BadRequest(new { success = false, message = "Failed to archive branch." });
+        }
+
+        // POST /Branch/Restore?branchId=1
+        [HttpPost]
+        public async Task<IActionResult> Restore(int branchId)
+        {
+            var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin);
+            if (denied != null) return denied;
+
+            var result = await _branchService.RestoreBranchAsync(branchId);
+            if (result)
+                return Ok(new { success = true, message = "Branch restored from archive." });
+
+            return BadRequest(new { success = false, message = "Failed to restore branch." });
+        }
+
         // POST /Branch/Delete?branchId=1
         [HttpPost]
         public async Task<IActionResult> Delete(int branchId)

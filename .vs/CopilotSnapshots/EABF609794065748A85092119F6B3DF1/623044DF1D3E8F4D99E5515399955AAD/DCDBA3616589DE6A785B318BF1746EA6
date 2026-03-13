@@ -1,0 +1,417 @@
+﻿-- ============================================================
+-- TechNova IT Solutions - Full Database Schema (SQL Server)
+-- Generated from EF Core migrations (current state: 20260303130025)
+-- Paste this into MonsterASP / SQL Server Management Studio and run.
+-- ============================================================
+
+-- ============================================================
+-- TABLE: __EFMigrationsHistory
+-- ============================================================
+CREATE TABLE [dbo].[__EFMigrationsHistory] (
+    [MigrationId]    NVARCHAR(150) NOT NULL,
+    [ProductVersion] NVARCHAR(32)  NOT NULL,
+    CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+);
+
+INSERT INTO [dbo].[__EFMigrationsHistory] ([MigrationId], [ProductVersion]) VALUES
+('20260225091858_InitialCreate',                             '10.0.0'),
+('20260225102111_UpdateSuperAdminPassword',                  '10.0.0'),
+('20260225122624_AddComplianceViolations',                   '10.0.0'),
+('20260226000022_AddBranchIdToPoliciesAndProcurements',      '10.0.0'),
+('20260226004714_SplitManagerNameAddManagerEmail',           '10.0.0'),
+('20260226233342_AddMustChangePassword',                     '10.0.0'),
+('20260301151026_AddPolicyReviewWorkflow',                   '10.0.0'),
+('20260302122237_SplitAdminRolesAddSupplierContractSeverity','10.0.3'),
+('20260303130025_SeedSuperAdminAccount',                     '10.0.3');
+
+-- ============================================================
+-- TABLE: Branches  (must be created before Users / Suppliers)
+-- ============================================================
+CREATE TABLE Branches (
+    branchId          INT            IDENTITY(1,1) PRIMARY KEY,
+    branchName        NVARCHAR(150)  NOT NULL,
+    address           NVARCHAR(255)  NOT NULL,
+    city              NVARCHAR(100)  NOT NULL,
+    region            NVARCHAR(100)  NULL,
+    phone             NVARCHAR(20)   NULL,
+    email             NVARCHAR(255)  NULL,
+    -- Manager split into first / last + email (SplitManagerNameAddManagerEmail)
+    managerFirstName  NVARCHAR(100)  NULL,
+    managerLastName   NVARCHAR(100)  NULL,
+    managerEmail      NVARCHAR(255)  NULL,
+    status            NVARCHAR(20)   NOT NULL,
+    createdAt         DATETIME2      NOT NULL,
+    updatedAt         DATETIME2      NOT NULL
+);
+
+-- ============================================================
+-- TABLE: Users
+-- ============================================================
+CREATE TABLE Users (
+    userID             INT            IDENTITY(1,1) PRIMARY KEY,
+    firstname          NVARCHAR(100)  NOT NULL,
+    lastname           NVARCHAR(100)  NOT NULL,
+    email              NVARCHAR(255)  NOT NULL,
+    password           NVARCHAR(255)  NOT NULL,
+    role               NVARCHAR(50)   NOT NULL,
+    status             NVARCHAR(20)   NOT NULL,
+    branchId           INT            NULL,
+    -- Added by AddMustChangePassword migration
+    mustChangePassword BIT            NOT NULL DEFAULT 0,
+    CONSTRAINT UQ_Users_email UNIQUE (email),
+    CONSTRAINT FK_Users_Branches_branchId
+        FOREIGN KEY (branchId) REFERENCES Branches(branchId) ON DELETE SET NULL
+);
+
+-- ============================================================
+-- TABLE: Suppliers
+-- ============================================================
+CREATE TABLE Suppliers (
+    supplierID            INT            IDENTITY(1,1) PRIMARY KEY,
+    supplier_name         NVARCHAR(255)  NOT NULL,
+    contact_person_fname  NVARCHAR(100)  NULL,
+    contact_person_lname  NVARCHAR(100)  NULL,
+    email                 NVARCHAR(255)  NULL,
+    contact_person_number NVARCHAR(20)   NULL,
+    address               NVARCHAR(500)  NULL,
+    status                NVARCHAR(20)   NOT NULL,
+    termination_reason    NVARCHAR(500)  NULL,
+    terminated_at         DATETIME2      NULL,
+    terminated_by_user_id INT            NULL,
+    branch_id             INT            NULL,
+    CONSTRAINT FK_Suppliers_Branches_branch_id
+        FOREIGN KEY (branch_id) REFERENCES Branches(branchId) ON DELETE SET NULL
+);
+
+CREATE UNIQUE INDEX IX_Suppliers_email
+    ON Suppliers(email) WHERE email IS NOT NULL;
+
+-- ============================================================
+-- TABLE: Audit_Logs
+-- ============================================================
+CREATE TABLE Audit_Logs (
+    logID   INT            IDENTITY(1,1) PRIMARY KEY,
+    userID  INT            NULL,
+    action  NVARCHAR(255)  NULL,
+    module  NVARCHAR(100)  NULL,
+    logdate DATETIME2      NOT NULL,
+    CONSTRAINT FK_Audit_Logs_Users_userID
+        FOREIGN KEY (userID) REFERENCES Users(userID) ON DELETE SET NULL
+);
+
+-- ============================================================
+-- TABLE: Policies
+-- ============================================================
+CREATE TABLE Policies (
+    policyID          INT            IDENTITY(1,1) PRIMARY KEY,
+    policy_title      NVARCHAR(255)  NOT NULL,
+    description       NVARCHAR(MAX)  NULL,
+    category          NVARCHAR(100)  NULL,
+    file_path         NVARCHAR(500)  NULL,
+    uploaded_by       INT            NULL,
+    date_uploaded     DATETIME2      NULL,
+    is_archived       BIT            NOT NULL DEFAULT 0,
+    archived_date     DATETIME2      NULL,
+    -- Added by AddBranchIdToPoliciesAndProcurements
+    branch_id         INT            NULL,
+    -- Added by AddPolicyReviewWorkflow
+    review_status     NVARCHAR(30)   NOT NULL DEFAULT '',
+    review_notes      NVARCHAR(MAX)  NULL,
+    reviewed_by       INT            NULL,
+    reviewed_at       DATETIME2      NULL,
+    pending_title     NVARCHAR(255)  NULL,
+    pending_description NVARCHAR(MAX) NULL,
+    pending_category  NVARCHAR(100)  NULL,
+    pending_file_path NVARCHAR(500)  NULL,
+    pending_updated_at DATETIME2     NULL,
+    pending_updated_by INT           NULL,
+    CONSTRAINT FK_Policies_Users_uploaded_by
+        FOREIGN KEY (uploaded_by) REFERENCES Users(userID) ON DELETE SET NULL,
+    CONSTRAINT FK_Policies_Branches_branch_id
+        FOREIGN KEY (branch_id) REFERENCES Branches(branchId) ON DELETE SET NULL,
+    CONSTRAINT FK_Policies_Users_reviewed_by
+        FOREIGN KEY (reviewed_by) REFERENCES Users(userID)
+);
+
+-- ============================================================
+-- TABLE: Supplier_Items
+-- ============================================================
+CREATE TABLE Supplier_Items (
+    supplier_itemID    INT           IDENTITY(1,1) PRIMARY KEY,
+    supplierID         INT           NOT NULL,
+    item_name          NVARCHAR(255) NOT NULL,
+    category           NVARCHAR(100) NULL,
+    unit_price         DECIMAL(18,2) NOT NULL DEFAULT 0,
+    currency_code      NVARCHAR(3)   NOT NULL DEFAULT 'PHP',
+    quantity_available INT           NOT NULL,
+    status             NVARCHAR(30)  NOT NULL,
+    last_updated       DATETIME2     NOT NULL,
+    CONSTRAINT FK_Supplier_Items_Suppliers_supplierID
+        FOREIGN KEY (supplierID) REFERENCES Suppliers(supplierID) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IX_Supplier_Items_supplierID_item_name
+    ON Supplier_Items(supplierID, item_name);
+
+-- ============================================================
+-- TABLE: Policy_Assignments
+-- ============================================================
+CREATE TABLE Policy_Assignments (
+    assignmentID  INT       IDENTITY(1,1) PRIMARY KEY,
+    policyID      INT       NOT NULL,
+    userID        INT       NOT NULL,
+    assigned_date DATETIME2 NULL,
+    CONSTRAINT FK_Policy_Assignments_Policies_policyID
+        FOREIGN KEY (policyID) REFERENCES Policies(policyID) ON DELETE CASCADE,
+    CONSTRAINT FK_Policy_Assignments_Users_userID
+        FOREIGN KEY (userID) REFERENCES Users(userID) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IX_Policy_Assignments_policyID_userID
+    ON Policy_Assignments(policyID, userID);
+
+-- ============================================================
+-- TABLE: Compliance_Status
+-- ============================================================
+CREATE TABLE Compliance_Status (
+    complianceID      INT          IDENTITY(1,1) PRIMARY KEY,
+    assignmentID      INT          NOT NULL,
+    status            NVARCHAR(50) NOT NULL,
+    acknowledged_date DATETIME2    NULL,
+    CONSTRAINT FK_Compliance_Status_Policy_Assignments_assignmentID
+        FOREIGN KEY (assignmentID) REFERENCES Policy_Assignments(assignmentID) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IX_Compliance_Status_assignmentID
+    ON Compliance_Status(assignmentID);
+
+-- ============================================================
+-- TABLE: Supplier_Policies
+-- ============================================================
+CREATE TABLE Supplier_Policies (
+    supplier_policiesID INT          IDENTITY(1,1) PRIMARY KEY,
+    supplierID          INT          NOT NULL,
+    policyID            INT          NOT NULL,
+    assigned_date       DATETIME2    NULL,
+    compliance_status   NVARCHAR(50) NOT NULL,
+    CONSTRAINT FK_Supplier_Policies_Policies_policyID
+        FOREIGN KEY (policyID) REFERENCES Policies(policyID) ON DELETE CASCADE,
+    CONSTRAINT FK_Supplier_Policies_Suppliers_supplierID
+        FOREIGN KEY (supplierID) REFERENCES Suppliers(supplierID) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IX_Supplier_Policies_supplierID_policyID
+    ON Supplier_Policies(supplierID, policyID);
+
+-- ============================================================
+-- TABLE: Procurement
+-- ============================================================
+CREATE TABLE Procurement (
+    procurementID              INT            IDENTITY(1,1) PRIMARY KEY,
+    item_name                  NVARCHAR(255)  NULL,
+    category                   NVARCHAR(100)  NULL,
+    quantity                   INT            NULL,
+    supplierID                 INT            NULL,
+    related_policyID           INT            NULL,
+    purchase_date              DATETIME2      NULL,
+    currency_code              NVARCHAR(3)    NOT NULL DEFAULT 'PHP',
+    original_amount            DECIMAL(18,2)  NOT NULL DEFAULT 0,
+    exchange_rate              DECIMAL(18,6)  NOT NULL DEFAULT 1,
+    converted_amount           DECIMAL(18,2)  NOT NULL DEFAULT 0,
+    conversion_timestamp       DATETIME2      NULL,
+    status                     NVARCHAR(40)   NOT NULL DEFAULT 'Draft',
+    supplier_response_date     DATETIME2      NULL,
+    supplier_response_deadline DATETIME2      NULL,
+    supplier_commit_ship_date  DATETIME2      NULL,
+    revised_delivery_date      DATETIME2      NULL,
+    delay_reason               NVARCHAR(500)  NULL,
+    shipment_date              DATETIME2      NULL,
+    received_date              DATETIME2      NULL,
+    rejection_reason           NVARCHAR(500)  NULL,
+    -- Added by AddBranchIdToPoliciesAndProcurements
+    branch_id                  INT            NULL,
+    CONSTRAINT FK_Procurement_Policies_related_policyID
+        FOREIGN KEY (related_policyID) REFERENCES Policies(policyID) ON DELETE SET NULL,
+    CONSTRAINT FK_Procurement_Suppliers_supplierID
+        FOREIGN KEY (supplierID) REFERENCES Suppliers(supplierID) ON DELETE SET NULL,
+    CONSTRAINT FK_Procurement_Branches_branch_id
+        FOREIGN KEY (branch_id) REFERENCES Branches(branchId) ON DELETE SET NULL
+);
+
+-- ============================================================
+-- TABLE: Procurement_Status_History
+-- ============================================================
+CREATE TABLE Procurement_Status_History (
+    historyID         INT           IDENTITY(1,1) PRIMARY KEY,
+    procurementID     INT           NOT NULL,
+    from_status       NVARCHAR(40)  NOT NULL,
+    to_status         NVARCHAR(40)  NOT NULL,
+    reason            NVARCHAR(500) NULL,
+    changed_by_userID INT           NULL,
+    changed_at        DATETIME2     NOT NULL,
+    CONSTRAINT FK_Procurement_Status_History_Procurement_procurementID
+        FOREIGN KEY (procurementID) REFERENCES Procurement(procurementID) ON DELETE CASCADE
+);
+
+-- ============================================================
+-- TABLE: External_Policy_Imports
+-- ============================================================
+CREATE TABLE External_Policy_Imports (
+    importID             INT            IDENTITY(1,1) PRIMARY KEY,
+    source_api           NVARCHAR(100)  NOT NULL,
+    document_number      NVARCHAR(100)  NULL,
+    external_url         NVARCHAR(1000) NULL,
+    policy_title         NVARCHAR(255)  NOT NULL,
+    description          NVARCHAR(MAX)  NULL,
+    category             NVARCHAR(100)  NULL,
+    publication_date     DATETIME2      NULL,
+    review_status        NVARCHAR(30)   NOT NULL,
+    imported_at          DATETIME2      NOT NULL,
+    reviewed_at          DATETIME2      NULL,
+    review_notes         NVARCHAR(500)  NULL,
+    imported_by_user_id  INT            NULL,
+    reviewed_by_user_id  INT            NULL,
+    approved_policy_id   INT            NULL,
+    CONSTRAINT FK_External_Policy_Imports_Policies_approved_policy_id
+        FOREIGN KEY (approved_policy_id) REFERENCES Policies(policyID) ON DELETE SET NULL,
+    CONSTRAINT FK_External_Policy_Imports_Users_imported_by_user_id
+        FOREIGN KEY (imported_by_user_id) REFERENCES Users(userID),
+    CONSTRAINT FK_External_Policy_Imports_Users_reviewed_by_user_id
+        FOREIGN KEY (reviewed_by_user_id) REFERENCES Users(userID)
+);
+
+-- ============================================================
+-- TABLE: compliance_violations  (added by AddComplianceViolations)
+-- ============================================================
+CREATE TABLE compliance_violations (
+    violationID        INT            IDENTITY(1,1) PRIMARY KEY,
+    assignment_id      INT            NULL,
+    supplier_policy_id INT            NULL,
+    violation_type     NVARCHAR(20)   NOT NULL,   -- 'Employee' | 'Supplier'
+    status             NVARCHAR(30)   NOT NULL,   -- 'Open' | 'UnderReview' | 'Escalated' | 'Resolved'
+    description        NVARCHAR(500)  NULL,
+    notes              NVARCHAR(MAX)  NULL,
+    resolution         NVARCHAR(500)  NULL,
+    raised_date        DATETIME2      NOT NULL,
+    resolved_date      DATETIME2      NULL,
+    raised_by_user_id  INT            NULL,
+    -- Added by SplitAdminRolesAddSupplierContractSeverity
+    severity_level     NVARCHAR(20)   NOT NULL DEFAULT '',
+    CONSTRAINT FK_compliance_violations_Policy_Assignments_assignment_id
+        FOREIGN KEY (assignment_id) REFERENCES Policy_Assignments(assignmentID),
+    CONSTRAINT FK_compliance_violations_Supplier_Policies_supplier_policy_id
+        FOREIGN KEY (supplier_policy_id) REFERENCES Supplier_Policies(supplier_policiesID),
+    CONSTRAINT FK_compliance_violations_Users_raised_by_user_id
+        FOREIGN KEY (raised_by_user_id) REFERENCES Users(userID)
+);
+
+-- ============================================================
+-- INDEXES
+-- ============================================================
+CREATE INDEX IX_Audit_Logs_userID
+    ON Audit_Logs(userID);
+
+CREATE INDEX IX_Users_branchId
+    ON Users(branchId);
+
+CREATE INDEX IX_Suppliers_branch_id
+    ON Suppliers(branch_id);
+
+CREATE INDEX IX_Policies_uploaded_by
+    ON Policies(uploaded_by);
+
+CREATE INDEX IX_Policies_branch_id
+    ON Policies(branch_id);
+
+CREATE INDEX IX_Policies_reviewed_by
+    ON Policies(reviewed_by);
+
+CREATE INDEX IX_Policy_Assignments_userID
+    ON Policy_Assignments(userID);
+
+CREATE INDEX IX_Supplier_Policies_policyID
+    ON Supplier_Policies(policyID);
+
+CREATE INDEX IX_Supplier_Items_supplierID
+    ON Supplier_Items(supplierID);
+
+CREATE INDEX IX_Procurement_supplierID
+    ON Procurement(supplierID);
+
+CREATE INDEX IX_Procurement_related_policyID
+    ON Procurement(related_policyID);
+
+CREATE INDEX IX_Procurement_branch_id
+    ON Procurement(branch_id);
+
+CREATE INDEX IX_Procurement_Status_History_procurementID
+    ON Procurement_Status_History(procurementID);
+
+CREATE INDEX IX_External_Policy_Imports_approved_policy_id
+    ON External_Policy_Imports(approved_policy_id);
+
+CREATE INDEX IX_External_Policy_Imports_imported_by_user_id
+    ON External_Policy_Imports(imported_by_user_id);
+
+CREATE INDEX IX_External_Policy_Imports_reviewed_by_user_id
+    ON External_Policy_Imports(reviewed_by_user_id);
+
+CREATE INDEX IX_External_Policy_Imports_review_status
+    ON External_Policy_Imports(review_status);
+
+CREATE INDEX IX_External_Policy_Imports_source_api_document_number
+    ON External_Policy_Imports(source_api, document_number);
+
+CREATE INDEX IX_compliance_violations_assignment_id
+    ON compliance_violations(assignment_id);
+
+CREATE INDEX IX_compliance_violations_supplier_policy_id
+    ON compliance_violations(supplier_policy_id);
+
+CREATE INDEX IX_compliance_violations_raised_by_user_id
+    ON compliance_violations(raised_by_user_id);
+
+CREATE INDEX IX_Supplier_Contracts_supplierID
+    ON Supplier_Contracts(supplierID);
+
+CREATE INDEX IX_Supplier_Contracts_linked_policyID
+    ON Supplier_Contracts(linked_policyID);
+
+CREATE INDEX IX_Supplier_Contracts_approved_by
+    ON Supplier_Contracts(approved_by);
+
+-- ============================================================
+-- SEED DATA: Default Accounts
+-- NOTE: Both passwords are BCrypt hashed for plain-text "Admin@123"
+--   SystemAdmin role: SystemAdmin
+--   SuperAdmin  role: SuperAdmin
+-- ============================================================
+
+-- Admin account
+INSERT INTO Users (firstname, lastname, email, password, role, status, mustChangePassword)
+VALUES (
+    'System',
+    'Administrator',
+    'admin@technova.com',
+    '$2a$11$KeI0ALoRNNrYuPz72yHa6u27wX.miwOTz/dPRya9BXwLcnBGKvK0G',
+    'SystemAdmin',
+    'Active',
+    0
+);
+
+-- Super Admin account
+INSERT INTO Users (firstname, lastname, email, password, role, status, mustChangePassword)
+VALUES (
+    'Super',
+    'Administrator',
+    'superadmin@technova.com',
+    '$2a$11$Uqd82u2pKRUJdX/kv0esjO0.rqhb49uMWm.21dHc0mQnqE50lKP4O',
+    'SuperAdmin',
+    'Active',
+    0
+);
+
+-- ============================================================
+-- Hashes above were generated with BCrypt.Net work factor 11.
+-- Plain-text password for both accounts: Admin@123
+-- ============================================================

@@ -771,7 +771,11 @@
                                 data-db-id="@record.ProcurementId.Replace("PROC-", "")"
                                 data-exchange-rate="@(record.ExchangeRate?.ToString("0.000000") ?? "N/A")"
                                 data-delay-reason="@(record.DelayReason ?? string.Empty)"
-                                data-revised-delivery="@(record.RevisedDeliveryDate?.ToString("MMM d, yyyy") ?? "N/A")">
+                                data-revised-delivery="@(record.RevisedDeliveryDate?.ToString("MMM d, yyyy") ?? "N/A")"
+                                data-supplier-id="@record.SupplierId"
+                                data-policy-id="@(record.PolicyId ?? 0)"
+                                data-item-name="@record.ItemName"
+                                data-quantity="@record.Quantity">
                                 <td>@record.ProcurementId</td>
                                 <td>@record.ItemName</td>
                                 <td>@record.Category</td>
@@ -1152,7 +1156,7 @@
             document.getElementById('viewModal').classList.remove('active');
         }
 
-        function editRecord(id) {
+        async function editRecord(id) {
             const rows = document.querySelectorAll('#procurementTable tr');
             let targetRow = null;
             rows.forEach(row => {
@@ -1172,10 +1176,51 @@
                 return;
             }
 
-            // Extract numeric DB ID from "PROC-001" format
             editingProcurementId = parseInt(id.replace('PROC-', ''));
             document.getElementById('modalTitle').textContent = 'Edit Procurement Record';
+
+            // Reset form to defaults first
+            document.getElementById('procurementForm').reset();
+            categoryInput.value = '';
+            document.getElementById('derivedCurrencyCode').value = 'Auto from item';
+            document.getElementById('derivedOriginalAmount').value = 'Auto from unit price x quantity';
+            supplierItemSelect.innerHTML = '<option value="">Select Supplier First</option>';
+            supplierItemSelect.disabled = true;
+            policySelect.innerHTML = '<option value="">Select Supplier First</option>';
+            policySelect.disabled = true;
+
             document.getElementById('procurementModal').classList.add('active');
+
+            const supplierId = parseInt(targetRow.dataset.supplierId || '0');
+            const policyId   = parseInt(targetRow.dataset.policyId   || '0');
+            const itemName   = (targetRow.dataset.itemName || '').trim();
+            const qty        = parseInt(targetRow.dataset.quantity || '0');
+
+            if (supplierId > 0) {
+                supplierSelect.value = supplierId;
+                await reloadSupplierItems();
+
+                // Select the matching item by name
+                if (itemName) {
+                    const opts = Array.from(supplierItemSelect.options);
+                    const match = opts.find(o => o.textContent.startsWith(itemName + ' (') || o.textContent === itemName);
+                    if (match) {
+                        supplierItemSelect.value = match.value;
+                        categoryInput.value = match.dataset.category || '';
+                    }
+                }
+
+                // Select the linked policy
+                if (policyId > 0) {
+                    policySelect.value = policyId;
+                }
+            }
+
+            // Set quantity and refresh pricing preview
+            if (qty > 0) {
+                document.getElementById('quantity').value = qty;
+            }
+            updatePricingPreview();
         }
 
         function markDeliveryArrived(id) {

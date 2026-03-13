@@ -1147,11 +1147,12 @@ else
         if (!_pendingApproveId) return;
         const notes = document.getElementById('approvalNotes').value.trim();
         const payload = { reviewNotes: notes || null };
+        const importId = _pendingApproveId;
         closeApproveModal();
 
         const _t = setTimeout(() => showLoading('Approving import...'), 300);
         try {
-            const res = await fetch(`/api/policy-references/staging/${_pendingApproveId}/approve`, {
+            const res = await fetch(`/api/policy-references/staging/${importId}/approve`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

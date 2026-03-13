@@ -15,6 +15,7 @@
 
 <!-- Sidebar -->
 <div class="sidebar" id="adminSidebar">
+    <script>(function(){var s=document.currentScript.parentElement;if(localStorage.getItem('adminSidebarCollapsed')==='true')s.classList.add('collapsed','notransition');})()</script>
     <div class="logo">
         <img src="/images/logo2.png" alt="TechNova Logo" class="logo-image" />
         <span class="logo-text">TechNova</span>
@@ -78,13 +79,6 @@
                 <line x1="8" y1="17" x2="12" y2="17"></line>
                 <path d="M16 13v4M14 15h4"></path>
             </svg>
-            <span class="nav-text">Supplier Report</span>
-        </a>
-        <a href="/SystemAdmin/Procurement" class="nav-item @(Model == "Procurement" ? "active" : "")" title="Procurement">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                <line x1="1" y1="10" x2="23" y2="10"></line>
-            </svg>
             <span class="nav-text">Procurement</span>
         </a>
         <a href="/SystemAdmin/Inventory" class="nav-item @(Model == "Inventory" ? "active" : "")" title="Inventory">
@@ -135,6 +129,7 @@
         transition: width 0.3s ease;
     }
     .sidebar.collapsed { width: 70px; }
+        .sidebar.notransition { transition: none !important; }
     .logo { padding: 20px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px; }
     .logo-text { font-size: 18px; font-weight: 700; color: #1e40af; white-space: nowrap; }
     .sidebar.collapsed .logo-text { display: none; }
@@ -143,7 +138,10 @@
     .toggle-btn svg { width: 24px; height: 24px; }
     .logo-image { height: 45px; width: auto; object-fit: contain; }
     .sidebar.collapsed .logo-image { height: 32px; }
-    .nav-menu { flex: 1; padding: 8px 0; overflow-y: auto; min-height: 0; }
+    .nav-menu { flex: 1; padding: 8px 0; overflow-y: auto; min-height: 0; scrollbar-width: thin; scrollbar-color: #e2e8f0 transparent; }
+        .nav-menu::-webkit-scrollbar { width: 4px; }
+        .nav-menu::-webkit-scrollbar-track { background: transparent; }
+        .nav-menu::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
     .nav-item { padding: 14px 24px; color: #6b7280; text-decoration: none; border: none; background: transparent; width: 100%; text-align: left; display: flex; align-items: center; gap: 12px; transition: all 0.3s; font-size: 14px; font-weight: 500; white-space: nowrap; }
     .nav-item:hover { background: rgba(30, 64, 175, 0.1); color: #1e40af; }
     .nav-item.active { background: linear-gradient(90deg, rgba(30, 64, 175, 0.15) 0%, transparent 100%); color: #1e40af; border-left: 3px solid #1e40af; }
@@ -172,8 +170,7 @@
         localStorage.setItem('adminSidebarCollapsed', sidebar.classList.contains('collapsed'));
     }
     document.addEventListener('DOMContentLoaded', function() {
-        const sidebar = document.getElementById('adminSidebar');
-        if (localStorage.getItem('adminSidebarCollapsed') === 'true') sidebar.classList.add('collapsed');
+        document.getElementById('adminSidebar').classList.remove('notransition');
     });
     function toggleMobileSidebar() {
         const sidebar = document.getElementById('adminSidebar');

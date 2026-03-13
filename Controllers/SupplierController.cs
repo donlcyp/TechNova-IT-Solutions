@@ -204,6 +204,40 @@ namespace TechNova_IT_Solutions.Controllers
             return Ok(new { success = true, message = "Delay report submitted and escalated." });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetSupplierNotifications()
+        {
+            var supplierId = await GetCurrentSupplierIdAsync();
+            if (!supplierId.HasValue) return Unauthorized(new { success = false });
+
+            // Procurement requests awaiting supplier response
+            var pendingRequests = await _context.Procurements
+                .Where(p => p.SupplierId == supplierId.Value && p.Status == ProcurementStatuses.Submitted)
+                .CountAsync();
+
+            // Active compliance violations raised against this supplier (not resolved)
+            var activeViolations = await _context.ComplianceViolations
+                .Include(v => v.SupplierPolicy)
+                .Where(v => v.SupplierPolicy != null &&
+                            v.SupplierPolicy.SupplierId == supplierId.Value &&
+                            v.Status != "Resolved")
+                .CountAsync();
+
+            // Late deliveries (supplier-approved procurements past possible arrival)
+            var today = DateTime.UtcNow.Date;
+            var lateDeliveries = await _context.Procurements
+                .Where(p => p.SupplierId == supplierId.Value && p.Status == ProcurementStatuses.Late)
+                .CountAsync();
+
+            return Ok(new SupplierNotificationResult
+            {
+                Success = true,
+                PendingRequests = pendingRequests,
+                ActiveViolations = activeViolations,
+                LateDeliveries = lateDeliveries
+            });
+        }
+
         [HttpPost]
         public async Task<IActionResult> RespondToProcurement([FromBody] SupplierProcurementActionData actionData)
         {
@@ -231,5 +265,14 @@ namespace TechNova_IT_Solutions.Controllers
     {
         public int SupplierItemId { get; set; }
         public int AddQuantity { get; set; }
+    }
+
+    public class SupplierNotificationResult
+    {
+        public bool Success { get; set; }
+        public int PendingRequests { get; set; }
+        public int ActiveViolations { get; set; }
+        public int LateDeliveries { get; set; }
+        public int Total => PendingRequests + ActiveViolations + LateDeliveries;
     }
 }

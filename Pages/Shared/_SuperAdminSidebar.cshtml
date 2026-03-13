@@ -14,6 +14,7 @@
 
 <!-- Sidebar -->
 <div class="sidebar" id="superAdminSidebar">
+    <script>(function(){var s=document.currentScript.parentElement;if(localStorage.getItem('superAdminSidebarCollapsed')==='true')s.classList.add('collapsed','notransition');})()</script>
     <div class="logo">
         <img src="/images/logo2.png" alt="TechNova Logo" class="logo-image" />
         <span class="logo-text">TechNova</span>
@@ -183,6 +184,8 @@
         width: 70px;
     }
 
+    .sidebar.notransition { transition: none !important; }
+
     .logo {
         padding: 20px;
         display: flex;
@@ -240,11 +243,15 @@
     .nav-menu {
         flex: 1;
         padding: 8px 0;
+        overflow-y: auto;
+        min-height: 0;
+        scrollbar-width: thin;
+        scrollbar-color: #e2e8f0 transparent;
     }
 
-    .nav-menu {
-        overflow-y: auto;
-    }
+    .nav-menu::-webkit-scrollbar { width: 4px; }
+    .nav-menu::-webkit-scrollbar-track { background: transparent; }
+    .nav-menu::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
 
     /* ── Group header ── */
     .nav-group {
@@ -529,11 +536,12 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         const sidebar = document.getElementById('superAdminSidebar');
-        const isCollapsed = localStorage.getItem('superAdminSidebarCollapsed') === 'true';
-
-        if (isCollapsed) {
-            sidebar.classList.add('collapsed');
-        }
+        sidebar.classList.remove('notransition');
+        document.querySelectorAll('#superAdminNav .nav-group').forEach(function (group, i) {
+            var saved = localStorage.getItem('superAdminNavGroup_' + i);
+            if (saved === 'true') group.classList.add('open');
+            else if (saved === 'false') group.classList.remove('open');
+        });
     });
 
     function toggleMobileSidebar() {
@@ -557,6 +565,8 @@
         if (sidebar.classList.contains('collapsed')) return;
         const group = btn.closest('.nav-group');
         group.classList.toggle('open');
+        const i = Array.from(document.querySelectorAll('#superAdminNav .nav-group')).indexOf(group);
+        if (i >= 0) localStorage.setItem('superAdminNavGroup_' + i, group.classList.contains('open'));
     }
 
     document.querySelectorAll('.nav-item').forEach(item => {

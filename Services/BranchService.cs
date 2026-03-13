@@ -18,6 +18,7 @@ namespace TechNova_IT_Solutions.Services
         public async Task<List<BranchData>> GetAllBranchesAsync()
         {
             var branches = await _db.Branches
+                .Where(b => b.Status != "Archived")
                 .OrderBy(b => b.BranchName)
                 .ToListAsync();
 
@@ -102,6 +103,51 @@ namespace TechNova_IT_Solutions.Services
             if (branch == null) return false;
 
             branch.Status    = "Active";
+            branch.UpdatedAt = DateTime.UtcNow;
+
+            return await _db.SaveChangesAsync() > 0;
+        }
+
+        public async Task<List<BranchData>> GetArchivedBranchesAsync()
+        {
+            var branches = await _db.Branches
+                .Where(b => b.Status == "Archived")
+                .OrderBy(b => b.BranchName)
+                .ToListAsync();
+
+            var admins = await _db.Users
+                .Where(u => u.Role == RoleNames.BranchAdmin && u.BranchId != null)
+                .ToListAsync();
+
+            return branches.Select(b =>
+            {
+                var admin = admins.FirstOrDefault(u => u.BranchId == b.BranchId);
+                return MapToData(b, admin);
+            }).ToList();
+        }
+
+        public async Task<bool> ArchiveBranchAsync(int branchId)
+        {
+            var assignedAdmins = await _db.Users
+                .Where(u => u.Role == RoleNames.BranchAdmin && u.BranchId == branchId)
+                .ToListAsync();
+            foreach (var a in assignedAdmins) a.BranchId = null;
+
+            var branch = await _db.Branches.FindAsync(branchId);
+            if (branch == null) return false;
+
+            branch.Status    = "Archived";
+            branch.UpdatedAt = DateTime.UtcNow;
+
+            return await _db.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> RestoreBranchAsync(int branchId)
+        {
+            var branch = await _db.Branches.FindAsync(branchId);
+            if (branch == null) return false;
+
+            branch.Status    = "Inactive";
             branch.UpdatedAt = DateTime.UtcNow;
 
             return await _db.SaveChangesAsync() > 0;

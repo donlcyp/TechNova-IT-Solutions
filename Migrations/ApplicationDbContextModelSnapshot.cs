@@ -692,66 +692,6 @@ namespace TechNova_IT_Solutions.Migrations
                     b.ToTable("Suppliers");
                 });
 
-            modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierContract", b =>
-                {
-                    b.Property<int>("ContractId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("contractID");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ContractId"));
-
-                    b.Property<DateTime?>("ApprovalDate")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("approval_date");
-
-                    b.Property<int?>("ApprovedBy")
-                        .HasColumnType("int")
-                        .HasColumnName("approved_by");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTime>("ExpiryDate")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("expiry_date");
-
-                    b.Property<int?>("LinkedPolicyId")
-                        .HasColumnType("int")
-                        .HasColumnName("linked_policyID");
-
-                    b.Property<string>("RiskLevel")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasColumnName("risk_level");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("start_date");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)")
-                        .HasColumnName("status");
-
-                    b.Property<int>("SupplierId")
-                        .HasColumnType("int")
-                        .HasColumnName("supplierID");
-
-                    b.HasKey("ContractId");
-
-                    b.HasIndex("ApprovedBy");
-
-                    b.HasIndex("LinkedPolicyId");
-
-                    b.HasIndex("SupplierId");
-
-                    b.ToTable("Supplier_Contracts");
-                });
-
             modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierItem", b =>
                 {
                     b.Property<int>("SupplierItemId")
@@ -1065,31 +1005,6 @@ namespace TechNova_IT_Solutions.Migrations
                     b.Navigation("Branch");
                 });
 
-            modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierContract", b =>
-                {
-                    b.HasOne("TechNova_IT_Solutions.Models.User", "ApprovedByUser")
-                        .WithMany()
-                        .HasForeignKey("ApprovedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("TechNova_IT_Solutions.Models.Policy", "LinkedPolicy")
-                        .WithMany()
-                        .HasForeignKey("LinkedPolicyId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("TechNova_IT_Solutions.Models.Supplier", "Supplier")
-                        .WithMany("SupplierContracts")
-                        .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ApprovedByUser");
-
-                    b.Navigation("LinkedPolicy");
-
-                    b.Navigation("Supplier");
-                });
-
             modelBuilder.Entity("TechNova_IT_Solutions.Models.SupplierItem", b =>
                 {
                     b.HasOne("TechNova_IT_Solutions.Models.Supplier", "Supplier")
@@ -1161,8 +1076,6 @@ namespace TechNova_IT_Solutions.Migrations
             modelBuilder.Entity("TechNova_IT_Solutions.Models.Supplier", b =>
                 {
                     b.Navigation("Procurements");
-
-                    b.Navigation("SupplierContracts");
 
                     b.Navigation("SupplierItems");
 

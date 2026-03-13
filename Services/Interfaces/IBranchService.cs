@@ -3,11 +3,14 @@ namespace TechNova_IT_Solutions.Services.Interfaces
     public interface IBranchService
     {
         Task<List<BranchData>> GetAllBranchesAsync();
+        Task<List<BranchData>> GetArchivedBranchesAsync();
         Task<BranchData?> GetBranchByIdAsync(int branchId);
         Task<bool> CreateBranchAsync(BranchData branchData);
         Task<bool> UpdateBranchAsync(BranchData branchData);
         Task<bool> DeactivateBranchAsync(int branchId);
         Task<bool> ReactivateBranchAsync(int branchId);
+        Task<bool> ArchiveBranchAsync(int branchId);
+        Task<bool> RestoreBranchAsync(int branchId);
         Task<bool> DeleteBranchAsync(int branchId);
         Task<List<UserData>> GetAvailableAdminsAsync();
         Task<bool> AssignAdminToBranchAsync(int branchId, int adminUserId);

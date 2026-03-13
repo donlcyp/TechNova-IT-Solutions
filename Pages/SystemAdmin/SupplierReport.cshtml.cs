@@ -139,12 +139,6 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
 
         private async Task LoadOverviewAsync(List<TechNova_IT_Solutions.Models.Supplier> suppliers)
         {
-            var contractCounts = await _context.SupplierContracts
-                .AsNoTracking()
-                .GroupBy(c => c.SupplierId)
-                .Select(g => new { SupplierId = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.SupplierId, x => x.Count);
-
             var procValueBySupplier = await _context.Procurements
                 .AsNoTracking()
                 .Where(p => p.SupplierId.HasValue)
@@ -161,7 +155,6 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
                 SupplierId = $"SUP-{s.SupplierId:D3}",
                 SupplierName = s.SupplierName,
                 Status = s.Status,
-                Contracts = contractCounts.GetValueOrDefault(s.SupplierId, 0),
                 PolicyCount = s.SupplierPolicies.Count,
                 ComplianceStatus = s.SupplierPolicies.Any(sp => sp.ComplianceStatus == "Compliant")
                     ? "Compliant"
@@ -274,10 +267,10 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
 
             if (ReportType == "overview")
             {
-                sb.AppendLine("Supplier ID,Supplier Name,Status,Contracts,Policies,Compliance,Total Procurement,Terminated At");
+                sb.AppendLine("Supplier ID,Supplier Name,Status,Policies,Compliance,Total Procurement,Terminated At");
                 foreach (var r in OverviewData)
                     sb.AppendLine(string.Join(",", Csv(r.SupplierId), Csv(r.SupplierName), Csv(r.Status),
-                        r.Contracts.ToString(), r.PolicyCount.ToString(), Csv(r.ComplianceStatus),
+                        r.PolicyCount.ToString(), Csv(r.ComplianceStatus),
                         r.TotalProcurement.ToString("F2"), Csv(r.TerminatedAt?.ToString("yyyy-MM-dd") ?? "")));
             }
             else if (ReportType == "procurement")
@@ -311,7 +304,6 @@ namespace TechNova_IT_Solutions.Pages.SystemAdmin
         public string SupplierId { get; set; } = string.Empty;
         public string SupplierName { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
-        public int Contracts { get; set; }
         public int PolicyCount { get; set; }
         public string ComplianceStatus { get; set; } = string.Empty;
         public decimal TotalProcurement { get; set; }

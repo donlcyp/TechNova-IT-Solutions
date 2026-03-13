@@ -1,12 +1,71 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "D:\\C#\\repos\\TechNova IT Solutions\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{E24EDBD2-C14A-16DF-0F84-425131ED8D3E}|TechNova IT Solutions.csproj|d:\\c#\\repos\\technova it solutions\\controllers\\suppliercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E24EDBD2-C14A-16DF-0F84-425131ED8D3E}|TechNova IT Solutions.csproj|solutionrelative:controllers\\suppliercontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E24EDBD2-C14A-16DF-0F84-425131ED8D3E}|TechNova IT Solutions.csproj|d:\\c#\\repos\\technova it solutions\\pages\\shared\\_suppliertopbar.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{E24EDBD2-C14A-16DF-0F84-425131ED8D3E}|TechNova IT Solutions.csproj|solutionrelative:pages\\shared\\_suppliertopbar.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{E24EDBD2-C14A-16DF-0F84-425131ED8D3E}|TechNova IT Solutions.csproj|d:\\c#\\repos\\technova it solutions\\pages\\systemadmin\\supplierreport.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{E24EDBD2-C14A-16DF-0F84-425131ED8D3E}|TechNova IT Solutions.csproj|solutionrelative:pages\\systemadmin\\supplierreport.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
       "VerticalTabListWidth": 256,
-      "DocumentGroups": []
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "_SupplierTopBar.cshtml",
+              "DocumentMoniker": "D:\\C#\\repos\\TechNova IT Solutions\\Pages\\Shared\\_SupplierTopBar.cshtml",
+              "RelativeDocumentMoniker": "Pages\\Shared\\_SupplierTopBar.cshtml",
+              "ToolTip": "D:\\C#\\repos\\TechNova IT Solutions\\Pages\\Shared\\_SupplierTopBar.cshtml",
+              "RelativeToolTip": "Pages\\Shared\\_SupplierTopBar.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-11T12:04:52.61Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "SupplierController.cs",
+              "DocumentMoniker": "D:\\C#\\repos\\TechNova IT Solutions\\Controllers\\SupplierController.cs",
+              "RelativeDocumentMoniker": "Controllers\\SupplierController.cs",
+              "ToolTip": "D:\\C#\\repos\\TechNova IT Solutions\\Controllers\\SupplierController.cs",
+              "RelativeToolTip": "Controllers\\SupplierController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-11T12:04:52.533Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "SupplierReport.cshtml",
+              "DocumentMoniker": "D:\\C#\\repos\\TechNova IT Solutions\\Pages\\SystemAdmin\\SupplierReport.cshtml",
+              "RelativeDocumentMoniker": "Pages\\SystemAdmin\\SupplierReport.cshtml",
+              "ToolTip": "D:\\C#\\repos\\TechNova IT Solutions\\Pages\\SystemAdmin\\SupplierReport.cshtml",
+              "RelativeToolTip": "Pages\\SystemAdmin\\SupplierReport.cshtml",
+              "ViewState": "AgIAAHwAAAAAAAAAAIBJwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-11T12:19:01.876Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -48,6 +48,7 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
             public string PolicyTitle { get; set; } = string.Empty;
             public string Status { get; set; } = string.Empty;
             public DateTime? AssignedDate { get; set; }
+            public DateTime? AcknowledgedDate { get; set; }
         }
 
         public async Task<IActionResult> OnGet()
@@ -100,11 +101,12 @@ namespace TechNova_IT_Solutions.Pages.SuperAdmin
                 .OrderByDescending(pa => pa.AssignedDate)
                 .Select(pa => new AssignmentMonitoringRow
                 {
-                    AssigneeType = "Employee",
-                    AssigneeName = pa.User.FirstName + " " + pa.User.LastName,
-                    PolicyTitle = pa.Policy.PolicyTitle,
-                    Status = pa.ComplianceStatus != null ? pa.ComplianceStatus.Status : "Pending",
-                    AssignedDate = pa.AssignedDate
+                    AssigneeType    = "Employee",
+                    AssigneeName    = pa.User.FirstName + " " + pa.User.LastName,
+                    PolicyTitle     = pa.Policy.PolicyTitle,
+                    Status          = pa.ComplianceStatus != null ? pa.ComplianceStatus.Status : "Pending",
+                    AssignedDate    = pa.AssignedDate,
+                    AcknowledgedDate = pa.ComplianceStatus != null ? pa.ComplianceStatus.AcknowledgedDate : null
                 })
                 .Take(8)
                 .ToListAsync();
