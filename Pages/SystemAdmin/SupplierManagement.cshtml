@@ -352,6 +352,33 @@
             font-size: 14px;
         }
 
+        .form-error-summary {
+            display: none;
+            margin-bottom: 16px;
+            padding: 10px 12px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .form-error-summary.active {
+            display: block;
+        }
+
+        .field-error {
+            margin-top: 6px;
+            min-height: 16px;
+            font-size: 12px;
+            color: #b91c1c;
+        }
+
+        .input-error {
+            border-color: #dc2626 !important;
+            background: #fef2f2;
+        }
+
         .policy-steps {
             margin-bottom: 12px;
             padding: 12px;
@@ -815,40 +842,48 @@
                 <button class="close-modal" onclick="closeModal('supplierModal')">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="supplierForm">
+                <form id="supplierForm" novalidate>
+                    <div class="form-error-summary" id="supplierFormError" role="alert" aria-live="polite"></div>
                     <input type="hidden" id="supplierId" />
                     <div class="form-group">
                         <label for="supplierName">Supplier Name *</label>
-                        <input type="text" id="supplierName" required />
+                        <input type="text" id="supplierName" required aria-describedby="errorSupplierName" />
+                        <div class="field-error" id="errorSupplierName"></div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="contactFirstName">First Name *</label>
-                            <input type="text" id="contactFirstName" required />
+                            <input type="text" id="contactFirstName" required aria-describedby="errorContactFirstName" />
+                            <div class="field-error" id="errorContactFirstName"></div>
                         </div>
                         <div class="form-group">
                             <label for="contactLastName">Last Name *</label>
-                            <input type="text" id="contactLastName" required />
+                            <input type="text" id="contactLastName" required aria-describedby="errorContactLastName" />
+                            <div class="field-error" id="errorContactLastName"></div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="email">Email *</label>
-                        <input type="email" id="email" required />
+                        <input type="email" id="email" required aria-describedby="errorEmail" />
+                        <div class="field-error" id="errorEmail"></div>
                     </div>
                     <div class="form-group">
                         <label for="contactNumber">Contact Number *</label>
-                        <input type="text" id="contactNumber" required />
+                        <input type="text" id="contactNumber" required aria-describedby="errorContactNumber" />
+                        <div class="field-error" id="errorContactNumber"></div>
                     </div>
                     <div class="form-group">
                         <label for="address">Address *</label>
-                        <textarea id="address" rows="3" required></textarea>
+                        <textarea id="address" rows="3" required aria-describedby="errorAddress"></textarea>
+                        <div class="field-error" id="errorAddress"></div>
                     </div>
                     <div class="form-group">
                         <label for="status">Status *</label>
-                        <select id="status" required>
+                        <select id="status" required aria-describedby="errorStatus">
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
                         </select>
+                        <div class="field-error" id="errorStatus"></div>
                     </div>
                 </form>
             </div>
@@ -1003,11 +1038,15 @@
             document.getElementById('modalTitle').textContent = 'Add Supplier';
             document.getElementById('supplierForm').reset();
             document.getElementById('supplierId').value = '';
+            clearSupplierErrors();
             document.getElementById('supplierModal').classList.add('active');
         }
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
+            if (modalId === 'supplierModal') {
+                clearSupplierErrors();
+            }
             if (modalId === 'terminateModal') {
                 terminateSupplierId = null;
                 document.getElementById('terminationReason').value = '';
@@ -1061,12 +1100,67 @@
                         document.getElementById('contactNumber').value = s.contactPersonNumber;
                         document.getElementById('address').value = s.address;
                         document.getElementById('status').value = s.status;
+                        clearSupplierErrors();
                         document.getElementById('supplierModal').classList.add('active');
                     } else {
                         showToast(result.message || 'Failed to fetch details', 'error');
                     }
                 })
                 .catch(() => showToast('Error fetching details', 'error'));
+        }
+
+        const supplierFieldErrors = {
+            supplierName: 'errorSupplierName',
+            contactFirstName: 'errorContactFirstName',
+            contactLastName: 'errorContactLastName',
+            email: 'errorEmail',
+            contactNumber: 'errorContactNumber',
+            address: 'errorAddress',
+            status: 'errorStatus'
+        };
+
+        function clearSupplierErrors() {
+            Object.keys(supplierFieldErrors).forEach(fieldId => {
+                clearSupplierFieldError(fieldId);
+            });
+            const summary = document.getElementById('supplierFormError');
+            if (summary) {
+                summary.textContent = '';
+                summary.classList.remove('active');
+            }
+        }
+
+        function clearSupplierFieldError(fieldId) {
+            const errorId = supplierFieldErrors[fieldId];
+            const input = document.getElementById(fieldId);
+            const errorEl = document.getElementById(errorId);
+            if (input) {
+                input.classList.remove('input-error');
+                input.removeAttribute('aria-invalid');
+            }
+            if (errorEl) {
+                errorEl.textContent = '';
+            }
+        }
+
+        function setSupplierError(fieldId, message) {
+            const errorId = supplierFieldErrors[fieldId];
+            const input = document.getElementById(fieldId);
+            const errorEl = document.getElementById(errorId);
+            if (input) {
+                input.classList.add('input-error');
+                input.setAttribute('aria-invalid', 'true');
+            }
+            if (errorEl) {
+                errorEl.textContent = message;
+            }
+        }
+
+        function showSupplierFormError(message) {
+            const summary = document.getElementById('supplierFormError');
+            if (!summary) return;
+            summary.textContent = message;
+            summary.classList.add('active');
         }
 
         let currentSupplierId = null;
@@ -1140,8 +1234,7 @@
         }
 
         function saveSupplier() {
-            const form = document.getElementById('supplierForm');
-            if (!form.checkValidity()) { form.reportValidity(); return; }
+            clearSupplierErrors();
 
             const emailRegex = /^[a-zA-Z0-9._%+\-]+@@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
             const phoneRegex = /^[+\d][\d\s\-().]{6,}$/;
@@ -1152,12 +1245,74 @@
             const email = document.getElementById('email').value.trim();
             const phone = document.getElementById('contactNumber').value.trim();
             const address = document.getElementById('address').value.trim();
+            const status = document.getElementById('status').value;
 
-            if (!/^[A-Z]/.test(firstName)) { showToast('First name must start with a capital letter.', 'error'); return; }
-            if (!/^[A-Z]/.test(lastName)) { showToast('Last name must start with a capital letter.', 'error'); return; }
-            if (!emailRegex.test(email)) { showToast('Please enter a valid email address.', 'error'); return; }
-            if (!phoneRegex.test(phone)) { showToast('Contact number must start with + or digit and be at least 7 characters.', 'error'); return; }
-            if (address.length < 5) { showToast('Please enter a complete address.', 'error'); return; }
+            let hasError = false;
+            let firstErrorField = null;
+
+            if (!supplierName) {
+                setSupplierError('supplierName', 'Supplier name is required.');
+                hasError = true;
+                firstErrorField = firstErrorField || 'supplierName';
+            }
+            if (!firstName) {
+                setSupplierError('contactFirstName', 'First name is required.');
+                hasError = true;
+                firstErrorField = firstErrorField || 'contactFirstName';
+            } else if (!/^[A-Z]/.test(firstName)) {
+                setSupplierError('contactFirstName', 'First name must start with a capital letter.');
+                hasError = true;
+                firstErrorField = firstErrorField || 'contactFirstName';
+            }
+            if (!lastName) {
+                setSupplierError('contactLastName', 'Last name is required.');
+                hasError = true;
+                firstErrorField = firstErrorField || 'contactLastName';
+            } else if (!/^[A-Z]/.test(lastName)) {
+                setSupplierError('contactLastName', 'Last name must start with a capital letter.');
+                hasError = true;
+                firstErrorField = firstErrorField || 'contactLastName';
+            }
+            if (!email) {
+                setSupplierError('email', 'Email is required.');
+                hasError = true;
+                firstErrorField = firstErrorField || 'email';
+            } else if (!emailRegex.test(email)) {
+                setSupplierError('email', 'Please enter a valid email address.');
+                hasError = true;
+                firstErrorField = firstErrorField || 'email';
+            }
+            if (!phone) {
+                setSupplierError('contactNumber', 'Contact number is required.');
+                hasError = true;
+                firstErrorField = firstErrorField || 'contactNumber';
+            } else if (!phoneRegex.test(phone)) {
+                setSupplierError('contactNumber', 'Contact number must start with + or digit and be at least 7 characters.');
+                hasError = true;
+                firstErrorField = firstErrorField || 'contactNumber';
+            }
+            if (!address) {
+                setSupplierError('address', 'Address is required.');
+                hasError = true;
+                firstErrorField = firstErrorField || 'address';
+            } else if (address.length < 5) {
+                setSupplierError('address', 'Please enter a complete address.');
+                hasError = true;
+                firstErrorField = firstErrorField || 'address';
+            }
+            if (!status) {
+                setSupplierError('status', 'Status is required.');
+                hasError = true;
+                firstErrorField = firstErrorField || 'status';
+            }
+
+            if (hasError) {
+                if (firstErrorField) {
+                    const field = document.getElementById(firstErrorField);
+                    if (field) field.focus();
+                }
+                return;
+            }
 
             const id = document.getElementById('supplierId').value;
             const isUpdate = !!id;
@@ -1169,7 +1324,7 @@
                 email,
                 contactPersonNumber: phone,
                 address,
-                status: document.getElementById('status').value
+                status
             };
             if (isUpdate) data.supplierId = parseInt(id);
 
@@ -1179,11 +1334,28 @@
                 .then(res => res.json())
                 .then(result => {
                     clearTimeout(_t); hideLoading();
-                    if (result.success) { closeModal('supplierModal'); showToast(result.message, 'success'); setTimeout(() => location.reload(), 1500); }
-                    else { showToast(result.message || 'Failed to save supplier', 'error'); }
+                    if (result.success) {
+                        closeModal('supplierModal');
+                        showToast(result.message, 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showSupplierFormError(result.message || 'Failed to save supplier');
+                    }
                 })
-                .catch(() => { clearTimeout(_t); hideLoading(); showToast('Error saving supplier', 'error'); });
+                .catch(() => {
+                    clearTimeout(_t);
+                    hideLoading();
+                    showSupplierFormError('Error saving supplier. Please try again.');
+                });
         }
+
+        Object.keys(supplierFieldErrors).forEach(fieldId => {
+            const input = document.getElementById(fieldId);
+            if (!input) return;
+            const handler = () => clearSupplierFieldError(fieldId);
+            input.addEventListener('input', handler);
+            input.addEventListener('change', handler);
+        });
 
         function savePolicy() {
             const form = document.getElementById('policyForm');
