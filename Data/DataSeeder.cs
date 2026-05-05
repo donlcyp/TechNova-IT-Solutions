@@ -1,6 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using TechNova_IT_Solutions.Constants;
 using TechNova_IT_Solutions.Models;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace TechNova_IT_Solutions.Data
 {
@@ -10,15 +14,16 @@ namespace TechNova_IT_Solutions.Data
     public static class DataSeeder
     {
         /// <summary>
-        /// Default password for all seeded users (except Admin, which is in migration).
+        /// DEPRECATED: This constant is no longer used. Passwords are now generated randomly in development.
         /// </summary>
-        public const string SeededUserPassword = "Admin@123";
+        [Obsolete("This constant is deprecated. Passwords are now generated randomly for security.")]
+        public const string SeededUserPassword = "DEPRECATED_DO_NOT_USE";
 
-        public static async Task SeedAsync(ApplicationDbContext context)
+        public static async Task SeedAsync(ApplicationDbContext context, IHostEnvironment environment, ILogger logger)
         {
             if (context == null) return;
 
-            await SeedUsersAsync(context).ConfigureAwait(false);
+            await SeedUsersAsync(context, environment, logger).ConfigureAwait(false);
             await context.SaveChangesAsync().ConfigureAwait(false);
 
             await SeedPoliciesAsync(context).ConfigureAwait(false);
@@ -37,11 +42,66 @@ namespace TechNova_IT_Solutions.Data
             await context.SaveChangesAsync().ConfigureAwait(false);
         }
 
-        private static async Task SeedUsersAsync(ApplicationDbContext context)
+        /// <summary>
+        /// Generates a cryptographically secure random password
+        /// </summary>
+        private static string GenerateRandomStrongPassword()
+        {
+            const string uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const string lowercase = "abcdefghijklmnopqrstuvwxyz";
+            const string digits = "0123456789";
+            const string special = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+            const string allChars = uppercase + lowercase + digits + special;
+
+            var password = new StringBuilder();
+            
+            // Ensure at least one character from each required category
+            password.Append(uppercase[RandomNumberGenerator.GetInt32(uppercase.Length)]);
+            password.Append(lowercase[RandomNumberGenerator.GetInt32(lowercase.Length)]);
+            password.Append(digits[RandomNumberGenerator.GetInt32(digits.Length)]);
+            password.Append(special[RandomNumberGenerator.GetInt32(special.Length)]);
+
+            // Fill the rest with random characters (total length 16)
+            for (int i = 4; i < 16; i++)
+            {
+                password.Append(allChars[RandomNumberGenerator.GetInt32(allChars.Length)]);
+            }
+
+            // Shuffle the password to avoid predictable patterns
+            return new string(password.ToString().OrderBy(_ => RandomNumberGenerator.GetInt32(int.MaxValue)).ToArray());
+        }
+
+        private static async Task SeedUsersAsync(ApplicationDbContext context, IHostEnvironment environment, ILogger logger)
         {
             var hasSeedUsers = await context.Users.CountAsync().ConfigureAwait(false) > 1;
 
-            var hashedPassword = BCrypt.Net.BCrypt.HashPassword(SeededUserPassword);
+            // Check if we're in production environment
+            bool isProduction = environment.IsProduction();
+
+            string hashedPassword;
+            string actualPassword;
+
+            if (isProduction)
+            {
+                // In production, do NOT seed users with default passwords
+                logger.LogInformation("Production environment detected. Skipping user seeding to prevent default password usage.");
+                
+                // Only ensure super admin and system admin exist if they don't already
+                // These should be created through migrations or manual setup with strong passwords
+                return;
+            }
+            else
+            {
+                // In development/staging, generate random strong passwords
+                actualPassword = GenerateRandomStrongPassword();
+                hashedPassword = BCrypt.Net.BCrypt.HashPassword(actualPassword);
+                
+                logger.LogWarning("===========================================");
+                logger.LogWarning("DEVELOPMENT ENVIRONMENT - SEEDING USERS");
+                logger.LogWarning("Generated password for seeded users: {Password}", actualPassword);
+                logger.LogWarning("All seeded users MUST change password on first login");
+                logger.LogWarning("===========================================");
+            }
 
             if (!await context.Users.AnyAsync(u => u.Email == "superadmin@technova.com").ConfigureAwait(false))
             {
@@ -52,7 +112,8 @@ namespace TechNova_IT_Solutions.Data
                     Email = "superadmin@technova.com",
                     Password = hashedPassword,
                     Role = "SuperAdmin",
-                    Status = "Active"
+                    Status = "Active",
+                    MustChangePassword = true
                 });
             }
 
@@ -65,7 +126,8 @@ namespace TechNova_IT_Solutions.Data
                     Email = "sysadmin@technova.com",
                     Password = hashedPassword,
                     Role = "SystemAdmin",
-                    Status = "Active"
+                    Status = "Active",
+                    MustChangePassword = true
                 });
             }
 
@@ -79,7 +141,8 @@ namespace TechNova_IT_Solutions.Data
                 Email = "compliance@technova.com",
                 Password = hashedPassword,
                 Role = "ComplianceManager",
-                Status = "Active"
+                Status = "Active",
+                MustChangePassword = true
             });
             context.Users.Add(new User
             {
@@ -88,7 +151,8 @@ namespace TechNova_IT_Solutions.Data
                 Email = "employee@technova.com",
                 Password = hashedPassword,
                 Role = "Employee",
-                Status = "Active"
+                Status = "Active",
+                MustChangePassword = true
             });
         }
 

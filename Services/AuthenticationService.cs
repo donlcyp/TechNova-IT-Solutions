@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Models;
 using TechNova_IT_Solutions.Services.Interfaces;
@@ -10,14 +11,16 @@ namespace TechNova_IT_Solutions.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IMemoryCache _cache;
+        private readonly ILogger<AuthenticationService> _logger;
         private const int MaxFailedAttempts = 3;
         private const int LockoutMinutes = 15;
         private const string LockoutCachePrefix = "login_lockout_";
 
-        public AuthenticationService(ApplicationDbContext context, IMemoryCache cache)
+        public AuthenticationService(ApplicationDbContext context, IMemoryCache cache, ILogger<AuthenticationService> logger)
         {
             _context = context;
             _cache = cache;
+            _logger = logger;
         }
 
         public async Task<AuthenticationResult> AuthenticateUserAsync(string email, string password)
@@ -96,13 +99,22 @@ namespace TechNova_IT_Solutions.Services
                     Module = "Authentication",
                     LogDate = DateTime.Now
                 };
-                _context.AuditLogs.Add(auditLog);
-                await _context.SaveChangesAsync();
+
+                try
+                {
+                    _context.AuditLogs.Add(auditLog);
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Login succeeded for {Email}, but audit logging failed.", email);
+                }
 
                 return new AuthenticationResult { Success = true, User = user };
             }
             catch
             {
+                _logger.LogError("Unexpected login error for {Email}.", email);
                 return new AuthenticationResult { Success = false, ErrorMessage = "An error occurred during login. Please try again or contact your administrator." };
             }
         }

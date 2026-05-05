@@ -37,6 +37,7 @@ namespace TechNova_IT_Solutions.Services
             var fromEmail = (emailSettings["FromEmail"] ?? username)?.Trim();
             var useSsl = bool.TryParse(emailSettings["UseSsl"], out var parsedUseSsl) && parsedUseSsl;
 
+            // Validate configuration completeness
             if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(fromEmail))
             {
                 _logger.LogWarning("Email settings are incomplete. Skipping email send to {Email}.", to);
@@ -44,6 +45,17 @@ namespace TechNova_IT_Solutions.Services
                 {
                     Success = false,
                     ErrorMessage = "Email settings are incomplete."
+                };
+            }
+
+            // Validate SSL/TLS configuration - SECURITY REQUIREMENT
+            if (!useSsl)
+            {
+                _logger.LogError("Email configuration security violation: UseSsl is set to false. Refusing to send email to {Email} over unencrypted connection.", to);
+                return new EmailSendResult
+                {
+                    Success = false,
+                    ErrorMessage = "Email configuration is insecure. SSL/TLS encryption is required but UseSsl is set to false."
                 };
             }
 
@@ -70,10 +82,32 @@ namespace TechNova_IT_Solutions.Services
             using var smtp = new SmtpClient();
             try
             {
-                var socketOptions = useSsl || port == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
+                // Always enforce SSL/TLS encryption - SECURITY REQUIREMENT
+                // Use SslOnConnect for port 465, StartTls for port 587
+                var socketOptions = port == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
+                
+                // Validate SSL/TLS connection before sending
+                _logger.LogInformation("Connecting to SMTP server {Host}:{Port} with SSL/TLS encryption (SocketOptions: {SocketOptions})", host, port, socketOptions);
                 await smtp.ConnectAsync(host, port, socketOptions);
+                
+                // Verify that the connection is secure
+                if (!smtp.IsConnected || !smtp.IsSecure)
+                {
+                    _logger.LogError("Failed to establish secure SSL/TLS connection to SMTP server {Host}:{Port}. IsConnected: {IsConnected}, IsSecure: {IsSecure}", 
+                        host, port, smtp.IsConnected, smtp.IsSecure);
+                    return new EmailSendResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Failed to establish secure SSL/TLS connection to email server."
+                    };
+                }
+                
+                _logger.LogInformation("Secure SSL/TLS connection established to SMTP server {Host}:{Port}", host, port);
+                
                 await smtp.AuthenticateAsync(username, password);
                 await smtp.SendAsync(email);
+                
+                _logger.LogInformation("Email sent successfully to {Email} via secure SSL/TLS connection", to);
                 return new EmailSendResult { Success = true };
             }
             catch (System.Exception ex)

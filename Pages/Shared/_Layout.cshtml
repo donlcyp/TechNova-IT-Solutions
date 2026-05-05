@@ -315,6 +315,9 @@
             });
         })();
     </script>
+
+    <!-- Security helpers for CSRF and XSS prevention -->
+    <script src="~/js/security-helpers.js"></script>
     
     @await RenderSectionAsync("Scripts", required: false)
 </body>

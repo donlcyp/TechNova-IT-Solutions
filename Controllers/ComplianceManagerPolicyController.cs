@@ -16,17 +16,20 @@ namespace TechNova_IT_Solutions.Controllers
         private readonly IEmailService _emailService;
         private readonly IWebHostEnvironment _environment;
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<ComplianceManagerPolicyController> _logger;
 
         public ComplianceManagerPolicyController(
             IAdminService adminService,
             IEmailService emailService,
             IWebHostEnvironment environment,
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            ILogger<ComplianceManagerPolicyController> logger)
         {
             _adminService = adminService;
             _emailService = emailService;
             _environment = environment;
             _context = context;
+            _logger = logger;
         }
 
         // ── Auth helpers ────────────────────────────────────────
@@ -77,6 +80,39 @@ namespace TechNova_IT_Solutions.Controllers
             return role == RoleNames.SuperAdmin || role == RoleNames.ChiefComplianceManager;
         }
 
+        /// <summary>
+        /// Validates that the caller has access to a resource based on branch ownership.
+        /// Returns true if:
+        /// - User has global scope (SuperAdmin, ChiefComplianceManager)
+        /// - Resource has no branch (company-wide resource)
+        /// - Resource branch matches user's branch
+        /// </summary>
+        private async Task<bool> ValidateBranchAccessAsync(int? resourceBranchId)
+        {
+            // Global scope users can access all resources
+            if (HasGlobalScope())
+            {
+                return true;
+            }
+
+            // Get caller's branch ID
+            var callerBranchId = GetCallerBranchId();
+            if (!callerBranchId.HasValue)
+            {
+                // Branch-scoped user without a branch ID should not have access
+                return false;
+            }
+
+            // Resource with no branch is company-wide and accessible to all
+            if (!resourceBranchId.HasValue)
+            {
+                return true;
+            }
+
+            // Resource must match user's branch
+            return resourceBranchId == callerBranchId;
+        }
+
         private bool IsSuperAdmin()
         {
             var role = HttpContext.Session.GetString(SessionKeys.UserRole);
@@ -86,6 +122,96 @@ namespace TechNova_IT_Solutions.Controllers
         private string? GetCallerRole()
         {
             return HttpContext.Session.GetString(SessionKeys.UserRole);
+        }
+
+        // ── File Upload Security Helpers ────────────────────────
+
+        private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".pdf", ".docx", ".doc", ".txt"
+        };
+
+        private static readonly Dictionary<string, string[]> AllowedMimeTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { ".pdf", new[] { "application/pdf" } },
+            { ".docx", new[] { "application/vnd.openxmlformats-officedocument.wordprocessingml.document" } },
+            { ".doc", new[] { "application/msword" } },
+            { ".txt", new[] { "text/plain" } }
+        };
+
+        private const long MaxFileSize = 10 * 1024 * 1024; // 10MB
+
+        private (bool isValid, string errorMessage) ValidateFileUpload(IFormFile file)
+        {
+            // Check file size
+            if (file.Length > MaxFileSize)
+            {
+                return (false, $"File size exceeds maximum allowed size of {MaxFileSize / (1024 * 1024)}MB");
+            }
+
+            if (file.Length == 0)
+            {
+                return (false, "File is empty");
+            }
+
+            // Get file extension
+            var extension = Path.GetExtension(file.FileName);
+            if (string.IsNullOrEmpty(extension))
+            {
+                return (false, "File must have an extension");
+            }
+
+            // Check for double extensions (e.g., .pdf.exe)
+            var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(file.FileName);
+            if (fileNameWithoutExtension.Contains('.'))
+            {
+                return (false, "File contains multiple extensions which is not allowed");
+            }
+
+            // Validate extension is in whitelist
+            if (!AllowedExtensions.Contains(extension))
+            {
+                return (false, $"File type '{extension}' is not allowed. Allowed types: {string.Join(", ", AllowedExtensions)}");
+            }
+
+            // Validate MIME type matches extension
+            var contentType = file.ContentType;
+            if (string.IsNullOrEmpty(contentType))
+            {
+                return (false, "File MIME type could not be determined");
+            }
+
+            if (AllowedMimeTypes.TryGetValue(extension, out var allowedMimes))
+            {
+                if (!allowedMimes.Any(mime => mime.Equals(contentType, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return (false, $"File MIME type '{contentType}' does not match extension '{extension}'");
+                }
+            }
+
+            return (true, string.Empty);
+        }
+
+        private string SanitizeFileName(string fileName)
+        {
+            // Remove path traversal sequences
+            fileName = fileName.Replace("../", "").Replace("..\\", "");
+            fileName = fileName.Replace("./", "").Replace(".\\", "");
+
+            // Get just the filename without any path components
+            fileName = Path.GetFileName(fileName);
+
+            // Remove special characters except alphanumeric, dash, underscore, and period
+            var sanitized = new System.Text.StringBuilder();
+            foreach (var c in fileName)
+            {
+                if (char.IsLetterOrDigit(c) || c == '-' || c == '_' || c == '.')
+                {
+                    sanitized.Append(c);
+                }
+            }
+
+            return sanitized.ToString();
         }
 
         // ── Email helpers ───────────────────────────────────────
@@ -200,6 +326,15 @@ namespace TechNova_IT_Solutions.Controllers
             if (!HasPolicyLifecycleAuthority()) return Unauthorized(new { success = false, message = "Access denied. Only Chief Compliance Manager or Super Admin can update policies." });
             if (policyData == null) return BadRequest(new { success = false, message = "Invalid policy data" });
 
+            // Validate branch access before updating
+            var existingPolicy = await _context.Policies.FindAsync(policyData.PolicyId);
+            if (existingPolicy == null) return NotFound(new { success = false, message = "Policy not found" });
+            
+            if (!await ValidateBranchAccessAsync(existingPolicy.BranchId))
+            {
+                return Unauthorized(new { success = false, message = "Access denied. You can only update policies within your branch." });
+            }
+
             policyData.CallerUserId = GetCurrentUserId();
             policyData.CallerRole = GetCallerRole();
 
@@ -246,15 +381,34 @@ namespace TechNova_IT_Solutions.Controllers
             string filePath = string.Empty;
             if (policyFile != null && policyFile.Length > 0)
             {
-                var uploadsDir = Path.Combine(_environment.WebRootPath, "uploads", "policies");
-                Directory.CreateDirectory(uploadsDir);
-                var safeFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{Path.GetFileName(policyFile.FileName)}";
-                var fullPath = Path.Combine(uploadsDir, safeFileName);
+                // Validate file upload
+                var (isValid, errorMessage) = ValidateFileUpload(policyFile);
+                if (!isValid)
+                {
+                    return BadRequest(new { success = false, message = errorMessage });
+                }
+
+                // Sanitize filename
+                var sanitizedFileName = SanitizeFileName(policyFile.FileName);
+                if (string.IsNullOrEmpty(sanitizedFileName))
+                {
+                    return BadRequest(new { success = false, message = "Invalid filename after sanitization" });
+                }
+
+                // Store in non-web-accessible directory (App_Data)
+                var appDataPath = Path.Combine(_environment.ContentRootPath, "App_Data", "uploads", "policies");
+                Directory.CreateDirectory(appDataPath);
+                
+                var safeFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{sanitizedFileName}";
+                var fullPath = Path.Combine(appDataPath, safeFileName);
+                
                 await using (var stream = new FileStream(fullPath, FileMode.Create))
                 {
                     await policyFile.CopyToAsync(stream);
                 }
-                filePath = $"/uploads/policies/{safeFileName}";
+                
+                // Store relative path for database (will be served via controller action)
+                filePath = $"App_Data/uploads/policies/{safeFileName}";
             }
 
             var data = new PolicyData
@@ -308,10 +462,84 @@ namespace TechNova_IT_Solutions.Controllers
             return BadRequest(new { success = false, message = "Failed to save policy" });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> DownloadPolicyFile(int policyId)
+        {
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (string.IsNullOrEmpty(userIdString)) return Unauthorized(new { success = false, message = "Not authenticated" });
+
+            // Get the policy
+            var policy = await _context.Policies.FindAsync(policyId);
+            if (policy == null) return NotFound(new { success = false, message = "Policy not found" });
+
+            // Check if user has access to this policy
+            if (!HasGlobalScope())
+            {
+                var callerBranchId = GetCallerBranchId();
+                if (policy.BranchId.HasValue && policy.BranchId != callerBranchId)
+                {
+                    return Unauthorized(new { success = false, message = "Access denied to this policy" });
+                }
+            }
+
+            if (string.IsNullOrEmpty(policy.FilePath))
+            {
+                return NotFound(new { success = false, message = "Policy has no file attached" });
+            }
+
+            // Construct full file path
+            string fullPath;
+            if (policy.FilePath.StartsWith("App_Data/"))
+            {
+                // New secure storage location
+                fullPath = Path.Combine(_environment.ContentRootPath, policy.FilePath);
+            }
+            else if (policy.FilePath.StartsWith("/uploads/"))
+            {
+                // Legacy web-accessible location (for backward compatibility)
+                fullPath = Path.Combine(_environment.WebRootPath, policy.FilePath.TrimStart('/'));
+            }
+            else
+            {
+                return BadRequest(new { success = false, message = "Invalid file path" });
+            }
+
+            if (!System.IO.File.Exists(fullPath))
+            {
+                return NotFound(new { success = false, message = "File not found on server" });
+            }
+
+            // Determine content type from file extension
+            var extension = Path.GetExtension(fullPath).ToLowerInvariant();
+            var contentType = extension switch
+            {
+                ".pdf" => "application/pdf",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".doc" => "application/msword",
+                ".txt" => "text/plain",
+                _ => "application/octet-stream"
+            };
+
+            var fileName = Path.GetFileName(fullPath);
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(fullPath);
+            
+            return File(fileBytes, contentType, fileName);
+        }
+
         [HttpPost]
         public async Task<IActionResult> DeletePolicy(int policyId)
         {
             if (!HasPolicyLifecycleAuthority()) return Unauthorized(new { success = false, message = "Access denied. Only Chief Compliance Manager or Super Admin can delete policies." });
+            
+            // Validate branch access before deleting
+            var existingPolicy = await _context.Policies.FindAsync(policyId);
+            if (existingPolicy == null) return NotFound(new { success = false, message = "Policy not found" });
+            
+            if (!await ValidateBranchAccessAsync(existingPolicy.BranchId))
+            {
+                return Unauthorized(new { success = false, message = "Access denied. You can only delete policies within your branch." });
+            }
+
             var result = await _adminService.DeletePolicyAsync(policyId);
             if (result)
             {
@@ -326,6 +554,16 @@ namespace TechNova_IT_Solutions.Controllers
         public async Task<IActionResult> ArchivePolicy(int policyId)
         {
             if (!HasPolicyLifecycleAuthority()) return Unauthorized(new { success = false, message = "Access denied. Only Chief Compliance Manager or Super Admin can archive policies." });
+            
+            // Validate branch access before archiving
+            var existingPolicy = await _context.Policies.FindAsync(policyId);
+            if (existingPolicy == null) return NotFound(new { success = false, message = "Policy not found" });
+            
+            if (!await ValidateBranchAccessAsync(existingPolicy.BranchId))
+            {
+                return Unauthorized(new { success = false, message = "Access denied. You can only archive policies within your branch." });
+            }
+
             var result = await _adminService.ArchivePolicyAsync(policyId);
             if (result)
             {
@@ -340,6 +578,16 @@ namespace TechNova_IT_Solutions.Controllers
         public async Task<IActionResult> RestorePolicy(int policyId)
         {
             if (!HasPolicyLifecycleAuthority()) return Unauthorized(new { success = false, message = "Access denied. Only Chief Compliance Manager or Super Admin can restore policies." });
+            
+            // Validate branch access before restoring
+            var existingPolicy = await _context.Policies.FindAsync(policyId);
+            if (existingPolicy == null) return NotFound(new { success = false, message = "Policy not found" });
+            
+            if (!await ValidateBranchAccessAsync(existingPolicy.BranchId))
+            {
+                return Unauthorized(new { success = false, message = "Access denied. You can only restore policies within your branch." });
+            }
+
             var result = await _adminService.RestorePolicyAsync(policyId);
             if (result)
             {
@@ -396,6 +644,19 @@ namespace TechNova_IT_Solutions.Controllers
                 var callerBranchId = GetCallerBranchId();
                 if (callerBranchId.HasValue)
                 {
+                    // Validate policies are within user's branch
+                    var policies = await _context.Policies
+                        .Where(p => policyIds.Contains(p.PolicyId))
+                        .ToListAsync();
+                    
+                    foreach (var policy in policies)
+                    {
+                        if (!await ValidateBranchAccessAsync(policy.BranchId))
+                        {
+                            return Unauthorized(new { success = false, message = $"Access denied. You can only assign policies within your branch. Policy '{policy.PolicyTitle}' is not accessible." });
+                        }
+                    }
+
                     if (request.EmployeeIds.Any())
                     {
                         var outOfBranch = await _context.Users
@@ -488,7 +749,14 @@ namespace TechNova_IT_Solutions.Controllers
                 var reason = supplier.TerminationReason;
                 var nowStr = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
                 var body = $"Dear {contact},\n\nYour supplier account for {supplier.SupplierName} has been suspended due to non-compliance with TechNova IT Solutions policies.\n\nReason: {reason}\nSuspended On: {nowStr} UTC\n\nTo resolve this suspension, please contact the TechNova compliance team as soon as possible.\n\n— TechNova IT Solutions Compliance Team";
-                try { await _emailService.SendEmailAsync(supplier.Email!, $"[TechNova] Supplier Account Suspended – {supplier.SupplierName}", body); } catch { }
+                try 
+                { 
+                    await _emailService.SendEmailAsync(supplier.Email!, $"[TechNova] Supplier Account Suspended – {supplier.SupplierName}", body); 
+                } 
+                catch (Exception ex) 
+                { 
+                    _logger.LogError(ex, "Failed to send suspension email to supplier {Email}", supplier.Email); 
+                }
             }
 
             return Ok(new { success = true, message = $"Supplier '{supplier.SupplierName}' has been suspended." });
@@ -518,7 +786,14 @@ namespace TechNova_IT_Solutions.Controllers
                     : supplier.SupplierName;
                 var nowStr = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
                 var body = $"Dear {contact},\n\nYour supplier account for {supplier.SupplierName} has been reactivated. You now have full access to the TechNova IT Solutions supplier portal.\n\nReactivated On: {nowStr} UTC\n\nIf you have any questions, please contact the TechNova compliance team.\n\n— TechNova IT Solutions Compliance Team";
-                try { await _emailService.SendEmailAsync(supplier.Email!, $"[TechNova] Supplier Account Reactivated – {supplier.SupplierName}", body); } catch { }
+                try 
+                { 
+                    await _emailService.SendEmailAsync(supplier.Email!, $"[TechNova] Supplier Account Reactivated – {supplier.SupplierName}", body); 
+                } 
+                catch (Exception ex) 
+                { 
+                    _logger.LogError(ex, "Failed to send reactivation email to supplier {Email}", supplier.Email); 
+                }
             }
 
             return Ok(new { success = true, message = $"Supplier '{supplier.SupplierName}' has been re-activated." });
@@ -548,7 +823,14 @@ namespace TechNova_IT_Solutions.Controllers
                 var reason = request?.Reason ?? "Non-compliance with company policies";
                 var nowStr = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
                 var body = $"Dear {name},\n\nYour TechNova IT Solutions employee account has been suspended.\n\nReason: {reason}\nSuspended On: {nowStr} UTC\n\nPlease contact your Compliance Manager or HR department to resolve this matter.\n\n— TechNova IT Solutions Compliance Team";
-                try { await _emailService.SendEmailAsync(user.Email, "[TechNova] Your Account Has Been Suspended", body); } catch { }
+                try 
+                { 
+                    await _emailService.SendEmailAsync(user.Email, "[TechNova] Your Account Has Been Suspended", body); 
+                } 
+                catch (Exception ex) 
+                { 
+                    _logger.LogError(ex, "Failed to send suspension email to employee {Email}", user.Email); 
+                }
             }
 
             return Ok(new { success = true, message = $"Employee '{user.FirstName} {user.LastName}' has been suspended." });
@@ -573,7 +855,14 @@ namespace TechNova_IT_Solutions.Controllers
                 var name = $"{user.FirstName} {user.LastName}";
                 var nowStr = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm");
                 var body = $"Dear {name},\n\nYour TechNova IT Solutions employee account has been reactivated. You now have full access to the portal.\n\nReactivated On: {nowStr} UTC\n\nIf you have any questions, please contact the compliance team.\n\n— TechNova IT Solutions Compliance Team";
-                try { await _emailService.SendEmailAsync(user.Email, "[TechNova] Your Account Has Been Reactivated", body); } catch { }
+                try 
+                { 
+                    await _emailService.SendEmailAsync(user.Email, "[TechNova] Your Account Has Been Reactivated", body); 
+                } 
+                catch (Exception ex) 
+                { 
+                    _logger.LogError(ex, "Failed to send reactivation email to employee {Email}", user.Email); 
+                }
             }
 
             return Ok(new { success = true, message = $"Employee '{user.FirstName} {user.LastName}' has been reactivated." });

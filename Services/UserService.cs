@@ -60,25 +60,9 @@ namespace TechNova_IT_Solutions.Services
         {
             try
             {
-                // Assign role-based default password
-                var role = userData.Role ?? string.Empty;
-                string passwordToHash;
-                if (string.Equals(role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
-                    passwordToHash = "superadmin123";
-                else if (string.Equals(role, RoleNames.SystemAdmin, StringComparison.OrdinalIgnoreCase))
-                    passwordToHash = "systemadmin123";
-                else if (string.Equals(role, RoleNames.BranchAdmin, StringComparison.OrdinalIgnoreCase))
-                    passwordToHash = "branchadmin123";
-                else if (string.Equals(role, RoleNames.ChiefComplianceManager, StringComparison.OrdinalIgnoreCase))
-                    passwordToHash = "chiefcompliance123";
-                else if (role.Contains("Compliance", StringComparison.OrdinalIgnoreCase))
-                    passwordToHash = "compliance123";
-                else if (role.Contains("Supplier", StringComparison.OrdinalIgnoreCase))
-                    passwordToHash = "supplier123";
-                else
-                    passwordToHash = "employee123";
-
-                var hashedPassword = PasswordHasher.HashPassword(passwordToHash);
+                // Generate a secure random password instead of using hardcoded defaults
+                var generatedPassword = SecurePasswordService.GenerateSecurePassword();
+                var hashedPassword = PasswordHasher.HashPassword(generatedPassword);
                 
                 var user = new User
                 {
@@ -100,14 +84,21 @@ namespace TechNova_IT_Solutions.Services
                 if (!string.IsNullOrWhiteSpace(user.Email))
                 {
                     var roleLabel = string.IsNullOrWhiteSpace(user.Role) ? "User" : user.Role;
-                    var subject = $"Your TechNova {roleLabel} Account Has Been Created";
+                    var subject = $"Your TechNova {roleLabel} Account Has Been Created - Set Your Password";
+                    
+                    // Generate a password reset token and send secure link instead of password
+                    var resetToken = GeneratePasswordResetToken(user.UserId);
+                    var resetLink = $"https://yourdomain.com/account/reset-password?token={Uri.EscapeDataString(resetToken)}";
+                    
                     var body = $@"
                         <h2>Welcome to TechNova</h2>
-                        <p>Your account has been created.</p>
-                        <p><strong>Role:</strong> {roleLabel}</p>
-                        <p><strong>Email:</strong> {user.Email}</p>
-                        <p><strong>Temporary Password:</strong> {passwordToHash}</p>
-                        <p>Please log in and change your password immediately.</p>";
+                        <p>Hello {user.FirstName},</p>
+                        <p>Your account has been created successfully.</p>
+                        <p><strong>Role:</strong> {System.Net.WebUtility.HtmlEncode(roleLabel)}</p>
+                        <p><strong>Email:</strong> {System.Net.WebUtility.HtmlEncode(user.Email)}</p>
+                        <p style=""margin: 20px 0;""><a href=""{resetLink}"" style=""background-color: #1e40af; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;"">Set Your Password</a></p>
+                        <p>This link expires in 24 hours.</p>
+                        <p>If you did not request this account, please contact support immediately.</p>";
 
                     result.EmailAttempted = true;
                     var emailResult = await _emailService.SendEmailAsync(user.Email, subject, body);
@@ -214,42 +205,8 @@ namespace TechNova_IT_Solutions.Services
                     };
                 }
 
-                var role = user.Role ?? string.Empty;
-                string resetPassword;
-
-                if (string.Equals(role, RoleNames.SuperAdmin, StringComparison.OrdinalIgnoreCase))
-                {
-                    resetPassword = "superadmin123";
-                }
-                else if (string.Equals(role, RoleNames.SystemAdmin, StringComparison.OrdinalIgnoreCase))
-                {
-                    resetPassword = "systemadmin123";
-                }
-                else if (string.Equals(role, RoleNames.BranchAdmin, StringComparison.OrdinalIgnoreCase))
-                {
-                    resetPassword = "branchadmin123";
-                }
-                else if (string.Equals(role, RoleNames.ChiefComplianceManager, StringComparison.OrdinalIgnoreCase))
-                {
-                    resetPassword = "chiefcompliance123";
-                }
-                else if (role.Contains("Compliance", StringComparison.OrdinalIgnoreCase))
-                {
-                    resetPassword = "compliance123";
-                }
-                else if (role.Contains("Employee", StringComparison.OrdinalIgnoreCase))
-                {
-                    resetPassword = "employee123";
-                }
-                else if (role.Contains("Supplier", StringComparison.OrdinalIgnoreCase))
-                {
-                    resetPassword = "supplier123";
-                }
-                else
-                {
-                    resetPassword = "TempPassword123!";
-                }
-
+                // Generate secure random password instead of role-based defaults
+                var resetPassword = SecurePasswordService.GenerateSecurePassword();
                 user.Password = PasswordHasher.HashPassword(resetPassword);
                 user.MustChangePassword = true;
                 await _context.SaveChangesAsync();
@@ -258,7 +215,7 @@ namespace TechNova_IT_Solutions.Services
                 {
                     Success = true,
                     Password = resetPassword,
-                    Role = role,
+                    Role = user.Role ?? string.Empty,
                     Email = user.Email ?? string.Empty,
                     FirstName = user.FirstName ?? "User"
                 };
@@ -306,6 +263,27 @@ namespace TechNova_IT_Solutions.Services
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Generates a secure password reset token valid for 24 hours.
+        /// </summary>
+        private string GeneratePasswordResetToken(int userId)
+        {
+            var token = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{userId}-{DateTime.UtcNow:O}-{Guid.NewGuid()}"));
+            var resetToken = new PasswordResetToken
+            {
+                UserId = userId,
+                Token = token,
+                ExpiryDate = DateTime.UtcNow.AddHours(24),
+                CreatedDate = DateTime.UtcNow,
+                IsUsed = false
+            };
+            
+            _context.PasswordResetTokens.Add(resetToken);
+            _context.SaveChanges();
+            
+            return token;
         }
     }
 }

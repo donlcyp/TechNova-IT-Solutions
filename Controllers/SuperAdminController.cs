@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using TechNova_IT_Solutions.Constants;
 using TechNova_IT_Solutions.Infrastructure;
 using TechNova_IT_Solutions.Services.Interfaces;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TechNova_IT_Solutions.Controllers
 {
@@ -209,6 +210,7 @@ namespace TechNova_IT_Solutions.Controllers
         }
 
         [HttpPost]
+        [EnableRateLimiting("passwordreset")]
         public async Task<IActionResult> ResetUserPassword(int userId)
         {
             var denied = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.SuperAdmin);

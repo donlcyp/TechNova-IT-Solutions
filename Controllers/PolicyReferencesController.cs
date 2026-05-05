@@ -6,11 +6,13 @@ using TechNova_IT_Solutions.Infrastructure;
 using TechNova_IT_Solutions.Models;
 using TechNova_IT_Solutions.Services;
 using TechNova_IT_Solutions.Services.Interfaces;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TechNova_IT_Solutions.Controllers
 {
     [ApiController]
     [Route("api/policy-references")]
+    [EnableRateLimiting("api")]
     public class PolicyReferencesController : Controller
     {
         private readonly ApplicationDbContext _context;

@@ -24,6 +24,7 @@ namespace TechNova_IT_Solutions.Data
         public DbSet<ExternalPolicyImport> ExternalPolicyImports { get; set; }
         public DbSet<Branch> Branches { get; set; }
         public DbSet<ComplianceViolation> ComplianceViolations { get; set; }
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TechNova_IT_Solutions.Constants;
 using TechNova_IT_Solutions.Services.Interfaces;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TechNova_IT_Solutions.Controllers
 {
@@ -8,11 +9,13 @@ namespace TechNova_IT_Solutions.Controllers
     {
         private readonly IUserService _userService;
         private readonly IEmailService _emailService;
+        private readonly IAdminService _adminService;
 
-        public AdminUserController(IUserService userService, IEmailService emailService)
+        public AdminUserController(IUserService userService, IEmailService emailService, IAdminService adminService)
         {
             _userService = userService;
             _emailService = emailService;
+            _adminService = adminService;
         }
 
         private bool IsAdmin()
@@ -36,6 +39,12 @@ namespace TechNova_IT_Solutions.Controllers
         private int? GetCallerBranchId()
         {
             var s = HttpContext.Session.GetString(SessionKeys.BranchId);
+            return int.TryParse(s, out var id) ? id : null;
+        }
+
+        private int? GetCurrentUserId()
+        {
+            var s = HttpContext.Session.GetString(SessionKeys.UserId);
             return int.TryParse(s, out var id) ? id : null;
         }
 
@@ -63,9 +72,18 @@ namespace TechNova_IT_Solutions.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateUser([FromBody] UserData userData)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsAdmin())
+            {
+                // Add audit log for failed authorization
+                await _adminService.LogActivityAsync(
+                    GetCurrentUserId(), 
+                    "Unauthorized access attempt to CreateUser", 
+                    "Security");
+                return Unauthorized(new { success = false, message = "Access denied" });
+            }
             if (userData == null)
             {
                 return BadRequest(new { success = false, message = "Invalid user data" });
@@ -92,6 +110,12 @@ namespace TechNova_IT_Solutions.Controllers
 
             if (result.Success)
             {
+                // Add audit log for user creation
+                await _adminService.LogActivityAsync(
+                    GetCurrentUserId(), 
+                    $"Created user: {userData.Email} with role {userData.Role}", 
+                    "UserManagement");
+
                 var message = "User created successfully.";
                 if (result.EmailAttempted)
                 {
@@ -116,7 +140,15 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpGet]
         public async Task<IActionResult> GetUser(int userId)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsAdmin())
+            {
+                // Add audit log for failed authorization
+                await _adminService.LogActivityAsync(
+                    GetCurrentUserId(), 
+                    "Unauthorized access attempt to GetUser", 
+                    "Security");
+                return Unauthorized(new { success = false, message = "Access denied" });
+            }
 
             // Branch Admin can only view users in their branch
             var branchDenied = await EnforceBranchScopeAsync(userId);
@@ -133,9 +165,18 @@ namespace TechNova_IT_Solutions.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateUser([FromBody] UserData userData)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsAdmin())
+            {
+                // Add audit log for failed authorization
+                await _adminService.LogActivityAsync(
+                    GetCurrentUserId(), 
+                    "Unauthorized access attempt to UpdateUser", 
+                    "Security");
+                return Unauthorized(new { success = false, message = "Access denied" });
+            }
             if (userData == null)
             {
                 return BadRequest(new { success = false, message = "Invalid user data" });
@@ -156,10 +197,23 @@ namespace TechNova_IT_Solutions.Controllers
                 if (branchDenied != null) return branchDenied;
             }
 
+            // Get old user data for audit logging
+            var oldUser = await _userService.GetUserByIdAsync(uid);
+            var oldRole = oldUser?.Role;
+
             var result = await _userService.UpdateUserAsync(userData);
 
             if (result)
             {
+                // Add audit log for role modification if role changed
+                if (oldRole != null && !string.Equals(oldRole, userData.Role, StringComparison.OrdinalIgnoreCase))
+                {
+                    await _adminService.LogActivityAsync(
+                        GetCurrentUserId(), 
+                        $"Changed role for {userData.Email} from {oldRole} to {userData.Role}", 
+                        "UserManagement");
+                }
+
                 return Ok(new { success = true, message = "User updated successfully" });
             }
 
@@ -169,16 +223,36 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteUser(int userId)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsAdmin())
+            {
+                // Add audit log for failed authorization
+                await _adminService.LogActivityAsync(
+                    GetCurrentUserId(), 
+                    "Unauthorized access attempt to DeleteUser", 
+                    "Security");
+                return Unauthorized(new { success = false, message = "Access denied" });
+            }
 
             // Branch Admin can only delete users in their branch
             var branchDenied = await EnforceBranchScopeAsync(userId);
             if (branchDenied != null) return branchDenied;
 
+            // Get user data before deletion for audit logging
+            var user = await _userService.GetUserByIdAsync(userId);
+
             var result = await _userService.DeleteUserAsync(userId);
 
             if (result)
             {
+                // Add audit log for user deletion
+                if (user != null)
+                {
+                    await _adminService.LogActivityAsync(
+                        GetCurrentUserId(), 
+                        $"Deleted user: {user.Email}", 
+                        "UserManagement");
+                }
+
                 return Ok(new { success = true, message = "User deleted successfully" });
             }
 
@@ -186,9 +260,18 @@ namespace TechNova_IT_Solutions.Controllers
         }
 
         [HttpPost]
+        [EnableRateLimiting("passwordreset")]
         public async Task<IActionResult> ResetUserPassword(int userId)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsAdmin())
+            {
+                // Add audit log for failed authorization
+                await _adminService.LogActivityAsync(
+                    GetCurrentUserId(), 
+                    "Unauthorized access attempt to ResetUserPassword", 
+                    "Security");
+                return Unauthorized(new { success = false, message = "Access denied" });
+            }
 
             // Branch Admin can only reset passwords for users in their branch
             var branchDenied = await EnforceBranchScopeAsync(userId);
@@ -212,6 +295,12 @@ namespace TechNova_IT_Solutions.Controllers
             {
                 return BadRequest(new { success = false, message = resetResult.ErrorMessage });
             }
+
+            // Add audit log for password reset
+            await _adminService.LogActivityAsync(
+                GetCurrentUserId(), 
+                $"Password reset for user: {resetResult.Email}", 
+                "Authentication");
 
             var emailAttempted = false;
             var emailSent = false;
@@ -253,9 +342,18 @@ namespace TechNova_IT_Solutions.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeactivateUser(int userId)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsAdmin())
+            {
+                // Add audit log for failed authorization
+                await _adminService.LogActivityAsync(
+                    GetCurrentUserId(), 
+                    "Unauthorized access attempt to DeactivateUser", 
+                    "Security");
+                return Unauthorized(new { success = false, message = "Access denied" });
+            }
 
             // Branch Admin can only deactivate users in their branch
             var branchDenied = await EnforceBranchScopeAsync(userId);
@@ -272,6 +370,12 @@ namespace TechNova_IT_Solutions.Controllers
 
             if (result)
             {
+                // Add audit log for user deactivation
+                await _adminService.LogActivityAsync(
+                    GetCurrentUserId(), 
+                    $"Deactivated user: {user.Email}", 
+                    "UserManagement");
+
                 var emailAttempted = false;
                 var emailSent = false;
                 string? emailError = null;
@@ -313,9 +417,18 @@ namespace TechNova_IT_Solutions.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReactivateUser(int userId)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsAdmin())
+            {
+                // Add audit log for failed authorization
+                await _adminService.LogActivityAsync(
+                    GetCurrentUserId(), 
+                    "Unauthorized access attempt to ReactivateUser", 
+                    "Security");
+                return Unauthorized(new { success = false, message = "Access denied" });
+            }
 
             // Branch Admin can only reactivate users in their branch
             var branchDenied = await EnforceBranchScopeAsync(userId);
@@ -332,6 +445,12 @@ namespace TechNova_IT_Solutions.Controllers
 
             if (result)
             {
+                // Add audit log for user reactivation
+                await _adminService.LogActivityAsync(
+                    GetCurrentUserId(), 
+                    $"Reactivated user: {user.Email}", 
+                    "UserManagement");
+
                 var emailAttempted = false;
                 var emailSent = false;
                 string? emailError = null;
@@ -375,7 +494,15 @@ namespace TechNova_IT_Solutions.Controllers
         [HttpPost]
         public async Task<IActionResult> SetUserPassword(int userId, [FromBody] SetPasswordRequest request)
         {
-            if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
+            if (!IsAdmin())
+            {
+                // Add audit log for failed authorization
+                await _adminService.LogActivityAsync(
+                    GetCurrentUserId(), 
+                    "Unauthorized access attempt to SetUserPassword", 
+                    "Security");
+                return Unauthorized(new { success = false, message = "Access denied" });
+            }
 
             // Branch Admin can only set passwords for users in their branch
             var branchDenied = await EnforceBranchScopeAsync(userId);
@@ -401,6 +528,12 @@ namespace TechNova_IT_Solutions.Controllers
             {
                 return BadRequest(new { success = false, message = "Failed to set password." });
             }
+
+            // Add audit log for password change by admin
+            await _adminService.LogActivityAsync(
+                GetCurrentUserId(), 
+                $"Changed password for user: {user.Email}", 
+                "Authentication");
 
             var emailAttempted = false;
             var emailSent = false;

@@ -4,11 +4,13 @@ using TechNova_IT_Solutions.Constants;
 using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Infrastructure;
 using TechNova_IT_Solutions.Services.Interfaces;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TechNova_IT_Solutions.Controllers
 {
     [ApiController]
     [Route("api/policies")]
+    [EnableRateLimiting("api")]
     public class PoliciesController : Controller
     {
         private readonly ApplicationDbContext _context;

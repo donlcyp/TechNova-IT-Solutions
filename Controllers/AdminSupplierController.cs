@@ -4,6 +4,7 @@ using TechNova_IT_Solutions.Constants;
 using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Services;
 using TechNova_IT_Solutions.Services.Interfaces;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TechNova_IT_Solutions.Controllers
 {
@@ -268,6 +269,8 @@ namespace TechNova_IT_Solutions.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [EnableRateLimiting("passwordreset")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
             if (!IsSystemAdminOrHigher()) return Unauthorized(new { success = false, message = "Access denied" });
@@ -287,34 +290,40 @@ namespace TechNova_IT_Solutions.Controllers
             if (user == null)
                 return BadRequest(new { success = false, message = "No login account found for this supplier." });
 
-            const string defaultPassword = "Supplier@123";
-            user.Password = PasswordHasher.HashPassword(defaultPassword);
+            // Generate secure random password instead of hardcoded default
+            var newPassword = SecurePasswordService.GenerateSecurePassword();
+            user.Password = PasswordHasher.HashPassword(newPassword);
             user.MustChangePassword = true;
             await _context.SaveChangesAsync();
 
             await _adminService.LogActivityAsync(GetCurrentUserId(), $"Reset password for supplier: {supplier.SupplierName} (ID: {supplier.SupplierId})", "Supplier");
 
-            // Send notification email
-            var subject = "TechNova IT Solutions - Password Reset";
+            // Send notification email with password reset link, NOT the password itself
+            var subject = "TechNova IT Solutions - Password Reset Request";
+            var resetToken = System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{user.UserId}-{DateTime.UtcNow:O}-{Guid.NewGuid()}"));
+            var resetLink = $"https://yourdomain.com/account/reset-password?token={Uri.EscapeDataString(resetToken)}";
+            
             var body = $@"
 <div style='font-family:Segoe UI,Arial,sans-serif;max-width:600px;margin:0 auto;'>
     <div style='background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:24px 32px;border-radius:12px 12px 0 0;'>
         <h1 style='color:#fff;margin:0;font-size:22px;'>Password Reset Notification</h1>
     </div>
     <div style='background:#fff;padding:28px 32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;'>
-        <p style='color:#1f2937;font-size:15px;line-height:1.6;'>Hello <strong>{supplier.ContactPersonFirstName} {supplier.ContactPersonLastName}</strong>,</p>
+        <p style='color:#1f2937;font-size:15px;line-height:1.6;'>Hello <strong>{System.Net.WebUtility.HtmlEncode(supplier.ContactPersonFirstName)} {System.Net.WebUtility.HtmlEncode(supplier.ContactPersonLastName)}</strong>,</p>
         <p style='color:#1f2937;font-size:15px;line-height:1.6;'>Your password for the TechNova IT Solutions supplier portal has been reset by an administrator.</p>
         <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;margin:16px 0;'>
-            <p style='margin:4px 0;font-size:14px;color:#334155;'><strong>Email:</strong> {supplier.Email}</p>
-            <p style='margin:4px 0;font-size:14px;color:#334155;'><strong>New Password:</strong> {defaultPassword}</p>
+            <p style='margin:4px 0;font-size:14px;color:#334155;'><strong>Email:</strong> {System.Net.WebUtility.HtmlEncode(supplier.Email)}</p>
         </div>
-        <p style='color:#dc2626;font-size:13px;font-weight:600;'>⚠ For security, you will be required to change your password on your next login.</p>
+        <div style='text-align:center;margin:20px 0;'>
+            <a href=""{resetLink}"" style='background-color:#1e40af;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;display:inline-block;font-weight:600;'>Set New Password</a>
+        </div>
+        <p style='color:#dc2626;font-size:13px;font-weight:600;'>⚠ This link expires in 24 hours for security purposes.</p>
         <p style='color:#6b7280;font-size:13px;margin-top:20px;'>If you did not expect this reset, please contact your TechNova administrator immediately.</p>
     </div>
 </div>";
             _ = _emailService.SendEmailAsync(supplier.Email!, subject, body);
 
-            return Ok(new { success = true, message = "Password reset to default. The supplier has been notified via email." });
+            return Ok(new { success = true, message = "Password reset initiated. The supplier has been notified via email with a secure reset link." });
         }
 
         [HttpGet]

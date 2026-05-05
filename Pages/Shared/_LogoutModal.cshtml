@@ -21,6 +21,10 @@
         padding: 16px;
     }
 
+    .logout-modal-overlay[hidden] {
+        display: none !important;
+    }
+
     .logout-modal {
         width: 100%;
         max-width: 360px;
@@ -71,55 +75,4 @@
     }
 </style>
 
-<script>
-    (function () {
-        if (window.__logoutModalInitialized) return;
-        window.__logoutModalInitialized = true;
-
-        function getModalElements() {
-            const overlay = document.getElementById('logoutModalOverlay');
-            const cancel = document.getElementById('logoutCancelBtn');
-            const confirm = document.getElementById('logoutConfirmBtn');
-            return { overlay, cancel, confirm };
-        }
-
-        function openLogoutModal() {
-            const { overlay } = getModalElements();
-            if (!overlay) return;
-            overlay.hidden = false;
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeLogoutModal() {
-            const { overlay } = getModalElements();
-            if (!overlay) return;
-            overlay.hidden = true;
-            document.body.style.overflow = '';
-        }
-
-        document.addEventListener('click', function (event) {
-            const target = event.target;
-            if (!(target instanceof Element)) return;
-
-            if (target.closest('.js-logout-trigger')) {
-                event.preventDefault();
-                openLogoutModal();
-                return;
-            }
-
-            const { overlay, cancel } = getModalElements();
-            if (!overlay) return;
-
-            if (target === overlay || target === cancel) {
-                event.preventDefault();
-                closeLogoutModal();
-            }
-        });
-
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape') {
-                closeLogoutModal();
-            }
-        });
-    })();
-</script>
+<script src="~/js/logout-modal.js" asp-append-version="true"></script>

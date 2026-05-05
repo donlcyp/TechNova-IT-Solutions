@@ -923,6 +923,7 @@
                 }
 
                 <form method="post" novalidate autocomplete="on" id="loginForm">
+                    @Html.AntiForgeryToken()
                     <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
                     <div class="form-group">
                         <label asp-for="Email">Company Email</label>

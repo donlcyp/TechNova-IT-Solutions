@@ -48,6 +48,39 @@ namespace TechNova_IT_Solutions.Controllers
             return int.TryParse(s, out var id) ? id : null;
         }
 
+        /// <summary>
+        /// Validates that the caller has access to a resource based on branch ownership.
+        /// Returns true if:
+        /// - User is SuperAdmin (has global scope)
+        /// - Resource has no branch (company-wide resource)
+        /// - Resource branch matches user's branch
+        /// </summary>
+        private async Task<bool> ValidateBranchAccessAsync(int? resourceBranchId)
+        {
+            // SuperAdmin has global scope and can access all resources
+            if (IsSuperAdmin())
+            {
+                return true;
+            }
+
+            // Get caller's branch ID
+            var callerBranchId = GetCallerBranchId();
+            if (!callerBranchId.HasValue)
+            {
+                // Branch-scoped user without a branch ID should not have access
+                return false;
+            }
+
+            // Resource with no branch is company-wide and accessible to all
+            if (!resourceBranchId.HasValue)
+            {
+                return true;
+            }
+
+            // Resource must match user's branch
+            return resourceBranchId == callerBranchId;
+        }
+
         private sealed class EmailNotificationSummary
         {
             public int Recipients { get; set; }
@@ -116,13 +149,26 @@ namespace TechNova_IT_Solutions.Controllers
                 return NotFound(new { message = "File not found" });
             }
 
-            var fullPath = Path.Combine(_environment.WebRootPath, policy.FilePath.TrimStart('/'));
-            if (!System.IO.File.Exists(fullPath))
+            // SECURITY: Prevent path traversal attacks
+            var webRootPath = _environment.WebRootPath;
+            var filePath = policy.FilePath.TrimStart('/').TrimStart('\\');
+            var fullPath = Path.Combine(webRootPath, filePath);
+            
+            // Verify the resolved path is still within the intended directory
+            var fullResolvedPath = Path.GetFullPath(fullPath);
+            var webRootResolvedPath = Path.GetFullPath(webRootPath);
+            
+            if (!fullResolvedPath.StartsWith(webRootResolvedPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return Unauthorized(new { message = "Access to this file is denied" });
+            }
+
+            if (!System.IO.File.Exists(fullResolvedPath))
             {
                 return NotFound(new { message = "File not found on server" });
             }
 
-            var ext = Path.GetExtension(fullPath).ToLower();
+            var ext = Path.GetExtension(fullResolvedPath).ToLower();
             var contentType = ext switch
             {
                 ".pdf" => "application/pdf",
@@ -138,14 +184,14 @@ namespace TechNova_IT_Solutions.Controllers
                 _ => "application/octet-stream"
             };
 
-            var fileName = Path.GetFileName(fullPath);
+            var fileName = Path.GetFileName(fullResolvedPath);
             if (ext == ".pdf" || ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".txt")
             {
                 Response.Headers.Append("Content-Disposition", $"inline; filename=\"{fileName}\"");
-                return PhysicalFile(fullPath, contentType);
+                return PhysicalFile(fullResolvedPath, contentType);
             }
 
-            return PhysicalFile(fullPath, contentType, fileName);
+            return PhysicalFile(fullResolvedPath, contentType, fileName);
         }
 
         [HttpGet]
@@ -184,6 +230,7 @@ namespace TechNova_IT_Solutions.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AssignPolicy([FromBody] PolicyAssignmentRequest request)
         {
             if (!IsAdmin()) return Unauthorized(new { success = false, message = "Access denied" });
@@ -206,6 +253,19 @@ namespace TechNova_IT_Solutions.Controllers
                 var callerBranchId = GetCallerBranchId();
                 if (callerBranchId.HasValue)
                 {
+                    // Validate policies are within user's branch
+                    var policies = await _context.Policies
+                        .Where(p => policyIds.Contains(p.PolicyId))
+                        .ToListAsync();
+                    
+                    foreach (var policy in policies)
+                    {
+                        if (!await ValidateBranchAccessAsync(policy.BranchId))
+                        {
+                            return Unauthorized(new { success = false, message = $"Access denied. You can only assign policies within your branch. Policy '{policy.PolicyTitle}' is not accessible." });
+                        }
+                    }
+
                     if (request.EmployeeIds.Any())
                     {
                         var hasOutOfBranchEmployees = await _context.Users

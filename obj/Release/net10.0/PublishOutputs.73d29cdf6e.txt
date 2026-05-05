@@ -1,5 +1,6 @@
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova_IT_Solutions.exe
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\appsettings.json
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\appsettings.Production.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova_IT_Solutions.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova_IT_Solutions.runtimeconfig.json
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\TechNova_IT_Solutions.pdb
@@ -38,6 +39,7 @@ D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.Entit
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.EntityFrameworkCore.Sqlite.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.EntityFrameworkCore.SqlServer.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.Extensions.DependencyModel.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.Extensions.FileProviders.Embedded.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.Identity.Client.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.Identity.Client.Extensions.Msal.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Microsoft.IdentityModel.Abstractions.dll
@@ -68,6 +70,15 @@ D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\NuGet.Packaging
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\NuGet.ProjectModel.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\NuGet.Protocol.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\NuGet.Versioning.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Serilog.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Serilog.AspNetCore.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Serilog.Extensions.Hosting.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Serilog.Extensions.Logging.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Serilog.Formatting.Compact.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Serilog.Settings.Configuration.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Serilog.Sinks.Console.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Serilog.Sinks.Debug.dll
+D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\Serilog.Sinks.File.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\SQLitePCLRaw.batteries_v2.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\SQLitePCLRaw.core.dll
 D:\C#\repos\TechNova IT Solutions\obj\Release\net10.0\PubTmp\Out\SQLitePCLRaw.provider.e_sqlite3.dll

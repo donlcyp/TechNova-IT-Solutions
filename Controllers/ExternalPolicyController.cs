@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using TechNova_IT_Solutions.Services; // Ensure this namespace matches where IPolicyReferenceApiService is
 using TechNova_IT_Solutions.Models;   // Ensure this namespace matches where ExternalPolicyResponse/ExternalPolicyData are
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace TechNova_IT_Solutions.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [EnableRateLimiting("api")]
     public class ExternalPolicyController : ControllerBase
     {
         private readonly IPolicyReferenceApiService _policyService;

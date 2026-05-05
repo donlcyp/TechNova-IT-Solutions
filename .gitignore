@@ -1,5 +1,20 @@
-appsettings.json
-appsettings.json
-appsettings.json
-.gitignore
+# Build output
+bin/
+obj/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.cache
+*.log
+
+# App settings and local artifacts
+appsettings*.json
 create_all_tables.sql
+TASK_3.8_IMPLEMENTATION_SUMMARY.md
+
+# Kiro specs (local notes)
+.kiro/specs/asp-net-security-fixes/*.md
+.kiro/specs/asp-net-security-fixes/.config.kiro

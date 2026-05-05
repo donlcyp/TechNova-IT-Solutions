@@ -938,7 +938,10 @@
 
                 const response = await fetch(endpoint, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getAntiForgeryToken()
+                    },
                     body: JSON.stringify(userData)
                 });
 
@@ -971,7 +974,8 @@
                 try {
                     showLoading(`${actionText === 'deactivate' ? 'Deactivating' : 'Reactivating'} account & sending notification...`);
                     const response = await fetch(`${endpoint}?userId=${userId}`, {
-                        method: 'POST'
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': getAntiForgeryToken() }
                     });
 
                     const result = await response.json();
@@ -1099,7 +1103,10 @@
 
             showLoading('Resetting password & sending notification...');
             try {
-                const response = await fetch(`/AdminUser/ResetUserPassword?userId=${userId}`, { method: 'POST' });
+                const response = await fetch(`/AdminUser/ResetUserPassword?userId=${userId}`, { 
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': getAntiForgeryToken() }
+                });
                 const result = await response.json();
                 hideLoading();
 
