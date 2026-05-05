@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("TechNova_IT_Solutions")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+32cb762e3642e25874b75ac47ca928c454dddbb2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e3d0cc6e65135b5d6151230d2bb0fdbd8fda3efc")]
 [assembly: System.Reflection.AssemblyProductAttribute("TechNova_IT_Solutions")]
 [assembly: System.Reflection.AssemblyTitleAttribute("TechNova_IT_Solutions")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
