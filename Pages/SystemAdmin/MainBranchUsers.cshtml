@@ -384,7 +384,10 @@
                 showLoading('Creating user account & sending welcome email...');
                 const response = await fetch('/AdminUser/CreateUser', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': getAntiForgeryToken()
+                    },
                     body: JSON.stringify(userData)
                 });
                 const result = await response.json();
@@ -413,7 +416,10 @@
 
             try {
                 showLoading(`${label.charAt(0).toUpperCase() + label.slice(1)}ing account...`);
-                const response = await fetch(`${endpoint}?userId=${userId}`, { method: 'POST' });
+                const response = await fetch(`${endpoint}?userId=${userId}`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': getAntiForgeryToken() }
+                });
                 const result   = await response.json();
                 hideLoading();
 
@@ -439,7 +445,10 @@
 
             try {
                 showLoading('Resetting password...');
-                const response = await fetch(`/AdminUser/ResetPassword?userId=${userId}`, { method: 'POST' });
+                const response = await fetch(`/AdminUser/ResetUserPassword?userId=${userId}`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': getAntiForgeryToken() }
+                });
                 const result   = await response.json();
                 hideLoading();
 

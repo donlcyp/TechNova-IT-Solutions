@@ -1,3 +1,5 @@
+using System;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Models;
@@ -58,38 +60,95 @@ namespace TechNova_IT_Solutions.Services
 
         public async Task<UserCreationResult> CreateUserAsync(UserData userData)
         {
+            if (userData == null)
+            {
+                return new UserCreationResult { Success = false, ErrorMessage = "Invalid user data." };
+            }
+
+            var firstName = userData.FirstName?.Trim();
+            var lastName = userData.LastName?.Trim();
+            var email = userData.Email?.Trim();
+            var role = userData.Role?.Trim();
+
+            if (string.IsNullOrWhiteSpace(firstName) ||
+                string.IsNullOrWhiteSpace(lastName) ||
+                string.IsNullOrWhiteSpace(email) ||
+                string.IsNullOrWhiteSpace(role))
+            {
+                return new UserCreationResult
+                {
+                    Success = false,
+                    ErrorMessage = "First name, last name, email, and role are required."
+                };
+            }
+
+            var normalizedEmail = email.ToLowerInvariant();
+            var emailExists = await _context.Users.AnyAsync(u =>
+                u.Email != null && u.Email.Trim().ToLower() == normalizedEmail);
+            if (emailExists)
+            {
+                return new UserCreationResult { Success = false, ErrorMessage = "Email already exists." };
+            }
+
+            // Generate a secure random password instead of using hardcoded defaults
+            var generatedPassword = SecurePasswordService.GenerateSecurePassword();
+            var hashedPassword = PasswordHasher.HashPassword(generatedPassword);
+
+            var user = new User
+            {
+                FirstName = firstName,
+                LastName = lastName,
+                Email = email,
+                Role = role,
+                Status = string.IsNullOrWhiteSpace(userData.Status) ? "Active" : userData.Status,
+                Password = hashedPassword,
+                MustChangePassword = true,
+                BranchId = userData.BranchId
+            };
+
+            _context.Users.Add(user);
+
             try
             {
-                // Generate a secure random password instead of using hardcoded defaults
-                var generatedPassword = SecurePasswordService.GenerateSecurePassword();
-                var hashedPassword = PasswordHasher.HashPassword(generatedPassword);
-                
-                var user = new User
-                {
-                    FirstName = userData.FirstName,
-                    LastName  = userData.LastName,
-                    Email     = userData.Email,
-                    Role      = userData.Role ?? string.Empty,
-                    Status    = userData.Status,
-                    Password  = hashedPassword,
-                    MustChangePassword = true,
-                    BranchId  = userData.BranchId
-                };
-
-                _context.Users.Add(user);
                 await _context.SaveChangesAsync();
-
-                var result = new UserCreationResult { Success = true };
-
-                if (!string.IsNullOrWhiteSpace(user.Email))
+            }
+            catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+            {
+                return new UserCreationResult { Success = false, ErrorMessage = "Email already exists." };
+            }
+            catch (DbUpdateException)
+            {
+                return new UserCreationResult
                 {
-                    var roleLabel = string.IsNullOrWhiteSpace(user.Role) ? "User" : user.Role;
-                    var subject = $"Your TechNova {roleLabel} Account Has Been Created - Set Your Password";
-                    
+                    Success = false,
+                    ErrorMessage = "Failed to create user. Check required fields and data length limits."
+                };
+            }
+            catch
+            {
+                return new UserCreationResult { Success = false, ErrorMessage = "Failed to create user." };
+            }
+
+            var result = new UserCreationResult { Success = true };
+
+            if (!string.IsNullOrWhiteSpace(user.Email))
+            {
+                result.EmailAttempted = true;
+
+                try
+                {
                     // Generate a password reset token and send secure link instead of password
                     var resetToken = GeneratePasswordResetToken(user.UserId);
+                    if (string.IsNullOrWhiteSpace(resetToken))
+                    {
+                        result.EmailSent = false;
+                        result.EmailError = "Password reset token could not be generated.";
+                        return result;
+                    }
+
+                    var roleLabel = string.IsNullOrWhiteSpace(user.Role) ? "User" : user.Role;
+                    var subject = $"Your TechNova {roleLabel} Account Has Been Created - Set Your Password";
                     var resetLink = $"https://yourdomain.com/account/reset-password?token={Uri.EscapeDataString(resetToken)}";
-                    
                     var body = $@"
                         <h2>Welcome to TechNova</h2>
                         <p>Hello {user.FirstName},</p>
@@ -100,18 +159,23 @@ namespace TechNova_IT_Solutions.Services
                         <p>This link expires in 24 hours.</p>
                         <p>If you did not request this account, please contact support immediately.</p>";
 
-                    result.EmailAttempted = true;
                     var emailResult = await _emailService.SendEmailAsync(user.Email, subject, body);
                     result.EmailSent = emailResult.Success;
                     result.EmailError = emailResult.ErrorMessage;
                 }
+                catch (DbUpdateException ex) when (IsMissingPasswordResetTokensTable(ex))
+                {
+                    result.EmailSent = false;
+                    result.EmailError = "Password reset token storage is not available. Run the latest database migration.";
+                }
+                catch
+                {
+                    result.EmailSent = false;
+                    result.EmailError = "Password reset token could not be generated.";
+                }
+            }
 
-                return result;
-            }
-            catch
-            {
-                return new UserCreationResult { Success = false };
-            }
+            return result;
         }
 
         public async Task<bool> UpdateUserAsync(UserData userData)
@@ -284,6 +348,27 @@ namespace TechNova_IT_Solutions.Services
             _context.SaveChanges();
             
             return token;
+        }
+
+        private static bool IsUniqueConstraintViolation(DbUpdateException ex)
+        {
+            if (ex.InnerException is SqlException sqlEx)
+            {
+                return sqlEx.Number == 2601 || sqlEx.Number == 2627;
+            }
+
+            return false;
+        }
+
+        private static bool IsMissingPasswordResetTokensTable(DbUpdateException ex)
+        {
+            if (ex.InnerException is SqlException sqlEx)
+            {
+                return sqlEx.Number == 208 &&
+                       sqlEx.Message.IndexOf("PasswordResetTokens", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            return false;
         }
     }
 }

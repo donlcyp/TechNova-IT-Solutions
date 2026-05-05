@@ -134,7 +134,7 @@ namespace TechNova_IT_Solutions.Controllers
                 });
             }
 
-            return BadRequest(new { success = false, message = "Failed to create user" });
+            return BadRequest(new { success = false, message = result.ErrorMessage ?? "Failed to create user" });
         }
 
         [HttpGet]

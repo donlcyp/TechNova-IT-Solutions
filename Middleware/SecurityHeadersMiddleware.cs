@@ -15,13 +15,14 @@ public class SecurityHeadersMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         // Add Content-Security-Policy header to prevent XSS attacks
-        // Allows resources only from same origin, with inline styles for existing UI compatibility
+        // Allows inline scripts for existing role UIs that use inline handlers and page scripts.
+        // CDN sources are included for Bootstrap/Font Awesome assets used in Razor Pages.
         context.Response.Headers.Append("Content-Security-Policy",
             "default-src 'self'; " +
-            "script-src 'self'; " +
-            "style-src 'self' 'unsafe-inline'; " +
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
             "img-src 'self' data:; " +
-            "font-src 'self'; " +
+            "font-src 'self' https://cdnjs.cloudflare.com; " +
             "connect-src 'self'; " +
             "frame-ancestors 'none'");
 

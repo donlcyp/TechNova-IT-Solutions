@@ -36,6 +36,11 @@ builder.Host.UseSerilog();
 builder.Services.AddControllersWithViews(); // Add MVC Controllers
 builder.Services.AddRazorPages(); // Keep Razor Pages support
 
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+});
+
 // Add DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(

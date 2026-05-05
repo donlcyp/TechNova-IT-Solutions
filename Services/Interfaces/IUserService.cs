@@ -20,6 +20,7 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public bool EmailAttempted { get; set; }
         public bool EmailSent { get; set; }
         public string? EmailError { get; set; }
+        public string? ErrorMessage { get; set; }
     }
 
     public class PasswordResetResult
