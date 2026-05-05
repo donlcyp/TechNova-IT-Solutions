@@ -16,7 +16,7 @@ namespace TechNova_IT_Solutions.Controllers
 
         public async Task<IActionResult> Dashboard()
         {
-            var denied = RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
+            var denied =    RoleAccess.RequireRoleOrAccessDenied(this, RoleNames.Employee, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
             if (denied != null) return denied;
 
             var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
