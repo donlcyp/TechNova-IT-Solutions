@@ -45,6 +45,12 @@ namespace TechNova_IT_Solutions.Models
         [Column("branchId")]
         public int? BranchId { get; set; }
 
+        [Column("terms_accepted")]
+        public bool TermsAccepted { get; set; } = false;
+
+        [Column("terms_accepted_date")]
+        public DateTime? TermsAcceptedDate { get; set; }
+
         // Navigation properties
         public virtual Branch? Branch { get; set; }
         public virtual ICollection<Policy> UploadedPolicies { get; set; } = new List<Policy>();

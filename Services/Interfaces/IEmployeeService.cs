@@ -8,6 +8,8 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         Task<bool> AcknowledgePolicyAsync(int userId, int policyId);
         Task<int> GetPendingPoliciesCountAsync(int userId);
         Task<int> GetActiveViolationsCountAsync(int userId);
+        Task<bool> AcceptTermsAsync(int userId);
+        Task<TermsStatusData> GetTermsStatusAsync(int userId);
     }
 
     public class EmployeeDashboardData
@@ -37,5 +39,12 @@ namespace TechNova_IT_Solutions.Services.Interfaces
         public DateTime DateAssigned { get; set; }
         public string Status { get; set; } = string.Empty;
         public DateTime? AcknowledgedDate { get; set; }
+    }
+
+    public class TermsStatusData
+    {
+        public bool Success { get; set; }
+        public bool TermsAccepted { get; set; }
+        public DateTime? TermsAcceptedDate { get; set; }
     }
 }

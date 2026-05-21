@@ -139,6 +139,15 @@ namespace TechNova_IT_Solutions.Controllers
                 HttpContext.Session.Remove(SessionKeys.BranchName);
             }
 
+            if (user.MustChangePassword)
+            {
+                HttpContext.Session.SetString(SessionKeys.MustChangePassword, "true");
+            }
+            else
+            {
+                HttpContext.Session.Remove(SessionKeys.MustChangePassword);
+            }
+
             // Redirect based on role
             return RedirectToDashboard(user.Role ?? RoleNames.Employee);
         }

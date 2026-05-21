@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "MNcBe0qq66U=",
+  "dgSpecHash": "7g+qhMEY9Qs=",
   "success": true,
   "projectFilePath": "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
   "expectedPackageFiles": [
@@ -155,28 +155,13 @@
   ],
   "logs": [
     {
-      "code": "NU1901",
+      "code": "NU1900",
       "level": "Warning",
-      "message": "Package 'NuGet.Packaging' 6.12.1 has a known low severity vulnerability, https://github.com/advisories/GHSA-g4vj-cjjj-v7hg",
+      "message": "Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.",
       "projectPath": "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
       "warningLevel": 1,
       "filePath": "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
-      "libraryId": "NuGet.Packaging",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    },
-    {
-      "code": "NU1901",
-      "level": "Warning",
-      "message": "Package 'NuGet.Protocol' 6.12.1 has a known low severity vulnerability, https://github.com/advisories/GHSA-g4vj-cjjj-v7hg",
-      "projectPath": "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
-      "warningLevel": 1,
-      "filePath": "D:\\C#\\repos\\TechNova IT Solutions\\TechNova IT Solutions.csproj",
-      "libraryId": "NuGet.Protocol",
-      "targetGraphs": [
-        "net10.0"
-      ]
+      "targetGraphs": []
     }
   ]
 }

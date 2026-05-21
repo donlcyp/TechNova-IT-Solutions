@@ -23,6 +23,9 @@ namespace TechNova_IT_Solutions.Data
         {
             if (context == null) return;
 
+            await SeedBranchesAsync(context).ConfigureAwait(false);
+            await context.SaveChangesAsync().ConfigureAwait(false);
+
             await SeedUsersAsync(context, environment, logger).ConfigureAwait(false);
             await context.SaveChangesAsync().ConfigureAwait(false);
 
@@ -74,6 +77,14 @@ namespace TechNova_IT_Solutions.Data
         private static async Task SeedUsersAsync(ApplicationDbContext context, IHostEnvironment environment, ILogger logger)
         {
             var hasSeedUsers = await context.Users.CountAsync().ConfigureAwait(false) > 1;
+            var branchIds = await context.Branches
+                .OrderBy(b => b.BranchId)
+                .Select(b => b.BranchId)
+                .ToListAsync()
+                .ConfigureAwait(false);
+            var primaryBranchId = branchIds.Count > 0 ? (int?)branchIds[0] : null;
+            var secondaryBranchId = branchIds.Count > 1 ? (int?)branchIds[1] : primaryBranchId;
+            var tertiaryBranchId = branchIds.Count > 2 ? (int?)branchIds[2] : primaryBranchId;
 
             // Check if we're in production environment
             bool isProduction = environment.IsProduction();
@@ -136,13 +147,35 @@ namespace TechNova_IT_Solutions.Data
 
             context.Users.Add(new User
             {
+                FirstName = "Ava",
+                LastName = "Branch",
+                Email = "branchadmin@technova.com",
+                Password = hashedPassword,
+                Role = RoleNames.BranchAdmin,
+                Status = "Active",
+                MustChangePassword = true,
+                BranchId = primaryBranchId
+            });
+            context.Users.Add(new User
+            {
+                FirstName = "Chris",
+                LastName = "Chief",
+                Email = "ccm@technova.com",
+                Password = hashedPassword,
+                Role = RoleNames.ChiefComplianceManager,
+                Status = "Active",
+                MustChangePassword = true
+            });
+            context.Users.Add(new User
+            {
                 FirstName = "Jane",
                 LastName = "Compliance",
                 Email = "compliance@technova.com",
                 Password = hashedPassword,
                 Role = "ComplianceManager",
                 Status = "Active",
-                MustChangePassword = true
+                MustChangePassword = true,
+                BranchId = primaryBranchId
             });
             context.Users.Add(new User
             {
@@ -152,7 +185,167 @@ namespace TechNova_IT_Solutions.Data
                 Password = hashedPassword,
                 Role = "Employee",
                 Status = "Active",
+                MustChangePassword = true,
+                BranchId = primaryBranchId
+            });
+            context.Users.Add(new User
+            {
+                FirstName = "Sam",
+                LastName = "Supplier",
+                Email = "supplier@technova.com",
+                Password = hashedPassword,
+                Role = RoleNames.Supplier,
+                Status = "Active",
                 MustChangePassword = true
+            });
+            context.Users.Add(new User
+            {
+                FirstName = "Liam",
+                LastName = "Cebu",
+                Email = "branchadmin.cebu@technova.com",
+                Password = hashedPassword,
+                Role = RoleNames.BranchAdmin,
+                Status = "Active",
+                MustChangePassword = true,
+                BranchId = secondaryBranchId
+            });
+            context.Users.Add(new User
+            {
+                FirstName = "Maya",
+                LastName = "Manila",
+                Email = "branchadmin.manila@technova.com",
+                Password = hashedPassword,
+                Role = RoleNames.BranchAdmin,
+                Status = "Active",
+                MustChangePassword = true,
+                BranchId = tertiaryBranchId
+            });
+            context.Users.Add(new User
+            {
+                FirstName = "Ella",
+                LastName = "Cebu",
+                Email = "cebu.compliance@technova.com",
+                Password = hashedPassword,
+                Role = RoleNames.ComplianceManager,
+                Status = "Active",
+                MustChangePassword = true,
+                BranchId = secondaryBranchId
+            });
+            context.Users.Add(new User
+            {
+                FirstName = "Diego",
+                LastName = "Manila",
+                Email = "manila.compliance@technova.com",
+                Password = hashedPassword,
+                Role = RoleNames.ComplianceManager,
+                Status = "Active",
+                MustChangePassword = true,
+                BranchId = tertiaryBranchId
+            });
+            context.Users.Add(new User
+            {
+                FirstName = "Riley",
+                LastName = "Employee",
+                Email = "employee2@technova.com",
+                Password = hashedPassword,
+                Role = RoleNames.Employee,
+                Status = "Active",
+                MustChangePassword = true,
+                BranchId = primaryBranchId
+            });
+            context.Users.Add(new User
+            {
+                FirstName = "Noel",
+                LastName = "Employee",
+                Email = "employee3@technova.com",
+                Password = hashedPassword,
+                Role = RoleNames.Employee,
+                Status = "Active",
+                MustChangePassword = true,
+                BranchId = secondaryBranchId
+            });
+            context.Users.Add(new User
+            {
+                FirstName = "Sasha",
+                LastName = "Employee",
+                Email = "employee4@technova.com",
+                Password = hashedPassword,
+                Role = RoleNames.Employee,
+                Status = "Active",
+                MustChangePassword = true,
+                BranchId = tertiaryBranchId
+            });
+            context.Users.Add(new User
+            {
+                FirstName = "Luna",
+                LastName = "Supplier",
+                Email = "supplier2@technova.com",
+                Password = hashedPassword,
+                Role = RoleNames.Supplier,
+                Status = "Active",
+                MustChangePassword = true
+            });
+            context.Users.Add(new User
+            {
+                FirstName = "Kai",
+                LastName = "Supplier",
+                Email = "supplier3@technova.com",
+                Password = hashedPassword,
+                Role = RoleNames.Supplier,
+                Status = "Active",
+                MustChangePassword = true
+            });
+        }
+
+        private static async Task SeedBranchesAsync(ApplicationDbContext context)
+        {
+            if (await context.Branches.AnyAsync().ConfigureAwait(false))
+                return;
+
+            context.Branches.Add(new Branch
+            {
+                BranchName = "Main Branch",
+                Address = "100 Tech Avenue",
+                City = "Davao City",
+                Region = "Davao Region",
+                Phone = "+63-82-555-0100",
+                Email = "mainbranch@technova.com",
+                ManagerFirstName = "Mia",
+                ManagerLastName = "Reyes",
+                ManagerEmail = "m.reyes@technova.com",
+                Status = "Active",
+                CreatedAt = DateTime.UtcNow.AddDays(-120),
+                UpdatedAt = DateTime.UtcNow.AddDays(-10)
+            });
+            context.Branches.Add(new Branch
+            {
+                BranchName = "Cebu Branch",
+                Address = "200 Harbor Road",
+                City = "Cebu City",
+                Region = "Central Visayas",
+                Phone = "+63-32-555-0200",
+                Email = "cebu@technova.com",
+                ManagerFirstName = "Noah",
+                ManagerLastName = "Santos",
+                ManagerEmail = "n.santos@technova.com",
+                Status = "Active",
+                CreatedAt = DateTime.UtcNow.AddDays(-90),
+                UpdatedAt = DateTime.UtcNow.AddDays(-5)
+            });
+            context.Branches.Add(new Branch
+            {
+                BranchName = "Manila Branch",
+                Address = "300 Ayala Avenue",
+                City = "Makati",
+                Region = "NCR",
+                Phone = "+63-2-555-0300",
+                Email = "manila@technova.com",
+                ManagerFirstName = "Iris",
+                ManagerLastName = "Valdez",
+                ManagerEmail = "i.valdez@technova.com",
+                Status = "Active",
+                CreatedAt = DateTime.UtcNow.AddDays(-75),
+                UpdatedAt = DateTime.UtcNow.AddDays(-2)
             });
         }
 
@@ -163,6 +356,9 @@ namespace TechNova_IT_Solutions.Data
 
             var adminId = await context.Users.Where(u => u.Role == RoleNames.SystemAdmin || u.Role == RoleNames.BranchAdmin).Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
             var uploadedBy = adminId > 0 ? adminId : (int?)null;
+            var branchIds = await context.Branches.OrderBy(b => b.BranchId).Select(b => b.BranchId).ToListAsync().ConfigureAwait(false);
+            var primaryBranchId = branchIds.Count > 0 ? (int?)branchIds[0] : null;
+            var secondaryBranchId = branchIds.Count > 1 ? (int?)branchIds[1] : null;
             var date = DateTime.UtcNow;
 
             context.Policies.Add(new Policy
@@ -189,12 +385,66 @@ namespace TechNova_IT_Solutions.Data
                 UploadedBy = uploadedBy,
                 DateUploaded = date.AddDays(-10)
             });
+            context.Policies.Add(new Policy
+            {
+                PolicyTitle = "Incident Response Plan",
+                Description = "Steps for reporting, triage, and recovery from security incidents.",
+                Category = "Security",
+                UploadedBy = uploadedBy,
+                DateUploaded = date.AddDays(-22)
+            });
+            context.Policies.Add(new Policy
+            {
+                PolicyTitle = "Access Control Policy",
+                Description = "Role-based access guidelines for internal systems.",
+                Category = "Security",
+                UploadedBy = uploadedBy,
+                DateUploaded = date.AddDays(-18)
+            });
+            context.Policies.Add(new Policy
+            {
+                PolicyTitle = "Vendor Risk Management Policy",
+                Description = "Vendor onboarding, assessment, and monitoring requirements.",
+                Category = "Compliance",
+                UploadedBy = uploadedBy,
+                DateUploaded = date.AddDays(-16)
+            });
+            context.Policies.Add(new Policy
+            {
+                PolicyTitle = "Data Retention and Disposal Policy",
+                Description = "Retention periods and secure disposal procedures for data.",
+                Category = "Compliance",
+                UploadedBy = uploadedBy,
+                DateUploaded = date.AddDays(-12)
+            });
+            context.Policies.Add(new Policy
+            {
+                PolicyTitle = "Remote Work Security Policy",
+                Description = "Security requirements for offsite and remote work.",
+                Category = "Security",
+                UploadedBy = uploadedBy,
+                DateUploaded = date.AddDays(-9),
+                BranchId = primaryBranchId
+            });
+            context.Policies.Add(new Policy
+            {
+                PolicyTitle = "Business Continuity Policy",
+                Description = "Business continuity planning and operational resilience.",
+                Category = "Operations",
+                UploadedBy = uploadedBy,
+                DateUploaded = date.AddDays(-7),
+                BranchId = secondaryBranchId
+            });
         }
 
         private static async Task SeedSuppliersAsync(ApplicationDbContext context)
         {
             if (await context.Suppliers.AnyAsync().ConfigureAwait(false))
                 return;
+
+            var branchIds = await context.Branches.OrderBy(b => b.BranchId).Select(b => b.BranchId).ToListAsync().ConfigureAwait(false);
+            var primaryBranchId = branchIds.Count > 0 ? (int?)branchIds[0] : null;
+            var secondaryBranchId = branchIds.Count > 1 ? (int?)branchIds[1] : null;
 
             context.Suppliers.Add(new Supplier
             {
@@ -214,7 +464,41 @@ namespace TechNova_IT_Solutions.Data
                 Email = "bob@globalitsupplies.com",
                 ContactPersonNumber = "+1-555-0200",
                 Address = "456 Commerce Dr, Boston MA",
-                Status = "Active"
+                Status = "Active",
+                BranchId = primaryBranchId
+            });
+            context.Suppliers.Add(new Supplier
+            {
+                SupplierName = "Pacific Hardware Co",
+                ContactPersonFirstName = "Leah",
+                ContactPersonLastName = "Tan",
+                Email = "leah@pacifichardware.com",
+                ContactPersonNumber = "+63-2-555-0400",
+                Address = "12 Bayfront Ave, Manila",
+                Status = "Active",
+                BranchId = secondaryBranchId
+            });
+            context.Suppliers.Add(new Supplier
+            {
+                SupplierName = "CloudShield Services",
+                ContactPersonFirstName = "Marco",
+                ContactPersonLastName = "Dela Cruz",
+                Email = "marco@cloudshield.io",
+                ContactPersonNumber = "+63-82-555-0500",
+                Address = "88 Cloud Park, Davao",
+                Status = "Active",
+                BranchId = primaryBranchId
+            });
+            context.Suppliers.Add(new Supplier
+            {
+                SupplierName = "Metro Office Systems",
+                ContactPersonFirstName = "Priya",
+                ContactPersonLastName = "Singh",
+                Email = "priya@metrooffice.com",
+                ContactPersonNumber = "+63-32-555-0600",
+                Address = "77 Gateway Blvd, Cebu",
+                Status = "Active",
+                BranchId = secondaryBranchId
             });
         }
 
@@ -224,15 +508,47 @@ namespace TechNova_IT_Solutions.Data
                 return;
 
             var complianceUserId = await context.Users.Where(u => u.Email == "compliance@technova.com").Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
+            var cebuComplianceUserId = await context.Users.Where(u => u.Email == "cebu.compliance@technova.com").Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
+            var manilaComplianceUserId = await context.Users.Where(u => u.Email == "manila.compliance@technova.com").Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
             var employeeUserId = await context.Users.Where(u => u.Email == "employee@technova.com").Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
-            var policyIds = await context.Policies.OrderBy(p => p.PolicyId).Select(p => p.PolicyId).Take(3).ToListAsync().ConfigureAwait(false);
-            if (policyIds.Count < 3 || complianceUserId == 0 || employeeUserId == 0) return;
+            var employee2UserId = await context.Users.Where(u => u.Email == "employee2@technova.com").Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
+            var employee3UserId = await context.Users.Where(u => u.Email == "employee3@technova.com").Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
+            var employee4UserId = await context.Users.Where(u => u.Email == "employee4@technova.com").Select(u => u.UserId).FirstOrDefaultAsync().ConfigureAwait(false);
+            var policyIds = await context.Policies.OrderBy(p => p.PolicyId).Select(p => p.PolicyId).Take(8).ToListAsync().ConfigureAwait(false);
+            if (policyIds.Count < 2) return;
+
+            var userIds = new List<int>
+            {
+                complianceUserId,
+                cebuComplianceUserId,
+                manilaComplianceUserId,
+                employeeUserId,
+                employee2UserId,
+                employee3UserId,
+                employee4UserId
+            }.Where(id => id > 0).ToList();
+
+            if (userIds.Count == 0) return;
 
             var assigned = DateTime.UtcNow;
-            context.PolicyAssignments.Add(new PolicyAssignment { PolicyId = policyIds[0], UserId = complianceUserId, AssignedDate = assigned.AddDays(-15) });
-            context.PolicyAssignments.Add(new PolicyAssignment { PolicyId = policyIds[1], UserId = complianceUserId, AssignedDate = assigned.AddDays(-15) });
-            context.PolicyAssignments.Add(new PolicyAssignment { PolicyId = policyIds[0], UserId = employeeUserId, AssignedDate = assigned.AddDays(-5) });
-            context.PolicyAssignments.Add(new PolicyAssignment { PolicyId = policyIds[2], UserId = employeeUserId, AssignedDate = assigned.AddDays(-5) });
+            for (int i = 0; i < userIds.Count; i++)
+            {
+                var policyA = policyIds[i % policyIds.Count];
+                var policyB = policyIds[(i + 1) % policyIds.Count];
+
+                context.PolicyAssignments.Add(new PolicyAssignment
+                {
+                    PolicyId = policyA,
+                    UserId = userIds[i],
+                    AssignedDate = assigned.AddDays(-(6 + i))
+                });
+                context.PolicyAssignments.Add(new PolicyAssignment
+                {
+                    PolicyId = policyB,
+                    UserId = userIds[i],
+                    AssignedDate = assigned.AddDays(-(10 + i))
+                });
+            }
         }
 
         private static async Task SeedComplianceStatusesAsync(ApplicationDbContext context)
@@ -241,12 +557,21 @@ namespace TechNova_IT_Solutions.Data
                 return;
 
             var assignmentIds = await context.PolicyAssignments.OrderBy(a => a.AssignmentId).Select(a => a.AssignmentId).ToListAsync().ConfigureAwait(false);
-            if (assignmentIds.Count < 4) return;
+            if (assignmentIds.Count == 0) return;
 
-            context.ComplianceStatuses.Add(new ComplianceStatus { AssignmentId = assignmentIds[0], Status = "Acknowledged", AcknowledgedDate = DateTime.UtcNow.AddDays(-10) });
-            context.ComplianceStatuses.Add(new ComplianceStatus { AssignmentId = assignmentIds[1], Status = "Acknowledged", AcknowledgedDate = DateTime.UtcNow.AddDays(-8) });
-            context.ComplianceStatuses.Add(new ComplianceStatus { AssignmentId = assignmentIds[2], Status = "Pending", AcknowledgedDate = null });
-            context.ComplianceStatuses.Add(new ComplianceStatus { AssignmentId = assignmentIds[3], Status = "Pending", AcknowledgedDate = null });
+            var statuses = new[] { "Acknowledged", "Pending", "Overdue" };
+            var now = DateTime.UtcNow;
+
+            for (int i = 0; i < assignmentIds.Count; i++)
+            {
+                var status = statuses[i % statuses.Length];
+                context.ComplianceStatuses.Add(new ComplianceStatus
+                {
+                    AssignmentId = assignmentIds[i],
+                    Status = status,
+                    AcknowledgedDate = status == "Acknowledged" ? now.AddDays(-(4 + i)) : null
+                });
+            }
         }
 
         private static async Task SeedSupplierPoliciesAsync(ApplicationDbContext context)
@@ -254,15 +579,33 @@ namespace TechNova_IT_Solutions.Data
             if (await context.SupplierPolicies.AnyAsync().ConfigureAwait(false))
                 return;
 
-            var supplierIds = await context.Suppliers.OrderBy(s => s.SupplierId).Select(s => s.SupplierId).Take(2).ToListAsync().ConfigureAwait(false);
-            var policyIds = await context.Policies.OrderBy(p => p.PolicyId).Select(p => p.PolicyId).Take(2).ToListAsync().ConfigureAwait(false);
-            if (supplierIds.Count < 2 || policyIds.Count < 2) return;
+            var supplierIds = await context.Suppliers.OrderBy(s => s.SupplierId).Select(s => s.SupplierId).Take(5).ToListAsync().ConfigureAwait(false);
+            var policyIds = await context.Policies.OrderBy(p => p.PolicyId).Select(p => p.PolicyId).Take(4).ToListAsync().ConfigureAwait(false);
+            if (supplierIds.Count == 0 || policyIds.Count < 2) return;
 
             var assigned = DateTime.UtcNow;
-            context.SupplierPolicies.Add(new SupplierPolicy { SupplierId = supplierIds[0], PolicyId = policyIds[0], AssignedDate = assigned.AddDays(-25), ComplianceStatus = "Compliant" });
-            context.SupplierPolicies.Add(new SupplierPolicy { SupplierId = supplierIds[0], PolicyId = policyIds[1], AssignedDate = assigned.AddDays(-25), ComplianceStatus = "Pending" });
-            context.SupplierPolicies.Add(new SupplierPolicy { SupplierId = supplierIds[1], PolicyId = policyIds[0], AssignedDate = assigned.AddDays(-18), ComplianceStatus = "Compliant" });
-            context.SupplierPolicies.Add(new SupplierPolicy { SupplierId = supplierIds[1], PolicyId = policyIds[1], AssignedDate = assigned.AddDays(-18), ComplianceStatus = "Non-Compliant" });
+            var statuses = new[] { "Compliant", "Pending", "Non-Compliant" };
+
+            for (int i = 0; i < supplierIds.Count; i++)
+            {
+                var policyA = policyIds[i % policyIds.Count];
+                var policyB = policyIds[(i + 1) % policyIds.Count];
+
+                context.SupplierPolicies.Add(new SupplierPolicy
+                {
+                    SupplierId = supplierIds[i],
+                    PolicyId = policyA,
+                    AssignedDate = assigned.AddDays(-(20 + i)),
+                    ComplianceStatus = statuses[i % statuses.Length]
+                });
+                context.SupplierPolicies.Add(new SupplierPolicy
+                {
+                    SupplierId = supplierIds[i],
+                    PolicyId = policyB,
+                    AssignedDate = assigned.AddDays(-(14 + i)),
+                    ComplianceStatus = statuses[(i + 1) % statuses.Length]
+                });
+            }
         }
 
         private static async Task SeedSupplierItemsAsync(ApplicationDbContext context)
@@ -270,36 +613,63 @@ namespace TechNova_IT_Solutions.Data
             if (await context.SupplierItems.AnyAsync().ConfigureAwait(false))
                 return;
 
-            var supplierIds = await context.Suppliers.OrderBy(s => s.SupplierId).Select(s => s.SupplierId).Take(2).ToListAsync().ConfigureAwait(false);
-            if (supplierIds.Count < 2) return;
+            var supplierIds = await context.Suppliers.OrderBy(s => s.SupplierId).Select(s => s.SupplierId).Take(5).ToListAsync().ConfigureAwait(false);
+            if (supplierIds.Count == 0) return;
 
-            context.SupplierItems.Add(new SupplierItem
+            for (int i = 0; i < supplierIds.Count; i++)
             {
-                SupplierId = supplierIds[0],
-                ItemName = "Laptop Workstation",
-                Category = "Hardware",
-                QuantityAvailable = 25,
-                Status = "Available",
-                LastUpdated = DateTime.UtcNow
-            });
-            context.SupplierItems.Add(new SupplierItem
+                context.SupplierItems.Add(new SupplierItem
+                {
+                    SupplierId = supplierIds[i],
+                    ItemName = "Laptop Workstation",
+                    Category = "Hardware",
+                    QuantityAvailable = 25 - i,
+                    UnitPrice = 52000 + (i * 1500),
+                    CurrencyCode = "PHP",
+                    Status = "Available",
+                    LastUpdated = DateTime.UtcNow.AddDays(-2)
+                });
+                context.SupplierItems.Add(new SupplierItem
+                {
+                    SupplierId = supplierIds[i],
+                    ItemName = "Security Software License",
+                    Category = "Software",
+                    QuantityAvailable = 12 + i,
+                    UnitPrice = 18000 + (i * 750),
+                    CurrencyCode = "PHP",
+                    Status = "Available",
+                    LastUpdated = DateTime.UtcNow.AddDays(-1)
+                });
+            }
+
+            if (supplierIds.Count > 1)
             {
-                SupplierId = supplierIds[0],
-                ItemName = "Security Software License",
-                Category = "Software",
-                QuantityAvailable = 10,
-                Status = "Available",
-                LastUpdated = DateTime.UtcNow
-            });
-            context.SupplierItems.Add(new SupplierItem
+                context.SupplierItems.Add(new SupplierItem
+                {
+                    SupplierId = supplierIds[1],
+                    ItemName = "Network Switches",
+                    Category = "Hardware",
+                    QuantityAvailable = 8,
+                    UnitPrice = 32000,
+                    CurrencyCode = "PHP",
+                    Status = "Available",
+                    LastUpdated = DateTime.UtcNow
+                });
+            }
+            if (supplierIds.Count > 2)
             {
-                SupplierId = supplierIds[1],
-                ItemName = "Network Switches",
-                Category = "Hardware",
-                QuantityAvailable = 8,
-                Status = "Available",
-                LastUpdated = DateTime.UtcNow
-            });
+                context.SupplierItems.Add(new SupplierItem
+                {
+                    SupplierId = supplierIds[2],
+                    ItemName = "Backup Storage Array",
+                    Category = "Hardware",
+                    QuantityAvailable = 4,
+                    UnitPrice = 185000,
+                    CurrencyCode = "PHP",
+                    Status = "Available",
+                    LastUpdated = DateTime.UtcNow
+                });
+            }
         }
 
         private static async Task SeedProcurementsAsync(ApplicationDbContext context)
@@ -307,9 +677,9 @@ namespace TechNova_IT_Solutions.Data
             if (await context.Procurements.AnyAsync().ConfigureAwait(false))
                 return;
 
-            var supplierIds = await context.Suppliers.OrderBy(s => s.SupplierId).Select(s => s.SupplierId).Take(2).ToListAsync().ConfigureAwait(false);
-            var policyIds = await context.Policies.OrderBy(p => p.PolicyId).Select(p => p.PolicyId).Take(2).ToListAsync().ConfigureAwait(false);
-            if (supplierIds.Count < 2 || policyIds.Count < 2) return;
+            var supplierIds = await context.Suppliers.OrderBy(s => s.SupplierId).Select(s => s.SupplierId).Take(5).ToListAsync().ConfigureAwait(false);
+            var policyIds = await context.Policies.OrderBy(p => p.PolicyId).Select(p => p.PolicyId).Take(4).ToListAsync().ConfigureAwait(false);
+            if (supplierIds.Count == 0 || policyIds.Count < 2) return;
 
             context.Procurements.Add(new Procurement
             {
@@ -319,6 +689,11 @@ namespace TechNova_IT_Solutions.Data
                 SupplierId = supplierIds[0],
                 RelatedPolicyId = policyIds[0],
                 PurchaseDate = DateTime.UtcNow.AddDays(-14),
+                CurrencyCode = "PHP",
+                OriginalAmount = 520000,
+                ExchangeRate = 1,
+                ConvertedAmount = 520000,
+                ConversionTimestamp = DateTime.UtcNow.AddDays(-14),
                 Status = ProcurementStatuses.SupplierApproved,
                 SupplierResponseDate = DateTime.UtcNow.AddDays(-13),
                 SupplierResponseDeadline = DateTime.UtcNow.AddDays(-7),
@@ -328,26 +703,106 @@ namespace TechNova_IT_Solutions.Data
             {
                 ItemName = "Security Software License",
                 Category = "Software",
-                Quantity = 1,
+                Quantity = 2,
                 SupplierId = supplierIds[0],
                 RelatedPolicyId = policyIds[1],
                 PurchaseDate = DateTime.UtcNow.AddDays(-7),
+                CurrencyCode = "PHP",
+                OriginalAmount = 36000,
+                ExchangeRate = 1,
+                ConvertedAmount = 36000,
+                ConversionTimestamp = DateTime.UtcNow.AddDays(-7),
                 Status = ProcurementStatuses.Submitted,
-                SupplierResponseDeadline = DateTime.UtcNow
+                SupplierResponseDeadline = DateTime.UtcNow.AddDays(1)
             });
-            context.Procurements.Add(new Procurement
+            if (supplierIds.Count > 1)
             {
-                ItemName = "Network Switches",
-                Category = "Hardware",
-                Quantity = 5,
-                SupplierId = supplierIds[1],
-                RelatedPolicyId = policyIds[0],
-                PurchaseDate = DateTime.UtcNow.AddDays(-3),
-                Status = ProcurementStatuses.SupplierRejected,
-                SupplierResponseDate = DateTime.UtcNow.AddDays(-2),
-                SupplierResponseDeadline = DateTime.UtcNow.AddDays(4),
-                RejectionReason = "Insufficient warehouse stock for this batch size"
-            });
+                context.Procurements.Add(new Procurement
+                {
+                    ItemName = "Network Switches",
+                    Category = "Hardware",
+                    Quantity = 5,
+                    SupplierId = supplierIds[1],
+                    RelatedPolicyId = policyIds[0],
+                    PurchaseDate = DateTime.UtcNow.AddDays(-5),
+                    CurrencyCode = "PHP",
+                    OriginalAmount = 160000,
+                    ExchangeRate = 1,
+                    ConvertedAmount = 160000,
+                    ConversionTimestamp = DateTime.UtcNow.AddDays(-5),
+                    Status = ProcurementStatuses.SupplierRejected,
+                    SupplierResponseDate = DateTime.UtcNow.AddDays(-4),
+                    SupplierResponseDeadline = DateTime.UtcNow.AddDays(2),
+                    RejectionReason = "Insufficient warehouse stock for this batch size"
+                });
+            }
+            if (supplierIds.Count > 2)
+            {
+                context.Procurements.Add(new Procurement
+                {
+                    ItemName = "Backup Storage Array",
+                    Category = "Hardware",
+                    Quantity = 2,
+                    SupplierId = supplierIds[2],
+                    RelatedPolicyId = policyIds[2],
+                    PurchaseDate = DateTime.UtcNow.AddDays(-20),
+                    CurrencyCode = "PHP",
+                    OriginalAmount = 370000,
+                    ExchangeRate = 1,
+                    ConvertedAmount = 370000,
+                    ConversionTimestamp = DateTime.UtcNow.AddDays(-20),
+                    Status = ProcurementStatuses.Shipped,
+                    SupplierResponseDate = DateTime.UtcNow.AddDays(-18),
+                    SupplierResponseDeadline = DateTime.UtcNow.AddDays(-15),
+                    SupplierCommitShipDate = DateTime.UtcNow.AddDays(-16),
+                    ShipmentDate = DateTime.UtcNow.AddDays(-12)
+                });
+            }
+            if (supplierIds.Count > 3)
+            {
+                context.Procurements.Add(new Procurement
+                {
+                    ItemName = "Endpoint Protection Suite",
+                    Category = "Software",
+                    Quantity = 25,
+                    SupplierId = supplierIds[3],
+                    RelatedPolicyId = policyIds[3],
+                    PurchaseDate = DateTime.UtcNow.AddDays(-28),
+                    CurrencyCode = "PHP",
+                    OriginalAmount = 225000,
+                    ExchangeRate = 1,
+                    ConvertedAmount = 225000,
+                    ConversionTimestamp = DateTime.UtcNow.AddDays(-28),
+                    Status = ProcurementStatuses.Received,
+                    SupplierResponseDate = DateTime.UtcNow.AddDays(-26),
+                    SupplierResponseDeadline = DateTime.UtcNow.AddDays(-22),
+                    SupplierCommitShipDate = DateTime.UtcNow.AddDays(-23),
+                    ShipmentDate = DateTime.UtcNow.AddDays(-21),
+                    ReceivedDate = DateTime.UtcNow.AddDays(-18)
+                });
+            }
+            if (supplierIds.Count > 4)
+            {
+                context.Procurements.Add(new Procurement
+                {
+                    ItemName = "Office Network Upgrade",
+                    Category = "Hardware",
+                    Quantity = 1,
+                    SupplierId = supplierIds[4],
+                    RelatedPolicyId = policyIds[0],
+                    PurchaseDate = DateTime.UtcNow.AddDays(-35),
+                    CurrencyCode = "PHP",
+                    OriginalAmount = 980000,
+                    ExchangeRate = 1,
+                    ConvertedAmount = 980000,
+                    ConversionTimestamp = DateTime.UtcNow.AddDays(-35),
+                    Status = ProcurementStatuses.Late,
+                    SupplierResponseDate = DateTime.UtcNow.AddDays(-33),
+                    SupplierResponseDeadline = DateTime.UtcNow.AddDays(-25),
+                    SupplierCommitShipDate = DateTime.UtcNow.AddDays(-28),
+                    DelayReason = "Awaiting customs clearance"
+                });
+            }
         }
 
         private static async Task SeedAuditLogsAsync(ApplicationDbContext context)

@@ -26,43 +26,37 @@ namespace TechNova_IT_Solutions.Services
             var result = new StringBuilder();
 
             // Ensure at least one character from each category
-            using (var rng = new RNGCryptoServiceProvider())
-            {
-                result.Append(GetRandomChar(UpperCase, rng));
-                result.Append(GetRandomChar(LowerCase, rng));
-                result.Append(GetRandomChar(Numbers, rng));
-                result.Append(GetRandomChar(Symbols, rng));
+            result.Append(GetRandomChar(UpperCase));
+            result.Append(GetRandomChar(LowerCase));
+            result.Append(GetRandomChar(Numbers));
+            result.Append(GetRandomChar(Symbols));
 
-                // Fill the rest randomly
-                for (int i = result.Length; i < length; i++)
-                {
-                    result.Append(GetRandomChar(allChars, rng));
-                }
+            // Fill the rest randomly
+            for (int i = result.Length; i < length; i++)
+            {
+                result.Append(GetRandomChar(allChars));
             }
 
             // Shuffle the password
             var passwordArray = result.ToString().ToCharArray();
-            using (var rng = new RNGCryptoServiceProvider())
-            {
-                ShuffleArray(passwordArray, rng);
-            }
+            ShuffleArray(passwordArray);
 
             return new string(passwordArray);
         }
 
-        private static char GetRandomChar(string chars, RNGCryptoServiceProvider rng)
+        private static char GetRandomChar(string chars)
         {
             byte[] randomBytes = new byte[1];
-            rng.GetBytes(randomBytes);
+            RandomNumberGenerator.Fill(randomBytes);
             return chars[randomBytes[0] % chars.Length];
         }
 
-        private static void ShuffleArray(char[] array, RNGCryptoServiceProvider rng)
+        private static void ShuffleArray(char[] array)
         {
             for (int i = array.Length - 1; i > 0; i--)
             {
                 byte[] randomBytes = new byte[1];
-                rng.GetBytes(randomBytes);
+                RandomNumberGenerator.Fill(randomBytes);
                 int j = randomBytes[0] % (i + 1);
 
                 // Swap

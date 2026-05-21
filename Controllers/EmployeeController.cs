@@ -115,6 +115,36 @@ namespace TechNova_IT_Solutions.Controllers
                 ActiveViolations = activeViolations
             });
         }
+
+        [HttpPost]
+        public async Task<IActionResult> AcceptTerms()
+        {
+            var unauthorized = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.Employee, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
+            if (unauthorized != null) return unauthorized;
+
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (!int.TryParse(userIdString, out int userId))
+                return Unauthorized(new { success = false, message = "Not logged in" });
+
+            var result = await _employeeService.AcceptTermsAsync(userId);
+            return result
+                ? Ok(new { success = true, message = "Terms and Conditions accepted successfully" })
+                : BadRequest(new { success = false, message = "Failed to accept terms" });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetTermsStatus()
+        {
+            var unauthorized = RoleAccess.RequireRoleOrUnauthorized(this, RoleNames.Employee, RoleNames.SystemAdmin, RoleNames.BranchAdmin, RoleNames.SuperAdmin);
+            if (unauthorized != null) return unauthorized;
+
+            var userIdString = HttpContext.Session.GetString(SessionKeys.UserId);
+            if (!int.TryParse(userIdString, out int userId))
+                return Unauthorized(new { success = false });
+
+            var status = await _employeeService.GetTermsStatusAsync(userId);
+            return Ok(status);
+        }
     }
 
     public class AcknowledgeRequest

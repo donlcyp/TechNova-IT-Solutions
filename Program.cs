@@ -229,6 +229,22 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("Startup migrations are disabled. Set Database:AutoMigrateOnStartup=true to enable.");
     }
 
+    var seedOnStartup = app.Environment.IsDevelopment() ||
+        builder.Configuration.GetValue<bool>("Database:SeedOnStartup");
+
+    if (seedOnStartup)
+    {
+        try
+        {
+            await DataSeeder.SeedAsync(dbContext, app.Environment, logger);
+            logger.LogInformation("Database seeding completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Database seeding failed during startup.");
+        }
+    }
+
     // Super admin bootstrap is disabled by default and requires explicit credentials from configuration.
     var bootstrapSuperAdmin = builder.Configuration.GetValue<bool>("BootstrapSuperAdmin:Enabled");
     var bootstrapEmail = builder.Configuration["BootstrapSuperAdmin:Email"];

@@ -847,34 +847,34 @@
                     <input type="hidden" id="supplierId" />
                     <div class="form-group">
                         <label for="supplierName">Supplier Name *</label>
-                        <input type="text" id="supplierName" required aria-describedby="errorSupplierName" />
+                        <input type="text" id="supplierName" required aria-describedby="errorSupplierName" placeholder="e.g., RouteX" />
                         <div class="field-error" id="errorSupplierName"></div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="contactFirstName">First Name *</label>
-                            <input type="text" id="contactFirstName" required aria-describedby="errorContactFirstName" />
+                            <input type="text" id="contactFirstName" required aria-describedby="errorContactFirstName" placeholder="e.g., Shane" />
                             <div class="field-error" id="errorContactFirstName"></div>
                         </div>
                         <div class="form-group">
                             <label for="contactLastName">Last Name *</label>
-                            <input type="text" id="contactLastName" required aria-describedby="errorContactLastName" />
+                            <input type="text" id="contactLastName" required aria-describedby="errorContactLastName" placeholder="e.g., Beriong" />
                             <div class="field-error" id="errorContactLastName"></div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="email">Email *</label>
-                        <input type="email" id="email" required aria-describedby="errorEmail" />
+                        <input type="email" id="email" required aria-describedby="errorEmail" placeholder="name@company.com" />
                         <div class="field-error" id="errorEmail"></div>
                     </div>
                     <div class="form-group">
                         <label for="contactNumber">Contact Number *</label>
-                        <input type="text" id="contactNumber" required aria-describedby="errorContactNumber" />
+                        <input type="text" id="contactNumber" required aria-describedby="errorContactNumber" placeholder="e.g., 09171234567" />
                         <div class="field-error" id="errorContactNumber"></div>
                     </div>
                     <div class="form-group">
                         <label for="address">Address *</label>
-                        <textarea id="address" rows="3" required aria-describedby="errorAddress"></textarea>
+                        <textarea id="address" rows="3" required aria-describedby="errorAddress" placeholder="Street, City, Province"></textarea>
                         <div class="field-error" id="errorAddress"></div>
                     </div>
                     <div class="form-group">
@@ -996,10 +996,16 @@
 @section Scripts {
     <script>
         // --- Toast Notifications ---
-        function showToast(message, type = 'success') {
+        function showLoading(msg = 'Processing...') {
+            document.getElementById('loadingText').textContent = msg;
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
 
-        function showLoading(msg = 'Processing...') { document.getElementById('loadingText').textContent = msg; document.getElementById('loadingOverlay').classList.add('active'); }
-        function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+
+        function showToast(message, type = 'success') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
@@ -1382,7 +1388,10 @@
             showLoading('Assigning policies & sending notification emails...');
             fetch('/AdminPolicy/AssignPolicy', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': getAntiForgeryToken()
+                },
                 body: JSON.stringify(data)
             })
             .then(res => res.json())

@@ -71,6 +71,36 @@
                         </div>
                     </div>
 
+                    <!-- Terms and Conditions Card -->
+                    <div class="settings-card">
+                        <div class="card-header">
+                            <div class="header-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3>Terms and Conditions</h3>
+                                <p>Review and accept our terms of service</p>
+                            </div>
+                        </div>
+                        <div class="settings-form">
+                            <div id="termsStatusContainer">
+                                <div class="terms-content">
+                                    <p class="terms-text">By accepting these terms, you agree to comply with all TechNova IT Solutions policies, maintain accurate information, and fulfill all procurement commitments in a timely manner.</p>
+                                </div>
+                                <div id="termsStatus" class="terms-status-loading">
+                                    <div class="spinner"></div>
+                                    <span>Loading status...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Change Password Card -->
                     <div class="settings-card">
                         <div class="card-header">
@@ -109,6 +139,68 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            loadTermsStatus();
+        });
+
+        function loadTermsStatus() {
+            $.ajax({
+                url: '/Supplier/GetTermsStatus',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        if (response.termsAccepted) {
+                            $('#termsStatus').html(`
+                                <div class="terms-accepted">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                    <div>
+                                        <strong>Terms Accepted</strong>
+                                        <small>Accepted on ${new Date(response.termsAcceptedDate).toLocaleDateString()}</small>
+                                    </div>
+                                </div>
+                            `);
+                        } else {
+                            $('#termsStatus').html(`
+                                <button type="button" class="btn-primary" onclick="acceptTerms()">
+                                    Accept Terms and Conditions
+                                </button>
+                            `);
+                        }
+                    }
+                },
+                error: function() {
+                    $('#termsStatus').html('<p class="text-danger">Failed to load terms status</p>');
+                }
+            });
+        }
+
+        function acceptTerms() {
+            if (!confirm('Do you agree to the Terms and Conditions?')) {
+                return;
+            }
+
+            $.ajax({
+                url: '/Supplier/AcceptTerms',
+                type: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        loadTermsStatus();
+                        alert('Terms and Conditions accepted successfully!');
+                    } else {
+                        alert('Failed to accept terms: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('An error occurred while accepting terms');
+                }
+            });
+        }
+    </script>
 
     <style>
         * {
@@ -275,6 +367,67 @@
         .btn-primary:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+        }
+
+        .terms-content {
+            margin-bottom: 20px;
+        }
+
+        .terms-text {
+            font-size: 14px;
+            color: #4b5563;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .terms-status-loading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e5e7eb;
+            border-top-color: #1e40af;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @@keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .terms-accepted {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 8px;
+        }
+
+        .terms-accepted svg {
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+        }
+
+        .terms-accepted strong {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .terms-accepted small {
+            display: block;
+            font-size: 12px;
+            opacity: 0.9;
         }
 
         @@media (max-width: 1200px) {

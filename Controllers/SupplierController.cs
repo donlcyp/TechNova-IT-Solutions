@@ -259,6 +259,44 @@ namespace TechNova_IT_Solutions.Controllers
 
             return Ok(new { success = true, message = "Response submitted successfully" });
         }
+
+        [HttpPost]
+        public async Task<IActionResult> AcceptTerms()
+        {
+            var supplierId = await GetCurrentSupplierIdAsync();
+            if (!supplierId.HasValue) return Unauthorized(new { success = false, message = "Access denied" });
+
+            var supplier = await _context.Suppliers.FirstOrDefaultAsync(s => s.SupplierId == supplierId.Value);
+            if (supplier == null)
+            {
+                return BadRequest(new { success = false, message = "Supplier not found" });
+            }
+
+            supplier.TermsAccepted = true;
+            supplier.TermsAcceptedDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = "Terms and Conditions accepted successfully" });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetTermsStatus()
+        {
+            var supplierId = await GetCurrentSupplierIdAsync();
+            if (!supplierId.HasValue) return Unauthorized(new { success = false });
+
+            var supplier = await _context.Suppliers
+                .Where(s => s.SupplierId == supplierId.Value)
+                .Select(s => new { s.TermsAccepted, s.TermsAcceptedDate })
+                .FirstOrDefaultAsync();
+
+            if (supplier == null)
+            {
+                return BadRequest(new { success = false, message = "Supplier not found" });
+            }
+
+            return Ok(new { success = true, termsAccepted = supplier.TermsAccepted, termsAcceptedDate = supplier.TermsAcceptedDate });
+        }
     }
 
     public class AddStockRequest

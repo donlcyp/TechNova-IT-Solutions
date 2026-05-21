@@ -164,5 +164,44 @@ namespace TechNova_IT_Solutions.Services
                             v.PolicyAssignment.UserId == userId)
                 .CountAsync();
         }
+
+        public async Task<bool> AcceptTermsAsync(int userId)
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+                if (user == null) return false;
+
+                user.TermsAccepted = true;
+                user.TermsAcceptedDate = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<TermsStatusData> GetTermsStatusAsync(int userId)
+        {
+            var user = await _context.Users
+                .Where(u => u.UserId == userId)
+                .Select(u => new { u.TermsAccepted, u.TermsAcceptedDate })
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+            {
+                return new TermsStatusData { Success = false };
+            }
+
+            return new TermsStatusData
+            {
+                Success = true,
+                TermsAccepted = user.TermsAccepted,
+                TermsAcceptedDate = user.TermsAcceptedDate
+            };
+        }
     }
 }

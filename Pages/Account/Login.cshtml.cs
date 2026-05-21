@@ -109,7 +109,6 @@ namespace TechNova_IT_Solutions.Pages.Account
             return Page();
         }
 
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> OnPost()
         {
             Email = Email?.Trim() ?? string.Empty;

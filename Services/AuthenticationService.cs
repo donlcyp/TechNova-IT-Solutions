@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using System.Data.Common;
 using TechNova_IT_Solutions.Data;
 using TechNova_IT_Solutions.Models;
 using TechNova_IT_Solutions.Services.Interfaces;
@@ -112,10 +113,23 @@ namespace TechNova_IT_Solutions.Services
 
                 return new AuthenticationResult { Success = true, User = user };
             }
-            catch
+            catch (DbException ex)
             {
-                _logger.LogError("Unexpected login error for {Email}.", email);
-                return new AuthenticationResult { Success = false, ErrorMessage = "An error occurred during login. Please try again or contact your administrator." };
+                _logger.LogError(ex, "Database error during login for {Email}.", email);
+                return new AuthenticationResult
+                {
+                    Success = false,
+                    ErrorMessage = "Login service is temporarily unavailable. Please try again later."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected login error for {Email}.", email);
+                return new AuthenticationResult
+                {
+                    Success = false,
+                    ErrorMessage = "An error occurred during login. Please try again or contact your administrator."
+                };
             }
         }
 

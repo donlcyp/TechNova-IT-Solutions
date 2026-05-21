@@ -90,7 +90,6 @@ namespace TechNova_IT_Solutions.Services
                 return new UserCreationResult { Success = false, ErrorMessage = "Email already exists." };
             }
 
-            // Generate a secure random password instead of using hardcoded defaults
             var generatedPassword = SecurePasswordService.GenerateSecurePassword();
             var hashedPassword = PasswordHasher.HashPassword(generatedPassword);
 
@@ -137,41 +136,27 @@ namespace TechNova_IT_Solutions.Services
 
                 try
                 {
-                    // Generate a password reset token and send secure link instead of password
-                    var resetToken = GeneratePasswordResetToken(user.UserId);
-                    if (string.IsNullOrWhiteSpace(resetToken))
-                    {
-                        result.EmailSent = false;
-                        result.EmailError = "Password reset token could not be generated.";
-                        return result;
-                    }
-
                     var roleLabel = string.IsNullOrWhiteSpace(user.Role) ? "User" : user.Role;
-                    var subject = $"Your TechNova {roleLabel} Account Has Been Created - Set Your Password";
-                    var resetLink = $"https://yourdomain.com/account/reset-password?token={Uri.EscapeDataString(resetToken)}";
+                    var subject = $"Your TechNova {roleLabel} Account Has Been Created";
+                    var safePassword = System.Net.WebUtility.HtmlEncode(generatedPassword);
                     var body = $@"
                         <h2>Welcome to TechNova</h2>
-                        <p>Hello {user.FirstName},</p>
+                        <p>Hello {System.Net.WebUtility.HtmlEncode(user.FirstName)},</p>
                         <p>Your account has been created successfully.</p>
                         <p><strong>Role:</strong> {System.Net.WebUtility.HtmlEncode(roleLabel)}</p>
                         <p><strong>Email:</strong> {System.Net.WebUtility.HtmlEncode(user.Email)}</p>
-                        <p style=""margin: 20px 0;""><a href=""{resetLink}"" style=""background-color: #1e40af; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;"">Set Your Password</a></p>
-                        <p>This link expires in 24 hours.</p>
+                        <p><strong>Temporary Password:</strong> {safePassword}</p>
+                        <p>Please sign in and change your password immediately. You will be required to update it on first login.</p>
                         <p>If you did not request this account, please contact support immediately.</p>";
 
                     var emailResult = await _emailService.SendEmailAsync(user.Email, subject, body);
                     result.EmailSent = emailResult.Success;
                     result.EmailError = emailResult.ErrorMessage;
                 }
-                catch (DbUpdateException ex) when (IsMissingPasswordResetTokensTable(ex))
-                {
-                    result.EmailSent = false;
-                    result.EmailError = "Password reset token storage is not available. Run the latest database migration.";
-                }
                 catch
                 {
                     result.EmailSent = false;
-                    result.EmailError = "Password reset token could not be generated.";
+                    result.EmailError = "Account email could not be sent.";
                 }
             }
 
@@ -329,26 +314,6 @@ namespace TechNova_IT_Solutions.Services
             }
         }
 
-        /// <summary>
-        /// Generates a secure password reset token valid for 24 hours.
-        /// </summary>
-        private string GeneratePasswordResetToken(int userId)
-        {
-            var token = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{userId}-{DateTime.UtcNow:O}-{Guid.NewGuid()}"));
-            var resetToken = new PasswordResetToken
-            {
-                UserId = userId,
-                Token = token,
-                ExpiryDate = DateTime.UtcNow.AddHours(24),
-                CreatedDate = DateTime.UtcNow,
-                IsUsed = false
-            };
-            
-            _context.PasswordResetTokens.Add(resetToken);
-            _context.SaveChanges();
-            
-            return token;
-        }
 
         private static bool IsUniqueConstraintViolation(DbUpdateException ex)
         {
@@ -360,15 +325,5 @@ namespace TechNova_IT_Solutions.Services
             return false;
         }
 
-        private static bool IsMissingPasswordResetTokensTable(DbUpdateException ex)
-        {
-            if (ex.InnerException is SqlException sqlEx)
-            {
-                return sqlEx.Number == 208 &&
-                       sqlEx.Message.IndexOf("PasswordResetTokens", StringComparison.OrdinalIgnoreCase) >= 0;
-            }
-
-            return false;
-        }
     }
 }
